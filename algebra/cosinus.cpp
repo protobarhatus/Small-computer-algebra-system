@@ -1,4 +1,4 @@
-#include "Cosinus.h"
+#include "cosinus.h"
 #include "some_algebra_expression_conversions.h"
 #include <assert.h>
 #include "number.h"
@@ -8,6 +8,7 @@
 #include "constant.h"
 #include "degree.h"
 #include "polynomial.h"
+#include "sinus.h"
 Cosinus::Cosinus(abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
@@ -86,8 +87,8 @@ bool Cosinus::canDowncastTo(AlgebraExpression expr)
 {
     if (expr == FRACTAL && this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
         return true;
-    if (pi_member == nullptr)
-        return false;
+   // if (pi_member == nullptr)
+     //   return false;
   /*  if (expr == NUMBER)
     {
         //k*pi или k/2 * pi
@@ -101,6 +102,10 @@ bool Cosinus::canDowncastTo(AlgebraExpression expr)
             return true;
         return false;
     }
+    if (expr == POLYNOMIAL && this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
+        return true;
+    if (expr == POLYNOMIAL && this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
+        return true;
     return false;
 }
 abs_ex Cosinus::downcastTo(AlgebraExpression expr)
@@ -131,7 +136,17 @@ abs_ex Cosinus::downcastTo(AlgebraExpression expr)
         if (coe == Number(5, 6) || coe == Number(7, 6))
             return takeDegreeOf(Number(3), Number(1, 2)) * abs_ex(new Number(-1, 2));
     }
-
+    if (expr == POLYNOMIAL && this->pi_member != nullptr && isPiMemberInTable(pi_member->getCoefficient()))
+    {
+        auto left = this->argument - abs_ex(new Fractal(this->pi_member.get()));
+        return cos(left)*cos(toAbsEx(this->pi_member)) - sin(toAbsEx(this->pi_member))*sin(left);
+    }
+    if (expr == POLYNOMIAL && this->argument->getId() == POLYNOMIAL)
+    {
+        auto monoms = static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers();
+        auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
+        return cos(this->argument - right) * cos(right) - sin(right) * sin(this->argument - right);
+    }
     return abs_ex(nullptr);
 }
 std::set<int> Cosinus::getSetOfPolyVariables() const
@@ -142,10 +157,17 @@ std::set<int> Cosinus::getSetOfVariables() const
 {
     return this->argument->getSetOfVariables();
 }
+
+std::set<QString> Cosinus::getSetOfFunctions() const
+{
+    std::set<QString> set;
+    set.insert(this->makeStringOfExpression());
+    return set;
+}
 Number Cosinus::getMaxDegreeOfVariable(int id)
 {
     //return this->argument->getMaxDegreeOfVariable(id);
-    return Number::makeErrorNumber();
+    return 0;
 }
 void Cosinus::_qDebugOut()
 {
@@ -153,7 +175,7 @@ void Cosinus::_qDebugOut()
     this->argument->_qDebugOut();
     qDebug() << "End of Cosinus;";
 }
-QString Cosinus::makeStringOfExpression()
+QString Cosinus::makeStringOfExpression() const
 {
     return "cos(" + this->argument->makeStringOfExpression() + ")";
 }
@@ -211,6 +233,17 @@ QString Cosinus::getStringArgument() const
 std::unique_ptr<AbstractExpression> Cosinus::getArgumentMoved()
 {
     return std::move(this->argument);
+}
+
+std::unique_ptr<AbstractExpression> Cosinus::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    if (this->argument->makeStringOfExpression() == part)
+    {
+        abs_ex cop = copy(on_what);
+        this->argument.swap(cop);
+        return cop;
+    }
+    return this->argument->changeSomePartOn(part, on_what);
 }
 
 std::unique_ptr<AbstractExpression> cos(std::unique_ptr<AbstractExpression> &expr)

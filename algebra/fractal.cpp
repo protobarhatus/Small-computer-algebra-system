@@ -593,6 +593,22 @@ std::set<int> Fractal::getSetOfVariables() const
 
     return set;
 }
+
+std::set<QString> Fractal::getSetOfFunctions() const
+{
+    std::set<QString> set;
+    for (auto &it : this->numerator)
+    {
+        auto itset = it->getSetOfFunctions();
+        set.merge(itset);
+    }
+    for (auto &it : this->denominator)
+    {
+        auto itset = it->getSetOfFunctions();
+        set.merge(itset);
+    }
+    return set;
+}
 Number Fractal::getMaxDegreeOfVariable(int id)
 {
     Number deg(std::numeric_limits<long long int>::min() + 1);
@@ -854,7 +870,7 @@ Fractal::Fractal(std::unique_ptr<AbstractExpression> && num, Number coe) : coeff
     this->pushBackToNumerator(std::move(num));
     this->simplify();
 }
-QString Fractal::makeStringOfExpression()
+QString Fractal::makeStringOfExpression() const
 {
     QString result = "(";
     if (!this->coefficient.isOne())
@@ -1264,6 +1280,43 @@ void Fractal::checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bo
     {
         check(it);
     }
+}
+
+std::unique_ptr<AbstractExpression> Fractal::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    abs_ex its_part = nullptr;
+    auto add = [&on_what, &its_part](abs_ex & part)->void {
+        if (its_part == nullptr)
+            its_part = std::move(part);
+        part = copy(on_what);
+    };
+    auto add_r = [&its_part](abs_ex && part)->void {
+        if (its_part == nullptr && part != nullptr)
+            its_part = std::move(part);
+    };
+    for (auto &it : this->numerator)
+    {
+        if (it->makeStringOfExpression() == part)
+        {
+            add(it);
+
+        }
+        else
+            add_r(it->changeSomePartOn(part, on_what));
+
+    }
+    for (auto &it : this->denominator)
+    {
+        if (it->makeStringOfExpression() == part)
+        {
+            add(it);
+
+        }
+        else
+            add_r(it->changeSomePartOn(part, on_what));
+
+    }
+    return its_part;
 }
 
 void Fractal::castTrigonometry()

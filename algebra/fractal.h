@@ -45,6 +45,7 @@ public:
     bool isPolynomial();
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
+    virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
     std::unique_ptr<Fractal> getFractalWithoutVariable(int id);
     std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & right);
@@ -57,7 +58,7 @@ public:
 
     static bool lessFrac(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
     virtual void _qDebugOut() override;
-    virtual QString makeStringOfExpression() override;
+    virtual QString makeStringOfExpression() const override;
     std::unique_ptr<AbstractExpression> findCommonPart(Fractal * frac);
     void sortVariablesInIncreasingOfTheirId();
     void pushBackToNumerator(std::unique_ptr<AbstractExpression> && expr);
@@ -70,6 +71,7 @@ public:
     bool hasTangent();
     void convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> & instructions);
     void checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> & params);
+    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
 private:
     bool casted_trigonometry;
     void castTrigonometry();

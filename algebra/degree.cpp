@@ -363,6 +363,11 @@ std::set<int> Degree::getSetOfVariables() const
     result.insert(deg_set.begin(), deg_set.end());
     return result;
 }
+
+std::set<QString> Degree::getSetOfFunctions() const
+{
+    return this->argument->getSetOfFunctions();
+}
 Number Degree::getMaxDegreeOfVariable(int id)
 {
     Number deg = this->argument->getMaxDegreeOfVariable(id);
@@ -483,7 +488,7 @@ Number Degree::reduce()
     }
     return 1;
 }
-QString Degree::makeStringOfExpression()
+QString Degree::makeStringOfExpression() const
 {
     QString result;
     if (this->degree->getId() != NUMBER || static_cast<Number*>(this->degree.get())->isInteger())
@@ -560,4 +565,15 @@ int Degree::getPositionRelativelyZeroIfHasVariables()
 double Degree::getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule)
 {
     return pow(this->argument->getApproximateValue(choosing_value_rule), this->degree->getApproximateValue(choosing_value_rule));
+}
+
+std::unique_ptr<AbstractExpression> Degree::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    if (this->argument->makeStringOfExpression() == part)
+    {
+        abs_ex cop = copy(on_what);
+        this->argument.swap(cop);
+        return cop;
+    }
+    return this->argument->changeSomePartOn(part, on_what);
 }

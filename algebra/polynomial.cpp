@@ -329,6 +329,17 @@ std::set<int> Polynomial::getSetOfVariables() const
     }
     return set;
 }
+
+std::set<QString> Polynomial::getSetOfFunctions() const
+{
+    std::set<QString> set;
+    for (auto &it : monomials)
+    {
+        auto r = it->getSetOfFunctions();
+        set.merge(r);
+    }
+    return set;
+}
 Number Polynomial::getMaxDegreeOfVariable(int id)
 {
     Number num = std::numeric_limits<long long int>::min();
@@ -350,16 +361,46 @@ Number Polynomial::getMaxDegreeOfVariable(int id)
         return num;
     return 0;
 }
-std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::divide(Polynomial * dividend)
+std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::divide(Polynomial * _dividend)
 {
     //copys divider and dividend and sort them in descending order of degree of first met variable that have only numeric degree. if it hasn't variables but has trigonometrical functions,
-    //it works with tangent
+    //it works with them
     //otherwise just divide coefficients. If polynomials has different sets of variables, it returns nullptr. If max degree of all variables in divider is less then in dividend,
     //it returns nullptr. For correct work, both of them must be simplified. Also, it can work only with variable with numeric degree, if there are no common numeric, it returns
     //nullptr.
+    abs_ex changed_func = nullptr;
+    abs_ex changing_var = abs_ex(new Variable(systemVar(0)));
+    Polynomial * dividers, * dividend;
+    if (this->getSetOfPolyVariables().empty() || _dividend->getSetOfPolyVariables().empty())
+    {
+        dividers = new Polynomial(this);
+        dividend = new Polynomial(_dividend);
+        auto a_s = dividers->getSetOfFunctions();
+        auto b_s = dividend->getSetOfFunctions();
+        if (a_s.empty() || b_s.empty())
+            return {nullptr, nullptr};
+        QString common;
+        for (auto &it : a_s)
+            if (b_s.find(it) != b_s.end())
+            {
+                common = it;
+                break;
+            }
+        if (common == "")
+            return {nullptr, nullptr};
+        changed_func = dividers->changeSomePartOn(common, changing_var);
+        assert(changed_func != nullptr);
+        dividend->changeSomePartOn(common, changing_var);
 
+
+    }
+    else
+    {
+        dividend = _dividend;
+        dividers = this;
+    }
     int argument_variables_id = -1;
-    std::set<int> dividers_set = this->getSetOfPolyVariables(), dividends_set = dividend->getSetOfPolyVariables();
+    std::set<int> dividers_set = dividers->getSetOfPolyVariables(), dividends_set = dividend->getSetOfPolyVariables();
     auto it1 = dividers_set.begin();
     auto it2 = dividends_set.begin();
     while (it1 != dividers_set.end() && it2 != dividends_set.end())
@@ -367,7 +408,7 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
 
         if (*it1 == *it2)
         {
-            Number deg1 = this->getMaxDegreeOfVariable(*it1);
+            Number deg1 = dividers->getMaxDegreeOfVariable(*it1);
             Number deg2 = dividend->getMaxDegreeOfVariable(*it2);
             if (deg1.isCorrect() && deg2.isCorrect())
             {
@@ -386,7 +427,7 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
     if (argument_variables_id == -1)
         return std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>>(nullptr, nullptr);
     std::unique_ptr<Polynomial> divinders_monomials(new Polynomial), dividends_monomials(new Polynomial);
-    for (auto &it : this->monomials)
+    for (auto &it : dividers->monomials)
         divinders_monomials->pushBack(std::unique_ptr<Fractal>(new Fractal(it.get())));
     for (auto &it : dividend->monomials)
         dividends_monomials->pushBack(std::unique_ptr<Fractal>(new Fractal(it.get())));
@@ -410,22 +451,51 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
     Number deg_of_div = dividends_monomials->getMaxDegreeOfVariable(argument_variables_id);
     std::unique_ptr<AbstractExpression> arg_variable(new Variable(argument_variables_id));
 
-    Polynomial coefficient_of_max_degree_in_dividend = dividend->getCoefficientOfMaxDegreeOfVariable(argument_variables_id);
+    Number last_deg_of_max = deg_of_max;
     while (deg_of_max.isCorrect() && deg_of_max.compareWith(deg_of_div) >= 0)
     {
+        Polynomial coefficient_of_max_degree_in_dividend = dividends_monomials->getCoefficientOfMaxDegreeOfVariable(argument_variables_id);
         Polynomial coe_of_max_degree = divinders_monomials->getCoefficientOfMaxDegreeOfVariable(argument_variables_id);
+
+        auto set_max = coe_of_max_degree.getSetOfPolyVariables();
+        auto set_div = coefficient_of_max_degree_in_dividend.getSetOfPolyVariables();
+        if (set_max.size() < set_div.size())
+            return {nullptr, nullptr};
+        for (auto it = set_max.begin(), it1 = set_div.begin(); it != set_max.end() && it1 != set_div.end();)
+        {
+            if (*it == *it1)
+            {
+                if ((coe_of_max_degree.getMaxDegreeOfVariable(*it) - coefficient_of_max_degree_in_dividend.getMaxDegreeOfVariable(*it1)).compareWith(0) < 0)
+                    return {nullptr, nullptr};
+                ++it; ++it1;
+            }
+            else if (*it > *it1)
+                return {nullptr, nullptr};
+            else
+                ++it;
+        }
         std::unique_ptr<AbstractExpression> degree_diff(new Number(deg_of_max - deg_of_div));
         Degree var_multiplier = Degree(arg_variable, degree_diff);
         Fractal multiplier = *((coe_of_max_degree / &coefficient_of_max_degree_in_dividend) * Fractal(&var_multiplier));
         Polynomial subtrahend = *dividends_monomials * &multiplier;
         *divinders_monomials = *divinders_monomials - &subtrahend;
         deg_of_max = divinders_monomials->getMaxDegreeOfVariable(argument_variables_id);
+        if ((last_deg_of_max - deg_of_max).compareWith(0) < 0)
+            return {nullptr, nullptr};
+        last_deg_of_max = deg_of_max;
         result_list.push_back(std::unique_ptr<Fractal>(new Fractal(std::move(multiplier))));
     }
     std::unique_ptr<Polynomial> result = std::make_unique<Polynomial>(std::move(result_list));
     result->simplify();
-    return std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>>(std::move(result), std::move(divinders_monomials));
+    if (changed_func == nullptr)
+        return std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>>(std::move(result), std::move(divinders_monomials));
+    result->changeSomePartOn(changing_var->makeStringOfExpression(), changed_func);
+    divinders_monomials->changeSomePartOn(changing_var->makeStringOfExpression(), changed_func);
+    delete dividers;
+    delete dividend;
+    return {std::move(result), std::move(divinders_monomials)};
 }
+
 Polynomial::Polynomial(std::list<std::unique_ptr<Fractal>> & list)
 {
     for (auto &it : list)
@@ -510,7 +580,7 @@ Fractal Polynomial::operator/(AbstractExpression * expr)
     Fractal result(this, expr);
     return result;
 }
-QString Polynomial::makeStringOfExpression()
+QString Polynomial::makeStringOfExpression() const
 {
     QString result = "(";
     for (auto &it : this->monomials)
@@ -650,18 +720,31 @@ std::unique_ptr<AbstractExpression> Polynomial::toDegree(long long degree)
 //from here all functions are for taking full root from polynom
 std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRoot(long long int root)
 {
-    auto set = this->getSetOfPolyVariables();
-    if (this->getSetOfVariables() != set || root > 20 || root < 2 || (set.empty() && root > 2))
+    Polynomial *polynom;
+    std::vector<abs_ex> functions;
+    abs_ex cop = nullptr;
+    if (this->getSetOfFunctions().empty())
+        polynom = this;
+    else
+    {
+        cop = makeAbstractExpression(POLYNOMIAL, this);
+        functions = replaceEveryFunctionOnSystemVariable(cop);
+        polynom = dynamic_cast<Polynomial*>(cop.get());
+    }
+    auto set = polynom->getSetOfPolyVariables();
+    if (polynom->getSetOfVariables() != set || root > 20 || root < 2 || (set.empty() && root > 2))
         return std::unique_ptr<AbstractExpression>(nullptr);
-    for (auto &it : this->monomials)
+    for (auto &it : polynom->monomials)
         for (auto &it1 : *it->getFractal().first)
             if (Degree::getArgumentOfDegree(it1.get())->getId() == POLYNOMIAL || Degree::getDegreeOfExpression(it1.get())->getId() != NUMBER)
                 return std::unique_ptr<AbstractExpression>(nullptr);
     std::unique_ptr<AbstractExpression> root_ptr;
     if (set.empty())
-        root_ptr = this->tryToTakeRootOfNonVariablesPolynomial();
+        root_ptr = polynom->tryToTakeRootOfNonVariablesPolynomial();
     else
-        root_ptr = this->tryToTakeRootOfVariablesPolynomial(root);
+        root_ptr = polynom->tryToTakeRootOfVariablesPolynomial(root);
+    if (root_ptr != nullptr)
+        replaceSystemVariablesBackToFunctions(root_ptr, functions);
     if (root_ptr != nullptr && root % 2 == 0)
         return std::unique_ptr<AbstractExpression>(new AbsoluteValue(std::move(root_ptr)));
     return root_ptr;
@@ -1038,7 +1121,6 @@ void sortGroup(std::list<std::unique_ptr<Fractal>> & group)
 }
 std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfVariablesPolynomial(long long root)
 {
-
     //отсортировать слагаемые по группам множителей-переменных, среди них - по паттерну степеней (паттерн - их отношение друг к другу), среди них - по возрастанию суммы степеней
     auto monoms = groupPolynom(getMonomialsSorted(this->getMonomialsPointers()));
     //теперь вынести за скобки одинаковые группы переменных (чтобы в скобках их не было)
@@ -1688,6 +1770,34 @@ std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > P
         it->checkTrigonometricalFunctionsItHas(params);
     }
     return params;
+}
+
+std::unique_ptr<AbstractExpression> Polynomial::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    abs_ex its_part = nullptr;
+    auto add = [&on_what, &its_part](abs_ex & part)->void {
+        if (its_part == nullptr)
+            its_part = std::move(part);
+        part = copy(on_what);
+    };
+    auto add_r = [&its_part](abs_ex && part)->void {
+        if (its_part == nullptr && part != nullptr)
+            its_part = std::move(part);
+    };
+    for (auto &it : this->monomials)
+    {
+        if (it->makeStringOfExpression() == part)
+        {
+           if (its_part != nullptr)
+               its_part = toAbsEx(it);
+           it = std::unique_ptr<Fractal>(new Fractal(on_what.get()));
+
+        }
+        else
+            add_r(it->changeSomePartOn(part, on_what));
+
+    }
+    return its_part;
 }
 
 

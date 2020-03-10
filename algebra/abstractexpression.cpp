@@ -8,6 +8,7 @@
 #include "cosinus.h"
 #include "tangent.h"
 #include "cotangent.h"
+#include "variablesdistributor.h"
 AbstractExpression::AbstractExpression()
 {
 
@@ -178,4 +179,26 @@ bool isDegreeOfTrigonometricalFunction(std::unique_ptr<AbstractExpression> &expr
 {
     auto arg = Degree::getArgumentOfDegree(expr.get())->getId();
     return arg == SINUS || arg == COSINUS || arg == TANGENT || arg == COTANGENT;
+}
+
+std::vector<std::unique_ptr<AbstractExpression> > replaceEveryFunctionOnSystemVariable(std::unique_ptr<AbstractExpression> &expr)
+{
+    auto functions = expr->getSetOfFunctions();
+    std::vector<abs_ex> result;
+    int counter = 0;
+    for (auto &it : functions)
+    {
+        abs_ex var(new Variable(systemVar(counter)));
+        result.push_back(expr->changeSomePartOn(it, var));
+        ++counter;
+    }
+    return result;
+}
+
+void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<std::unique_ptr<AbstractExpression> > &functions)
+{
+    for (int i = 0; i < functions.size(); ++i)
+    {
+        expr->changeSomePartOn(systemVar(i).makeStringOfExpression(), functions[i]);
+    }
 }

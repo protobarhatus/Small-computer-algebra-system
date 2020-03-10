@@ -111,6 +111,11 @@ std::set<int> AbsoluteValue::getSetOfVariables() const
 {
     return this->expression->getSetOfVariables();
 }
+
+std::set<QString> AbsoluteValue::getSetOfFunctions() const
+{
+    return this->expression->getSetOfFunctions();
+}
 Number AbsoluteValue::getMaxDegreeOfVariable(int id)
 {
     return this->expression->getMaxDegreeOfVariable(id);
@@ -121,7 +126,7 @@ void AbsoluteValue::_qDebugOut()
     this->expression->_qDebugOut();
     qDebug() << "END OF ABSOLUTE VALUE EXPRESSION;";
 }
-QString AbsoluteValue::makeStringOfExpression()
+QString AbsoluteValue::makeStringOfExpression() const
 {
     return "abs(" + this->expression->makeStringOfExpression() + ")";
 }
@@ -145,4 +150,16 @@ int AbsoluteValue::getPositionRelativelyZeroIfHasVariables()
 std::unique_ptr<AbstractExpression> AbsoluteValue::open()
 {
     return std::move(this->expression);
+}
+
+std::unique_ptr<AbstractExpression> AbsoluteValue::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+
+    if (this->expression->makeStringOfExpression() == part)
+    {
+        abs_ex cop = copy(on_what);
+        this->expression.swap(cop);
+        return cop;
+    }
+    return this->expression->changeSomePartOn(part, on_what);
 }

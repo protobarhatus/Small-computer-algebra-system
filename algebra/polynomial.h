@@ -39,7 +39,7 @@ public:
     std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> divide(Polynomial * dividend);
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
-
+    virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
     std::list<Fractal*> getMonomialsPointers();
     Polynomial getCoefficientOfMaxDegreeOfVariable(int id);
@@ -49,7 +49,7 @@ public:
     Polynomial operator-(AbstractExpression * expr);
     Polynomial operator*(AbstractExpression * expr);
     Fractal operator/(AbstractExpression * expr);
-    virtual QString makeStringOfExpression() override;
+    virtual QString makeStringOfExpression() const override;
     std::unique_ptr<AbstractExpression> reduceCommonPart();
     // if it is a sum like sqrt(3)+sqrt(5), it returns result on formula (a+b)(a-b)=a^2-b^2. returns result and multiplier
     std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression>> multiplyIrrationalSumOnAppropriateFormula();
@@ -70,6 +70,7 @@ public:
     //пятое - имеет ли тангенс,
     //шестое - имеет ли котангенс квадрат, седьмое - имеет ли котангенс
     std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> checkTrigonometricalFunctions();
+    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
 private:
     bool casted_trigonometry;
     void castTrigonometry();

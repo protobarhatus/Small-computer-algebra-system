@@ -3,15 +3,20 @@
 #include "variable.h"
 #include <vector>
 #include "variablesdefinition.h"
+
 class VariablesDistributor
 {
 public:
+    VariablesDefinition * system_var_def;
     static VariablesDistributor& get();
     static Variable createVariable(VariablesDefinition definition);
     void deleteVariables();
     static VariablesDefinition * getVariablesDefinition(int id);
-private:
+    static int firstSystemNum();
 
+private:
+    //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
+    const int first_system_num = 1000000000;
     VariablesDistributor();
     VariablesDistributor(const VariablesDistributor &) = delete;
     VariablesDistributor& operator=(const VariablesDistributor &) = delete;
@@ -20,4 +25,5 @@ private:
 };
 void deleteVariables();
 Variable getVariable(int id);
+Variable systemVar(int num = 0);
 #endif // VARIABLESDISTRIBUTOR_H

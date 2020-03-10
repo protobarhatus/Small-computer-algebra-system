@@ -19,8 +19,8 @@ public:
     virtual std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr) override;
     Number & operator=(long long int value);
     //the most important values
-    bool isOne();
-    bool isZero();
+    bool isOne() const;
+    bool isZero() const;
     //that's algebrasting function and comparing is made with all rules
     short int compareWith(long long int value) const;
     short int compareWith(Number num) const;
@@ -35,18 +35,20 @@ public:
     Number operator/=(const Number & number);
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
+    virtual std::set<QString> getSetOfFunctions() const override;
     static Number makeErrorNumber();
     bool isCorrect() const;
     virtual Number getMaxDegreeOfVariable(int id) override;
 
 
     virtual void _qDebugOut() override;
-    virtual QString makeStringOfExpression() override;
+    virtual QString makeStringOfExpression() const override;
 
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;
     bool operator==(long long int num);
     bool operator==(const Number & num);
+    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     long long int numerator;

@@ -99,6 +99,11 @@ AlgExpr& AlgExpr::operator/=(const AlgExpr & expr)
     this->expression = this->expression / expr.expression;
     return *this;
 }
+
+AlgExpr AlgExpr::operator-() const
+{
+    return -1 * *this;
+}
 bool AlgExpr::operator==(const AlgExpr &expr) const
 {
         //if ((this->expression->getId() == FRACTAL || expr.expression->getId() == FRACTAL) && !expr.isEqualTo(0))

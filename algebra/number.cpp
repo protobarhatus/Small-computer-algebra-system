@@ -82,7 +82,7 @@ Number & Number::operator=(long long int value)
     this->denominator = 1;
     return *this;
 }
-bool Number::isOne()
+bool Number::isOne() const
 {
     return this->numerator == 1 && this->denominator == 1;
 }
@@ -180,7 +180,7 @@ short int Number::compareWith(long long int value) const
     if (this->numerator > value)
         return 1;
 }
-bool Number::isZero()
+bool Number::isZero() const
 {
     return this->numerator == 0;
 }
@@ -195,6 +195,11 @@ std::set<int> Number::getSetOfPolyVariables() const
 std::set<int> Number::getSetOfVariables() const
 {
     return std::set<int>();
+}
+
+std::set<QString> Number::getSetOfFunctions() const
+{
+    return std::set<QString>();
 }
 Number Number::makeErrorNumber()
 {
@@ -257,7 +262,7 @@ void Number::_qDebugOut()
         qDebug() << "END OF NUMBER;";
     }
 }
-QString Number::makeStringOfExpression()
+QString Number::makeStringOfExpression() const
 {
     QString result, num, denum;
     num.setNum(this->numerator);
@@ -309,6 +314,11 @@ bool Number::operator==(long long num)
 bool Number::operator==(const Number & num)
 {
     return this->numerator == num.numerator && this->denominator == num.denominator;
+}
+
+std::unique_ptr<AbstractExpression> Number::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    return nullptr;
 }
 
 Number abs(Number num)

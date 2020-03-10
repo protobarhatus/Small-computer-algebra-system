@@ -40,10 +40,8 @@ int main(int argc, char *argv[])
     //c = (a + b) / 2;
    // TExpr_Builder builder;
    // auto expr = builder.BuildExpr("x^2+x+1");
-
-
-    c =  sin(x - pi()/4);
-
+    c = sqrt(sin(x)*sin(x) + 2*sin(x)*cos(x) + cos(x)*cos(x));
+   // c = sqrt(1 + 2*x*y);
 
    // c.out();
 

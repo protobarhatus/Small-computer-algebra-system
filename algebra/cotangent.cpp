@@ -160,9 +160,16 @@ std::set<int> Cotangent::getSetOfVariables() const
     return this->argument->getSetOfVariables();
 }
 
+std::set<QString> Cotangent::getSetOfFunctions() const
+{
+    std::set<QString> set;
+    set.insert(this->makeStringOfExpression());
+    return set;
+}
+
 Number Cotangent::getMaxDegreeOfVariable(int id)
 {
-    return Number::makeErrorNumber();
+    return 0;
 }
 
 void Cotangent::_qDebugOut()
@@ -172,7 +179,7 @@ void Cotangent::_qDebugOut()
     qDebug() << "End of sinus;";
 }
 
-QString Cotangent::makeStringOfExpression()
+QString Cotangent::makeStringOfExpression() const
 {
     return "cot(" + this->argument->makeStringOfExpression() + ")";
 }
@@ -221,8 +228,29 @@ std::unique_ptr<AbstractExpression> Cotangent::getArgumentMoved()
     return std::move(this->argument);
 }
 
+std::unique_ptr<AbstractExpression> Cotangent::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    if (this->argument->makeStringOfExpression() == part)
+    {
+        abs_ex cop = copy(on_what);
+        this->argument.swap(cop);
+        return cop;
+    }
+    return this->argument->changeSomePartOn(part, on_what);
+}
+
 bool Cotangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == COTANGENT);
     return AbstractExpression::less(this->argument.get(), (static_cast<Cotangent*>(const_cast<AbstractExpression*>(&right))->argument.get()));
+}
+
+std::unique_ptr<AbstractExpression> cot(std::unique_ptr<AbstractExpression> &expr)
+{
+    return abs_ex(new Cotangent(expr));
+}
+
+std::unique_ptr<AbstractExpression> cot(std::unique_ptr<AbstractExpression> &&expr)
+{
+    return abs_ex(new Cotangent(std::move(expr)));
 }

@@ -15,6 +15,7 @@
 #include "cosinus.h"
 #include "tangent.h"
 #include "cotangent.h"
+#include "variablesdistributor.h"
 std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, AbstractExpression * argument)
 {
     assert(type == argument->getId() || (type > 0 && argument->getId() > 0));
@@ -73,10 +74,37 @@ long long int gcd(long long int a, long long int b)
     }
     return a + b;
 }
-std::unique_ptr<Polynomial> gcd(Polynomial * a, Polynomial * b)
+std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
 {
+    Polynomial * a = new Polynomial(a_p);
+    Polynomial * b = new Polynomial(b_p);
     assert(a->reduce().isOne());
     assert(b->reduce().isOne());
+    //если нет переменных, относительно которых можно делить, но есть тригонометрические (или логарифмические) функции, заменяем общую функцию на переменную с id,
+    //которого точно тут быть не может. Точно такой же кусок кода есть и в Polynomial::divide, но поскольку тут деление вызывается много раз, для производительности
+    //лучше оставить это здесь тоже
+    abs_ex changed_func = nullptr;
+    abs_ex changing_var = abs_ex(new Variable(systemVar(0)));
+    if (a->getSetOfPolyVariables().empty() || b->getSetOfPolyVariables().empty())
+    {
+        auto a_s = a->getSetOfFunctions();
+        auto b_s = b->getSetOfFunctions();
+        if (a_s.empty() || b_s.empty())
+            return nullptr;
+        QString common;
+        for (auto &it : a_s)
+            if (b_s.find(it) != b_s.end())
+            {
+                common = it;
+                break;
+            }
+        if (common == "")
+            return nullptr;
+        changed_func = a->changeSomePartOn(common, changing_var);
+        assert(changed_func != nullptr);
+        b->changeSomePartOn(common, changing_var);
+
+    }
     assert(!a->getSetOfPolyVariables().empty() && !b->getSetOfPolyVariables().empty());
     auto div_result = a->divide(b);
     bool has_a_bigger_degree = true;
@@ -89,7 +117,7 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a, Polynomial * b)
     if (div_result.first == nullptr)
         return std::make_unique<Polynomial>(std::make_unique<Number>(1).get());
     if (div_result.second->isZero())
-        return std::make_unique<Polynomial>(has_a_bigger_degree ? b : a);
+        return std::make_unique<Polynomial>(has_a_bigger_degree ? b_p : a_p);
     std::unique_ptr<Polynomial> last_remainder = std::move(div_result.second);
     last_remainder->reduce();
     if (has_a_bigger_degree)
@@ -109,6 +137,9 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a, Polynomial * b)
     }
     if (last_remainder->downcast()->getId() == NUMBER)
         return std::unique_ptr<Polynomial>(new Polynomial(std::make_unique<Number>(1).get()));
+    if (changed_func != nullptr)
+        last_remainder->changeSomePartOn(changing_var->makeStringOfExpression(), changed_func);
+    qDebug() << last_remainder->makeStringOfExpression();
     return last_remainder;
 
 }

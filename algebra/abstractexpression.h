@@ -4,7 +4,7 @@
 #include <set>
 #include <QDebug>
 #include <QString>
-
+#include <vector>
 #define SIM_IF_NEED if (this->simplified) return; else this->simplified = true;
 #define NONCONST this->simplified = false;
 #define abs_ex std::unique_ptr<AbstractExpression>
@@ -68,17 +68,20 @@ public:
     virtual std::set<int> getSetOfPolyVariables() const = 0;
     //in expression like x^z returns both of them
     virtual std::set<int> getSetOfVariables() const = 0;
+    //returns string discription of all trigonometrical, logarithmic and other functions
+    virtual std::set<QString> getSetOfFunctions() const = 0;
     //if variable has'nt been found or it's max degree isn't Number or it's inside other function, it returns Number::makeErrorNumber()
     virtual Number getMaxDegreeOfVariable(int id) = 0;
 
     virtual void _qDebugOut() = 0;
-    virtual QString makeStringOfExpression() = 0;
+    virtual QString makeStringOfExpression() const = 0;
     virtual double getApproximateValue() = 0;
     //the difference between overload without argument is that this function choose a value for variable from definition by lambda, but other cannot be used with variables andjust throw assert()
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) = 0;
     //1 is bigger than 0 (or equally), -1 is less, 0 is undefined
     int getPositionRelativelyZero();
 
+    virtual abs_ex changeSomePartOn(QString function, abs_ex & on_what) = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -89,6 +92,8 @@ protected:
 };
 QString getStringArgumentOfTrigonometricalFunction(abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);
+std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);
+void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex> & functions);
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr);
 bool isDegreeOfTrigonometricalFunction(abs_ex & expr);
 std::unique_ptr<AbstractExpression> operator*(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);

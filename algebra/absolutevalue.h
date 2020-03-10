@@ -18,16 +18,17 @@ public:
 
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
+    virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
 
     virtual void _qDebugOut() override;
-    virtual QString makeStringOfExpression() override;
+    virtual QString makeStringOfExpression() const override;
 
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;
     //returns moved expression so it's not valid and must be destroyed
     std::unique_ptr<AbstractExpression> open();
-
+    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
 private:
     void checkIfNeedToCheckSignToLeadToTheAcceptedForm();
     virtual int getPositionRelativelyZeroIfHasVariables() override;

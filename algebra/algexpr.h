@@ -30,6 +30,7 @@ public:
     AlgExpr& operator-=(const AlgExpr & expr);
     AlgExpr& operator*=(const AlgExpr & expr);
     AlgExpr& operator/=(const AlgExpr & expr);
+    AlgExpr operator-() const;
     bool operator==(const AlgExpr & expr) const;
     bool operator==(Number num) const;
     bool operator==(long long int num) const;

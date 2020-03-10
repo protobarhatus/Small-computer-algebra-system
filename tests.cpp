@@ -729,6 +729,62 @@ void testAlgMod()
             []()->bool {
             AlgExpr x = var();
             return  sin(x - pi()/4) == sqrt(2)/2*(sin(x) - cos(x));
+},
+            []()->bool {
+            AlgExpr x = var();
+            return cos(pi()/2 - x) == sin(x);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return cos(pi()/2 + x) == -sin(x);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return cos(x + pi()) == -cos(x);
+},
+            []()->bool { //150
+            AlgExpr x = var();
+            AlgExpr y = var();
+            return cos(x - y) == cos(x)*cos(y) + sin(x)*sin(y);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return tan(x)*cot(x) == 1;
+},
+            []()->bool {
+            AlgExpr x = var();
+            AlgExpr y = var();
+            return sin(x + y) - sin(x)*cos(y) == sin(y)*cos(x);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return (sin(x)*sin(x) + sin(x) - 2) / (sin(x) - 1) == sin(x) + 2;
+},
+            []()->bool {
+            AlgExpr x = var();
+            AlgExpr y = var();
+            return (x*x - x - y*x + y) / (x - 1) == x - y;
+},
+            []()->bool { //155
+            AlgExpr x = var();
+            AlgExpr y = var();
+            return (x*x - x - y*x + y) / (x - y) == x - 1;
+},
+            []()->bool {
+            AlgExpr x = var();
+            return (sin(x)*sin(x)-sin(x)-cos(x)*sin(x) + cos(x)) / (sin(x) - 1) == sin(x) - cos(x);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return (sin(x)*sin(x)-sin(x)-cos(x)*sin(x) + cos(x)) / (sin(x) - cos(x)) == sin(x) - 1;
+},
+            []()->bool {
+            AlgExpr x = var();
+            return sqrt(sin(x)*sin(x) + 2*sin(x) + 1) == abs(sin(x) + 1);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return sqrt(sin(x)*sin(x) + 2*sin(x)*x + x*x) == abs(sin(x) + x);
 }
 
 

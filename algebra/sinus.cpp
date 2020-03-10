@@ -89,15 +89,9 @@ bool Sinus::canDowncastTo(AlgebraExpression expr)
 {
     if (expr == FRACTAL && this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
         return true;
-    if (pi_member == nullptr)
-        return false;
-  /*  if (expr == NUMBER)
-    {
-        //k*pi или k/2 * pi
-        if (pi_member->getCoefficient().getDenominator() <= 2)
-            return true;
-        return false;
-    }*/
+    //if (pi_member == nullptr)
+    //    return false;
+
     if (expr == FRACTAL && this->is_pi_member_only)
     {
         if (pi_member->getCoefficient().getDenominator() <= 6 && pi_member->getCoefficient().getDenominator() != 5)
@@ -105,6 +99,8 @@ bool Sinus::canDowncastTo(AlgebraExpression expr)
         return false;
     }
     if (expr == POLYNOMIAL && this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
+        return true;
+    if (expr == POLYNOMIAL && this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
         return true;
     return false;
 }
@@ -139,12 +135,13 @@ abs_ex Sinus::downcastTo(AlgebraExpression expr)
     if (expr == POLYNOMIAL && this->pi_member != nullptr && isPiMemberInTable(pi_member->getCoefficient()))
     {
         auto left = this->argument - abs_ex(new Fractal(this->pi_member.get()));
-      //  qDebug()<<this->makeStringOfExpression();
-      //  qDebug()<<left->makeStringOfExpression();
-       // qDebug()<<this->pi_member->makeStringOfExpression();
-      //  qDebug()<<(sin(left)*cos(toAbsEx(this->pi_member)))->makeStringOfExpression();
-     //   qDebug()<<(sin(toAbsEx(this->pi_member))*cos(left))->makeStringOfExpression();
         return sin(left)*cos(toAbsEx(this->pi_member)) + sin(toAbsEx(this->pi_member))*cos(left);
+    }
+    if (expr == POLYNOMIAL && this->argument->getId() == POLYNOMIAL)
+    {
+        auto monoms = static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers();
+        auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
+        return sin(this->argument - right) * cos(right) + sin(right) * cos(this->argument - right);
     }
     return abs_ex(nullptr);
 }
@@ -156,10 +153,17 @@ std::set<int> Sinus::getSetOfVariables() const
 {
     return this->argument->getSetOfVariables();
 }
+
+std::set<QString> Sinus::getSetOfFunctions() const
+{
+    std::set<QString> set;
+    set.insert(this->makeStringOfExpression());
+    return set;
+}
 Number Sinus::getMaxDegreeOfVariable(int id)
 {
     //return this->argument->getMaxDegreeOfVariable(id);
-    return Number::makeErrorNumber();
+    return 0;
 }
 void Sinus::_qDebugOut()
 {
@@ -167,7 +171,7 @@ void Sinus::_qDebugOut()
     this->argument->_qDebugOut();
     qDebug() << "End of sinus;";
 }
-QString Sinus::makeStringOfExpression()
+QString Sinus::makeStringOfExpression() const
 {
     return "sin(" + this->argument->makeStringOfExpression() + ")";
 }
@@ -225,6 +229,17 @@ QString Sinus::getStringArgument() const
 std::unique_ptr<AbstractExpression> Sinus::getArgumentMoved()
 {
     return std::move(this->argument);
+}
+
+std::unique_ptr<AbstractExpression> Sinus::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    if (this->argument->makeStringOfExpression() == part)
+    {
+        abs_ex cop = copy(on_what);
+        this->argument.swap(cop);
+        return cop;
+    }
+    return this->argument->changeSomePartOn(part, on_what);
 }
 
 std::unique_ptr<AbstractExpression> sin(std::unique_ptr<AbstractExpression> &expr)

@@ -56,6 +56,11 @@ std::set<int> Constant::getSetOfVariables() const
     return std::set<int>();
 }
 
+std::set<QString> Constant::getSetOfFunctions() const
+{
+    return std::set<QString>();
+}
+
 Number Constant::getMaxDegreeOfVariable(int id)
 {
     return Number::makeErrorNumber();
@@ -66,7 +71,7 @@ void Constant::_qDebugOut()
     qDebug() << "CONST: " << this->name;
 }
 
-QString Constant::makeStringOfExpression()
+QString Constant::makeStringOfExpression() const
 {
     return this->name;
 }
@@ -84,6 +89,11 @@ double Constant::getApproximateValue(const std::function<double (VariablesDefini
 int Constant::getPositionRelativelyZeroIfHasVariables()
 {
     return (this->value > 0 ? 1 : (this->value < 0 ? -1 : 0));
+}
+
+std::unique_ptr<AbstractExpression> Constant::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    return nullptr;
 }
 bool Constant::operator<(const AbstractExpression &right) const
 {

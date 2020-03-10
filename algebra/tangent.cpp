@@ -10,6 +10,7 @@
 #include "degree.h"
 #include "polynomial.h"
 #include "exception.h"
+#include "cotangent.h"
 Tangent::Tangent(abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
@@ -119,6 +120,10 @@ bool Tangent::canDowncastTo(AlgebraExpression expr)
             return true;
         return false;
     }
+    if (expr == FRACTAL && this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
+        return true;
+    if (expr == FRACTAL && this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
+        return true;
     return false;
 }
 
@@ -147,6 +152,21 @@ std::unique_ptr<AbstractExpression> Tangent::downcastTo(AlgebraExpression expr)
             return takeDegreeOf(Number(3), Number(1, 2)) * abs_ex(new Number(-1));
     }
 
+    if (expr == FRACTAL && this->pi_member != nullptr && abs(this->pi_member->getCoefficient()) == Number(1, 2))
+    {
+        return minus_one * cot(this->argument - toAbsEx(this->pi_member));
+    }
+    if (expr == FRACTAL && this->pi_member != nullptr && isPiMemberInTable(pi_member->getCoefficient()))
+    {
+        auto left = this->argument - abs_ex(new Fractal(this->pi_member.get()));
+        return (tan(left) + tan(toAbsEx(this->pi_member)))/(one - tan(left)*tan(toAbsEx(this->pi_member)));
+    }
+    if (expr == FRACTAL && this->argument->getId() == POLYNOMIAL)
+    {
+        auto monoms = static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers();
+        auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
+        return (tan(right) + tan(this->argument - right))/(one - tan(right)*tan(this->argument - right));
+    }
     return abs_ex(nullptr);
 }
 
@@ -160,9 +180,16 @@ std::set<int> Tangent::getSetOfVariables() const
     return this->argument->getSetOfVariables();
 }
 
+std::set<QString> Tangent::getSetOfFunctions() const
+{
+    std::set<QString> set;
+    set.insert(this->makeStringOfExpression());
+    return set;
+}
+
 Number Tangent::getMaxDegreeOfVariable(int id)
 {
-    return Number::makeErrorNumber();
+    return 0;
 }
 
 void Tangent::_qDebugOut()
@@ -172,7 +199,7 @@ void Tangent::_qDebugOut()
     qDebug() << "End of sinus;";
 }
 
-QString Tangent::makeStringOfExpression()
+QString Tangent::makeStringOfExpression() const
 {
     return "tan(" + this->argument->makeStringOfExpression() + ")";
 }
@@ -221,8 +248,29 @@ std::unique_ptr<AbstractExpression> Tangent::getArgumentMoved()
     return std::move(this->argument);
 }
 
+std::unique_ptr<AbstractExpression> Tangent::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    if (this->argument->makeStringOfExpression() == part)
+    {
+        abs_ex cop = copy(on_what);
+        this->argument.swap(cop);
+        return cop;
+    }
+    return this->argument->changeSomePartOn(part, on_what);
+}
+
 bool Tangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == TANGENT);
     return AbstractExpression::less(this->argument.get(), (static_cast<Tangent*>(const_cast<AbstractExpression*>(&right))->argument.get()));
+}
+
+std::unique_ptr<AbstractExpression> tan(std::unique_ptr<AbstractExpression> &expr)
+{
+    return abs_ex(new Tangent(expr));
+}
+
+std::unique_ptr<AbstractExpression> tan(std::unique_ptr<AbstractExpression> &&expr)
+{
+    return abs_ex(new Tangent(std::move(expr)));
 }

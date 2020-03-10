@@ -29,6 +29,7 @@ public:
     std::pair<std::unique_ptr<fractal_argument>, bool> getListOfArguments();
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
+    virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
     //abbreviation formulas
     bool canTurnIntoPolynomial();
@@ -37,12 +38,13 @@ public:
     Number reduce();
     virtual void  _qDebugOut() override;
     bool isDegreeOfNumberThatLessThanOne();
-    virtual QString makeStringOfExpression() override;
+    virtual QString makeStringOfExpression() const override;
     bool isRootNumeric();
     long long int getRootValue();
 
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;
+    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     void reducePolynomialArgument();

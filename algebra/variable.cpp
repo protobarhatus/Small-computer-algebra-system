@@ -15,13 +15,17 @@ Variable::Variable(int id, VariablesDefinition * def)
     this->definition = def;
 }
 //вообще, костыльный конструктор, мне следует получше разобраться с выдачей переменных
-Variable::Variable(int id, char iname)
+Variable::Variable(int id, QString iname)
 {
     this->id = id;
     this->name = iname;
-    VariablesNameDistributor::addVariable(id, name);
-    if (this->id >= Variable::id_counter)
-        Variable::id_counter = id;
+    if (id >= VariablesDistributor::firstSystemNum())
+    {
+        this->definition = VariablesDistributor::get().system_var_def;
+    }
+    //VariablesNameDistributor::addVariable(id, name);
+    //if (this->id >= Variable::id_counter)
+    //    Variable::id_counter = id;
 }
 Variable::Variable(const Variable & var)
 {
@@ -37,7 +41,7 @@ void Variable::simplify()
 {
 
 }
-QString Variable::getName()
+QString Variable::getName() const
 {
     return this->name;
 }
@@ -67,6 +71,11 @@ std::set<int> Variable::getSetOfVariables() const
     set.insert((int)this->id);
     return set;
 }
+
+std::set<QString> Variable::getSetOfFunctions() const
+{
+    return std::set<QString>();
+}
 Number Variable::getMaxDegreeOfVariable(int _id)
 {
     if (_id == this->id)
@@ -86,7 +95,7 @@ void Variable::_qDebugOut()
 {
     qDebug() << "VARIABLE: " << this->name;
 }
-QString Variable::makeStringOfExpression()
+QString Variable::makeStringOfExpression() const
 {
     return this->getName();
 }
@@ -97,10 +106,18 @@ double Variable::getApproximateValue()
 }
 Variable::Variable(int id)
 {
-    assert(id <= Variable::id_counter);
+   // assert(id <= Variable::id_counter);
     this->id = id;
-    this->definition = VariablesDistributor::getVariablesDefinition(id);
-    this->name = VariablesNameDistributor::getName(id);
+    if (id <= Variable::id_counter)
+    {
+        this->definition = VariablesDistributor::getVariablesDefinition(id);
+        this->name = VariablesNameDistributor::getName(id);
+    }
+    else
+    {
+        this->definition = VariablesDistributor::get().system_var_def;
+        this->name = "$system";
+    }
 }
 int Variable::getPositionRelativelyZeroIfHasVariables()
 {
@@ -113,4 +130,9 @@ int Variable::getPositionRelativelyZeroIfHasVariables()
 double Variable::getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule)
 {
     return choosing_value_rule(this->definition);
+}
+
+std::unique_ptr<AbstractExpression> Variable::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    return nullptr;
 }
