@@ -74,6 +74,7 @@ public:
 private:
     bool casted_trigonometry;
     void castTrigonometry();
+    void castTrigonometryArguments();
     std::map<QString, TrigonometricalFunctionsCastType> getTrigonometricalFunctionToTurnIntoIt();
     void castTrigonometricalFunctions();
     virtual int getPositionRelativelyZeroIfHasVariables() override;

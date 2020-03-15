@@ -785,6 +785,51 @@ void testAlgMod()
             []()->bool {
             AlgExpr x = var();
             return sqrt(sin(x)*sin(x) + 2*sin(x)*x + x*x) == abs(sin(x) + x);
+},
+            []()->bool { //160
+            AlgExpr x = var();
+            return 2*sin(x)*cos(x) - sin(2*x) == 0;
+},
+            []()->bool {
+            AlgExpr x = var();
+            return pow((cos(x) + 1)/2, 1) == (cos(x) + 1) /2;
+},
+            []()->bool {
+            AlgExpr x = var();
+            return pow((2*x)/3, 2) == (4*x*x)/9;
+},
+            []()->bool {
+            AlgExpr x = var();
+            return cos(x)*cos(x) - cos(2*x)/2 == A(1)/2;
+},
+            []()->bool {
+            AlgExpr x = var();
+            return pow(2*cos(x/2)*cos(x/2), 2) - cos(x) - cos(2*x) == 2 + cos(x) - cos(x)*cos(x);
+},
+            []()->bool { //165
+            AlgExpr x = var();
+            AlgExpr y = var();
+            return pow(2*cos(x/2)*cos(x/2), 2) - cos(x) - cos(2*x) + 3*sin(y)*cos(y) - sin(2*y) == 2 + cos(x) - cos(x)*cos(x) + sin(y)*cos(y);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return pow(2*cos(x/2)*cos(x/2), 2)  - cos(2*x) == 2 + cos(x)*2 - cos(x)*cos(x);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return 2*cos(x/2)*cos(x/2) - cos(x) - cos(2*x) == 1 - cos(2*x);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return sin(3*x)-sin(x) == 2*sin(x)-4*pow(sin(x), 3);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return  sin(3*x) - sin(x) + cos(2*x) - cos(x)*cos(x) == 2*sin(x) - sin(x)*sin(x) - 4*pow(sin(x), 3);
+},
+            []()->bool { //170
+            AlgExpr x = var();
+            return sin(x)*sin(x) + sin(x) + cos(x) + 2*cos(x)*cos(x) == cos(x) + sin(x) + 2 - sin(x)*sin(x);
 }
 
 

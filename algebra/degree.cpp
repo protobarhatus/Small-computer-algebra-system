@@ -131,7 +131,7 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo(AlgebraExpression expr)
 
         fractal_argument num, denum;
         Number num_coe = static_cast<Fractal*>(this->argument.get())->getCoefficient().getNumerator();
-        Number denom_coe = Number(1, static_cast<Fractal*>(this->argument.get())->getCoefficient().getDenominator());
+        Number denom_coe = Number( static_cast<Fractal*>(this->argument.get())->getCoefficient().getDenominator());
         if (!num_coe.isOne())
             num.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(NUMBER, &num_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
         for (auto &it : *fract.first)
@@ -576,4 +576,9 @@ std::unique_ptr<AbstractExpression> Degree::changeSomePartOn(QString part, std::
         return cop;
     }
     return this->argument->changeSomePartOn(part, on_what);
+}
+
+std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> &&argument, std::unique_ptr<AbstractExpression> &degree)
+{
+    return takeDegreeOf(std::move(argument), copy(degree));
 }

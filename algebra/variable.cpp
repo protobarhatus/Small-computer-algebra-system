@@ -3,6 +3,8 @@
 #include "variablesnamedistributor.h"
 #include "variablesdistributor.h"
 #include "cmath"
+int Variable::id_counter = 0;
+int Variable::system_id_counter;
 Variable::Variable()
 {
     assert(false);

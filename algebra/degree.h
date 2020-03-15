@@ -60,6 +60,7 @@ private:
 bool canReduceWithDowngradingDegree(AbstractExpression * left, AbstractExpression * right);
 std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> & argument, std::unique_ptr<AbstractExpression> & degree);
 std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> && argument, std::unique_ptr<AbstractExpression> && degree);
+std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> && argument, std::unique_ptr<AbstractExpression> & degree);
 std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> & argument, Number degree);
 std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> && argument, Number degree);
 std::unique_ptr<AbstractExpression> takeDegreeOf(Number argument, Number degree);

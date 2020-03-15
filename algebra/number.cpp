@@ -44,11 +44,11 @@ std::unique_ptr<AbstractExpression> Number::downcastTo(AlgebraExpression expr)
     assert(false);
     return std::unique_ptr<AbstractExpression>(nullptr);
 }
-long long int Number::getNumerator()
+long long int Number::getNumerator() const
 {
     return this->numerator;
 }
-long long int Number::getDenominator()
+long long int Number::getDenominator() const
 {
     return this->denominator;
 }
@@ -321,9 +321,26 @@ std::unique_ptr<AbstractExpression> Number::changeSomePartOn(QString part, std::
     return nullptr;
 }
 
+bool Number::less(const Number &b) const
+{
+    return (*this - b).compareWith(0) < 0 && *this != b;
+}
+
 Number abs(Number num)
 {
     if (num.compareWith(0) < 0)
         return num * -1;
     return num;
 }
+
+Number max(Number a, Number b)
+{
+    return (a - b).compareWith(0) > 0 ? a : b;
+}
+
+Number min(Number a, Number b)
+{
+    return (a-b).compareWith(0) < 0 ? a : b;
+}
+
+

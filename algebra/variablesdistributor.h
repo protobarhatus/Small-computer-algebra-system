@@ -25,5 +25,6 @@ private:
 };
 void deleteVariables();
 Variable getVariable(int id);
-Variable systemVar(int num = 0);
+Variable systemVar(int num);
+Variable systemVar();
 #endif // VARIABLESDISTRIBUTOR_H

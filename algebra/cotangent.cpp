@@ -239,6 +239,11 @@ std::unique_ptr<AbstractExpression> Cotangent::changeSomePartOn(QString part, st
     return this->argument->changeSomePartOn(part, on_what);
 }
 
+std::unique_ptr<AbstractExpression> Cotangent::getArgumentsCopy()
+{
+    return copy(this->argument);
+}
+
 bool Cotangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == COTANGENT);

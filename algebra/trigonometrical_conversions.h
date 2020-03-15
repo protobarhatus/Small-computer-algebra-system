@@ -17,6 +17,14 @@ enum TrigonometricalFunctionsCastType
     COTANGENT_TO_TANGENT,
     NONE
 };
+enum TrigonometricalFunctionsArgumentsCastType
+{
+    FROM_TRIPPLE_ARGUMENT,
+    FROM_DOUBLE_ARGUMENT,
+    FROM_HALF_ARGUMENT,
+    ARG_CAST_NONE
+};
+
 std::map<QString, TrigonometricalFunctionsCastType> chooseConversionRules(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> & params);
 abs_ex cosinusToSinus(abs_ex && cosinus);
 abs_ex sinusToCosinus(abs_ex && sinus);
@@ -28,4 +36,10 @@ abs_ex tangentToFractal(abs_ex && tangent_degree);
 abs_ex cotangentToFractal(abs_ex && cotangent_degree);
 abs_ex tangentToCotangent(abs_ex && tangent_degree);
 abs_ex cotangentToTangent(abs_ex && cotangent_degree);
+
+abs_ex convertTrigonometricalFunctionByArgument(abs_ex && func_degree, TrigonometricalFunctionsArgumentsCastType rule);
+abs_ex fromHalfArgument(abs_ex && func_degree);
+abs_ex fromDoubleArgument(abs_ex && func_degree);
+abs_ex fromTrippleArgument(abs_ex && func_degree);
+
 #endif // TRIGONOMETRICAL_CONVERSIONS_H

@@ -180,7 +180,7 @@ bool isDegreeOfTrigonometricalFunction(std::unique_ptr<AbstractExpression> &expr
     auto arg = Degree::getArgumentOfDegree(expr.get())->getId();
     return arg == SINUS || arg == COSINUS || arg == TANGENT || arg == COTANGENT;
 }
-
+/*
 std::vector<std::unique_ptr<AbstractExpression> > replaceEveryFunctionOnSystemVariable(std::unique_ptr<AbstractExpression> &expr)
 {
     auto functions = expr->getSetOfFunctions();
@@ -193,8 +193,34 @@ std::vector<std::unique_ptr<AbstractExpression> > replaceEveryFunctionOnSystemVa
         ++counter;
     }
     return result;
+}*/
+std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(std::unique_ptr<AbstractExpression> &expr, std::map<QString, int> &funcs)
+{
+    auto functions = expr->getSetOfFunctions();
+    std::map<int, abs_ex> result;
+    for (auto &it : functions)
+    {
+        auto it1 = funcs.find(it);
+        abs_ex var;
+        if (it1 == funcs.end())
+        {
+            var = abs_ex(new Variable(systemVar()));
+            funcs.insert({it, var->getId()});
+        }
+        else
+            var = abs_ex(new Variable(systemVar(it1->second)));
+        result.insert({var->getId(), expr->changeSomePartOn(it, var)});
+    }
+    return result;
 }
-
+void replaceSystemVariablesBackToFunctions(std::unique_ptr<AbstractExpression> &expr, std::map<int, abs_ex> & funcs)
+{
+    for (auto &it : funcs)
+    {
+        expr->changeSomePartOn(systemVar(it.first).makeStringOfExpression(), it.second);
+    }
+}
+/*
 void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<std::unique_ptr<AbstractExpression> > &functions)
 {
     for (int i = 0; i < functions.size(); ++i)
@@ -202,3 +228,28 @@ void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<std::uniqu
         expr->changeSomePartOn(systemVar(i).makeStringOfExpression(), functions[i]);
     }
 }
+*/
+std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(std::unique_ptr<AbstractExpression> &expr)
+{
+    AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
+    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT);
+    switch (arg->getId()) {
+    case SINUS:
+        return static_cast<Sinus*>(arg)->getArgumentsCopy();
+    case COSINUS:
+        return static_cast<Cosinus*>(arg)->getArgumentsCopy();
+    case TANGENT:
+        return static_cast<Tangent*>(arg)->getArgumentsCopy();
+    case COTANGENT:
+        return static_cast<Cotangent*>(arg)->getArgumentsCopy();
+    default:
+        assert(false);
+
+    }
+}
+
+std::unique_ptr<AbstractExpression> absEx(int num)
+{
+    return abs_ex(new Number(num));
+}
+

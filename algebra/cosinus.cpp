@@ -246,6 +246,11 @@ std::unique_ptr<AbstractExpression> Cosinus::changeSomePartOn(QString part, std:
     return this->argument->changeSomePartOn(part, on_what);
 }
 
+std::unique_ptr<AbstractExpression> Cosinus::getArgumentsCopy()
+{
+    return copy(argument);
+}
+
 std::unique_ptr<AbstractExpression> cos(std::unique_ptr<AbstractExpression> &expr)
 {
     return abs_ex(new Cosinus(expr))->downcast();

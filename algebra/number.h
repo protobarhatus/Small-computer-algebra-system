@@ -12,8 +12,8 @@ public:
     virtual AlgebraExpression getId() const override;
     virtual bool operator==(AbstractExpression & right) override;
     bool operator !=(const Number & num) const;
-    long long int getNumerator();
-    long long int getDenominator();
+    long long int getNumerator() const;
+    long long int getDenominator() const;
     virtual void simplify() override;
     virtual bool canDowncastTo(AlgebraExpression expr) override;
     virtual std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr) override;
@@ -49,6 +49,8 @@ public:
     bool operator==(long long int num);
     bool operator==(const Number & num);
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
+    bool less(const Number & b) const;
+
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     long long int numerator;
@@ -56,7 +58,10 @@ private:
     virtual bool operator<(const AbstractExpression & right) const override;
 
 };
+
 Number abs(Number num);
+Number max(Number a, Number b);
+Number min(Number a, Number b);
 /*
 
 abs_ex one = abs_ex(new Number(1));

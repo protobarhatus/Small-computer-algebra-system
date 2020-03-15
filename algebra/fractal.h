@@ -9,6 +9,7 @@ typedef std::list<std::unique_ptr<AbstractExpression>> fractal_argument;
 
 
 class Polynomial;
+//вообще это должно называться Fraction, лол. но теперь уже лень исправлять
 class Fractal : public AbstractExpression
 {
 public:
@@ -72,6 +73,9 @@ public:
     void convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> & instructions);
     void checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> & params);
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
+    //аргумент включается сюда только если он имеет числовую целую степень
+    std::vector<std::pair<abs_ex, Number>> getTrigonometryMultipliersArgumentsCopyAndItsDegrees();
+    void convertTrigonometricalMultipliersToDifferentArgument(const std::map<QString, TrigonometricalFunctionsArgumentsCastType> & instructions);
 private:
     bool casted_trigonometry;
     void castTrigonometry();

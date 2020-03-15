@@ -31,6 +31,7 @@ public:
 
     abs_ex getArgumentMoved();
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
+    abs_ex getArgumentsCopy();
 private:
     abs_ex argument;
     //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может

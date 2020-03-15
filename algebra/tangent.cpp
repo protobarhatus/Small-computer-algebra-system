@@ -259,6 +259,11 @@ std::unique_ptr<AbstractExpression> Tangent::changeSomePartOn(QString part, std:
     return this->argument->changeSomePartOn(part, on_what);
 }
 
+std::unique_ptr<AbstractExpression> Tangent::getArgumentsCopy()
+{
+    return copy(this->argument);
+}
+
 bool Tangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == TANGENT);

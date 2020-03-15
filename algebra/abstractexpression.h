@@ -92,10 +92,14 @@ protected:
 };
 QString getStringArgumentOfTrigonometricalFunction(abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);
-std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);
-void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex> & functions);
+//std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);
+std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr, std::map<QString, int> & funcs);
+void replaceSystemVariablesBackToFunctions(std::unique_ptr<AbstractExpression> &expr, std::map<int, abs_ex> & funcs);
+//void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex> & functions);
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr);
+abs_ex getArgumentOfTrigonometricalFunction(abs_ex & expr);
 bool isDegreeOfTrigonometricalFunction(abs_ex & expr);
+abs_ex absEx(int num);
 std::unique_ptr<AbstractExpression> operator*(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
 std::unique_ptr<AbstractExpression> operator/(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
 

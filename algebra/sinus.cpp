@@ -242,6 +242,11 @@ std::unique_ptr<AbstractExpression> Sinus::changeSomePartOn(QString part, std::u
     return this->argument->changeSomePartOn(part, on_what);
 }
 
+std::unique_ptr<AbstractExpression> Sinus::getArgumentsCopy()
+{
+    return copy(this->argument);
+}
+
 std::unique_ptr<AbstractExpression> sin(std::unique_ptr<AbstractExpression> &expr)
 {
     return abs_ex(new Sinus(expr))->downcast();

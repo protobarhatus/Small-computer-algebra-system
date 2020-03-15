@@ -83,7 +83,7 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
     //если нет переменных, относительно которых можно делить, но есть тригонометрические (или логарифмические) функции, заменяем общую функцию на переменную с id,
     //которого точно тут быть не может. Точно такой же кусок кода есть и в Polynomial::divide, но поскольку тут деление вызывается много раз, для производительности
     //лучше оставить это здесь тоже
-    abs_ex changed_func = nullptr;
+   /* abs_ex changed_func = nullptr;
     abs_ex changing_var = abs_ex(new Variable(systemVar(0)));
     if (a->getSetOfPolyVariables().empty() || b->getSetOfPolyVariables().empty())
     {
@@ -104,7 +104,8 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
         assert(changed_func != nullptr);
         b->changeSomePartOn(common, changing_var);
 
-    }
+    }*/
+    std::vector<abs_ex> func_vec1 = replaceEveryFunctionOnSystemVariable()
     assert(!a->getSetOfPolyVariables().empty() && !b->getSetOfPolyVariables().empty());
     auto div_result = a->divide(b);
     bool has_a_bigger_degree = true;
@@ -139,9 +140,8 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
         return std::unique_ptr<Polynomial>(new Polynomial(std::make_unique<Number>(1).get()));
     if (changed_func != nullptr)
         last_remainder->changeSomePartOn(changing_var->makeStringOfExpression(), changed_func);
-    qDebug() << last_remainder->makeStringOfExpression();
+  //  qDebug() << last_remainder->makeStringOfExpression();
     return last_remainder;
-
 }
 long long int root(long long int a, long long int b, bool & succesfully)
 {

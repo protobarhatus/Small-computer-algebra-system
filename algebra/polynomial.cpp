@@ -10,6 +10,7 @@
 #include "variablesdistributor.h"
 #include "absolutevalue.h"
 #include "trigonometrical_conversions.h"
+#include "number.h"
 Polynomial::Polynomial()
 {
 
@@ -60,6 +61,8 @@ void Polynomial::simplify()
     }
 
     this->castTrigonometry();
+    if (this->monomials.size() > 1)
+        this->castTrigonometryArguments();
     this->simplified = true;
 }
 void Polynomial::castTrigonometry()
@@ -71,6 +74,155 @@ void Polynomial::castTrigonometry()
         this->simplified = false;
         this->simplify();
     }
+}
+
+void Polynomial::castTrigonometryArguments()
+{
+    //все степени здесь целые
+    //первое выражение - аргумент функции, второй - степень функции и то, есть у этой функции нечетная степень, затем в словаре аргументы, которые представляют собой тот
+    //аргумент, умноженный на какое-либо число.
+    //ключ словаря - то самое число,  число в значении словаря - степени триг. функции с этим самым аргументом и то, есть ли у этой функции нечетная степень,
+    //а строка - строковое представление функции с этим аргументом
+    std::vector<std::pair<std::pair<abs_ex, std::pair<Number, bool>>, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>>>
+                                                                                                                                                            arguments_multipliers;
+    auto comp = [](const Number & a, const Number & b)->bool { return a.less(b);};
+    for (auto &it : this->monomials)
+    {
+        auto arguments = it->getTrigonometryMultipliersArgumentsCopyAndItsDegrees();
+        for (auto &it1 : arguments)
+        {
+            bool found_match = false;
+            for (auto &it2 : arguments_multipliers)
+            {
+                auto div_res = it1.first / it2.first.first;
+                if (div_res->getId() == NUMBER && !static_cast<Number*>(div_res.get())->isOne())
+                {
+                  //  qDebug() << it1.first->makeStringOfExpression();
+                   // qDebug() << it2.first.first->makeStringOfExpression();
+                  //  qDebug() << div_res->makeStringOfExpression();
+                    found_match = true;
+                    auto fres = it2.second.find(*static_cast<Number*>(div_res.get()));
+                    if (fres == it2.second.end())
+                        it2.second.insert({*static_cast<Number*>(div_res.get()), {{it1.second, it1.second.getNumerator() % 2}, it1.first->makeStringOfExpression()}});
+                    else
+                        fres->second.first = {max(fres->second.first.first, it1.second), fres->second.first.second || (it1.second.getNumerator() % 2)};
+                }
+
+            }
+            std::pair<abs_ex, std::pair<Number, bool>> p = {copy(it1.first), std::pair<Number, bool>{it1.second, it1.second.getNumerator() % 2}};
+            arguments_multipliers.push_back({std::move(p), std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>(comp)});
+        }
+    }
+    /*if (arguments_multipliers.size() > 0)
+    {
+        qDebug() << arguments_multipliers.begin()->first.first->makeStringOfExpression();
+        for (auto &it : arguments_multipliers.begin()->second)
+            qDebug() << it.second.second;
+    }*/
+    auto chooseInstructions = [&comp](Number its_degree, QString its_str, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>> & coefs)->std::vector<TrigonometricalFunctionsArgumentsCastType>
+    {
+        std::vector<TrigonometricalFunctionsArgumentsCastType> result(1 + coefs.size(), ARG_CAST_NONE);
+        if (coefs.size() == 0)
+            return result;
+        coefs.insert({1, {{its_degree, its_degree.getNumerator() % 2}, its_str}});
+        //иначе получается скорее переусложнение выражения, и вообще такие строить не надо
+        if (coefs.size() > 5)
+            return result;
+        //нормируем коэффициенты так, чтобы первый был единичным, убирая все, кроме 1, 2, 3, 4, 6
+        Number norma_coeff = Number(1) / coefs.begin()->first;
+        std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>> coes(comp);
+        for (auto &it : coefs)
+        {
+            Number new_coe = it.first * norma_coeff;
+            if (new_coe.isInteger() && new_coe.getNumerator() <= 6 && new_coe.getNumerator() != 5)
+                coes.insert({new_coe, it.second});
+        }
+        if (coes.size() < 2)
+            return result;
+        //степени при соответственно 1, 2, 3, 4, 6 коэффициентах. [0] и [5] не учитываются и остаются для удобства. Нулевая степень означает отсутствие данного коэффициента
+        std::vector<std::pair<int, bool>> degrs(7, {0, 0});
+        for (auto &it : coes)
+            degrs[it.first.getNumerator()] = {it.second.first.first.getNumerator(), it.second.first.second};
+        std::vector<TrigonometricalFunctionsArgumentsCastType> preresult(7, ARG_CAST_NONE);
+        //необходимо выбрать аргумент, к которому приводить
+        int cast_to_arg;
+        if (degrs[1].first % 2 == 1 || degrs[1].second)
+            cast_to_arg = 1;
+        else if (degrs[1].first != 0 && !degrs[1].second && degrs[2].first != 0)
+            cast_to_arg = 2;
+        else if (degrs[2].first != 0 && !degrs[1].second && ((degrs[4].first != 0 && degrs[2].first <= 2) || degrs[6].first == 1))
+            cast_to_arg = 2;
+        else if (degrs[1].first != 0 && !degrs[1].second && degrs[4].first != 0)
+            cast_to_arg = 2;
+        else if (degrs[1].first != 0 && degrs[3].first != 0)
+            cast_to_arg = 1;
+        else if (degrs[1].first == 2 && !degrs[1].second && (degrs[4].first != 0 || degrs[6].first != 0))
+            cast_to_arg = 2;
+
+        std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>::iterator map_it = coefs.begin();
+        int degrs_ind = 0;
+        int result_ind = 1;
+        while (degrs_ind < degrs.size())
+        {
+            while (degrs_ind < degrs.size() && degrs[degrs_ind].first == 0)
+                ++degrs_ind;
+            auto set_to_result = [&result](int & result_index, Number num, TrigonometricalFunctionsArgumentsCastType conv)->void
+            {
+                if (num == 1)
+                    result[0] = conv;
+                else
+                {
+                    result[result_index] = conv;
+                    ++result_index;
+                }
+            };
+            if (degrs_ind < degrs.size())
+            {
+                if (cast_to_arg == 2 * degrs_ind)
+                    set_to_result(result_ind, map_it->first, FROM_HALF_ARGUMENT);
+                else if (cast_to_arg * 2 == degrs_ind)
+                    set_to_result(result_ind, map_it->first, FROM_DOUBLE_ARGUMENT);
+                else if (cast_to_arg * 3 == degrs_ind)
+                    set_to_result(result_ind, map_it->first, FROM_TRIPPLE_ARGUMENT);
+
+                ++degrs_ind;
+                ++map_it;
+            }
+
+        }
+        return result;
+    };
+    std::map<QString, TrigonometricalFunctionsArgumentsCastType> instructions;
+    bool need_to_convert = false;
+    //qDebug() << arguments_multipliers.size();
+   // if (arguments_multipliers.size() > 0)
+    //    qDebug() << arguments_multipliers.begin()->first.second.makeStringOfExpression();
+    for (auto &it : arguments_multipliers)
+    {
+        auto vec_res = chooseInstructions(it.first.second.first, it.first.first->makeStringOfExpression(), it.second);
+        instructions.insert({it.first.first->makeStringOfExpression(), vec_res[0]});
+        if (vec_res[0] != ARG_CAST_NONE)
+            need_to_convert = true;
+        int res_ind = 1;
+        for (auto &it1 : it.second)
+        {
+            if (it1.second.second == it.first.first->makeStringOfExpression())
+                continue;
+            instructions.insert({it1.second.second, vec_res[res_ind]});
+            if (vec_res[res_ind] != ARG_CAST_NONE)
+                need_to_convert = true;
+            ++res_ind;
+        }
+    }
+    if (need_to_convert)
+        for (auto &it : this->monomials)
+            it->convertTrigonometricalMultipliersToDifferentArgument(instructions);
+    if (need_to_convert)
+    {
+        this->simplified = false;
+        this->simplify();
+    }
+
 }
 void Polynomial::removeZeroes()
 {
@@ -721,14 +873,15 @@ std::unique_ptr<AbstractExpression> Polynomial::toDegree(long long degree)
 std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRoot(long long int root)
 {
     Polynomial *polynom;
-    std::vector<abs_ex> functions;
+    std::map<int, abs_ex> functions;
     abs_ex cop = nullptr;
     if (this->getSetOfFunctions().empty())
         polynom = this;
     else
     {
         cop = makeAbstractExpression(POLYNOMIAL, this);
-        functions = replaceEveryFunctionOnSystemVariable(cop);
+        std::map<QString, int> f;
+        functions = replaceEveryFunctionOnSystemVariable(cop, f);
         polynom = dynamic_cast<Polynomial*>(cop.get());
     }
     auto set = polynom->getSetOfPolyVariables();

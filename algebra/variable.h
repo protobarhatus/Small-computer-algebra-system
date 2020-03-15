@@ -38,8 +38,10 @@ private:
     virtual bool operator<(const AbstractExpression & right) const override;
     int id;
     static int id_counter;
+    static int system_id_counter;
     QString name;
     VariablesDefinition * definition;
     friend VariablesDistributor;
+    friend Variable systemVar();
 };
 #endif // VARIABLE_H

@@ -11,7 +11,7 @@
 #include <G:\QTProjects\mo2\testpaintwidget.h>
 #endif
 #define A(x) AlgExpr(x)
-int Variable::id_counter = 0;
+
 int rand(int min, int max)
 {
    static std::random_device rt;
@@ -40,8 +40,16 @@ int main(int argc, char *argv[])
     //c = (a + b) / 2;
    // TExpr_Builder builder;
    // auto expr = builder.BuildExpr("x^2+x+1");
-    c = sqrt(sin(x)*sin(x) + 2*sin(x)*cos(x) + cos(x)*cos(x));
-   // c = sqrt(1 + 2*x*y);
+            // c = tan(x/2)*tan(x/2) + 2*tan(x) + tan(2*x);
+        //d = tan(x/2)*tan(x/2) + tan(x);
+        //  c = tan(x) + tan(2*x);
+        //  c = c + d;
+y = cos(x);
+x = sin(x);
+                        //c = (-1 + y + x + x*x + y*x)/y/(1 + y) + (x/y)*((-(x/y)*(x/y) + 3)/(-(x/y)*(x/y) + 1));
+    c = (-1 + y + x + x*x + y*x)/y/(1 + y);
+    d = (x/y)*((-(x/y)*(x/y) + 3)/(-(x/y)*(x/y) + 1));
+    c = c + d;
 
    // c.out();
 

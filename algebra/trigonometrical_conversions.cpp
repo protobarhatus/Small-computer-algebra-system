@@ -98,3 +98,98 @@ std::map<QString, TrigonometricalFunctionsCastType> chooseConversionRules(std::m
     }
     return result;
 }
+
+abs_ex convertTrigonometricalFunctionByArgument(abs_ex &&func_degree, TrigonometricalFunctionsArgumentsCastType rule)
+{
+    switch(rule)
+    {
+    case FROM_HALF_ARGUMENT:
+        return fromHalfArgument(std::move(func_degree));
+        break;
+    case FROM_DOUBLE_ARGUMENT:
+        return fromDoubleArgument(std::move(func_degree));
+        break;
+    case FROM_TRIPPLE_ARGUMENT:
+        return fromTrippleArgument(std::move(func_degree));
+        break;
+    default:
+        return std::move(func_degree);
+    }
+}
+
+abs_ex fromHalfArgument(abs_ex &&func_degree)
+{
+
+    abs_ex  arg = getArgumentOfTrigonometricalFunction(func_degree) * two;
+    abs_ex degree = Degree::getDegreeOfExpression(func_degree.get()) / two;
+    abs_ex res;
+    switch(Degree::getArgumentOfDegree(func_degree.get())->getId())
+    {
+    case SINUS:
+        res = (one - cos(arg)) / two;
+        break;
+    case COSINUS:
+        res = (one + cos(arg)) / two;
+        break;
+    case TANGENT:
+        res = (one - cos(arg))/(one + cos(arg));
+        break;
+    case COTANGENT:
+        res = (one + cos(arg)) / (one - cos(arg));
+        break;
+    default:
+        assert(false);
+    }
+    return takeDegreeOf(std::move(res), std::move(degree));
+}
+
+abs_ex fromDoubleArgument(abs_ex &&func_degree)
+{
+    abs_ex  arg = getArgumentOfTrigonometricalFunction(func_degree) / two;
+    abs_ex degree = Degree::getDegreeOfExpression(func_degree.get());
+    abs_ex res;
+    switch (Degree::getArgumentOfDegree(func_degree.get())->getId())
+    {
+    case SINUS:
+        res = two*sin(arg)*cos(arg);
+        break;
+    case COSINUS:
+        res = takeDegreeOf(cos(arg), two) - takeDegreeOf(sin(arg), two);
+        break;
+    case TANGENT:
+        res = two*tan(arg) / (one - takeDegreeOf(tan(arg), two));
+        break;
+    case COTANGENT:
+        res = (takeDegreeOf(cot(arg), two) - one) / (two * cot(arg));
+        break;
+    default:
+        assert(false);
+    }
+    return takeDegreeOf(std::move(res), std::move(degree));
+}
+
+abs_ex fromTrippleArgument(abs_ex &&func_degree)
+{
+    abs_ex  arg = getArgumentOfTrigonometricalFunction(func_degree) / absEx(3);
+    abs_ex degree = Degree::getDegreeOfExpression(func_degree.get());
+    abs_ex res;
+    switch (Degree::getArgumentOfDegree(func_degree.get())->getId())
+    {
+    case SINUS:
+        res = sin(arg) * (absEx(3) - two*two*takeDegreeOf(sin(arg), two));
+        break;
+    case COSINUS:
+        res = cos(arg) * (absEx(4)*takeDegreeOf(cos(arg), two) - absEx(3));
+        break;
+    case TANGENT:
+        res = (absEx(3) * tan(arg) - takeDegreeOf(tan(arg), absEx(3)))/(one - absEx(3)*takeDegreeOf(tan(arg), 2));
+        break;
+    case COTANGENT:
+        res = (absEx(3)*cot(arg) - takeDegreeOf(cot(arg), absEx(3)))/(one - absEx(3)*takeDegreeOf(cot(arg), 2));
+        break;
+    default:
+        assert(false);
+    }
+    return takeDegreeOf(std::move(res), std::move(degree));
+}
+

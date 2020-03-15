@@ -673,7 +673,8 @@ void Fractal::reducePolynomials()
             if (it1->get()->getId() == POLYNOMIAL && it2->get()->getId() == POLYNOMIAL)
             {
                 auto gcf = gcd(static_cast<Polynomial*>(it1->get()), static_cast<Polynomial*>(it2->get()));
-
+               // if (gcf == nullptr)
+               //     continue;
                 auto it1_pol = static_cast<Polynomial*>(it1->get())->divide(gcf.get()).first;
                 if (it1_pol == nullptr)
                     continue;
@@ -1158,6 +1159,7 @@ void Fractal::intoAcceptedSignForm()
 
 void Fractal::convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> &instructions)
 {
+    NONCONST
     auto convert = [&instructions](abs_ex & convertible)
     {
         if (!isDegreeOfTrigonometricalFunction(convertible))
@@ -1317,6 +1319,39 @@ std::unique_ptr<AbstractExpression> Fractal::changeSomePartOn(QString part, std:
 
     }
     return its_part;
+}
+
+std::vector<std::pair<abs_ex, Number>> Fractal::getTrigonometryMultipliersArgumentsCopyAndItsDegrees()
+{
+    assert(this->denominator.size() == 0);
+    std::vector<std::pair<abs_ex, Number>> res;
+    for (auto &it : this->numerator)
+    {
+        if (isDegreeOfTrigonometricalFunction(it) && Degree::getDegreeOfExpression(it.get())->getId() == NUMBER &&
+                static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->isInteger())
+        {
+            res.push_back({getArgumentOfTrigonometricalFunction(it), *static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())});
+
+        }
+    }
+    return res;
+}
+
+void Fractal::convertTrigonometricalMultipliersToDifferentArgument(const std::map<QString, TrigonometricalFunctionsArgumentsCastType> &instructions)
+{
+
+    for (auto &it : numerator)
+    {
+        if (isDegreeOfTrigonometricalFunction(it) && Degree::getDegreeOfExpression(it.get())->getId() == NUMBER &&
+                static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->isInteger())
+        {
+            NONCONST
+            it = convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfTrigonometricalFunction(it)->makeStringOfExpression())->second);
+            //qDebug() << "RES: " << convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfTrigonometricalFunction(it)->makeStringOfExpression())->second)->makeStringOfExpression();
+            //qDebug() << "IN FR: " << it->makeStringOfExpression();
+        }
+
+    }
 }
 
 void Fractal::castTrigonometry()
