@@ -344,3 +344,8 @@ Number min(Number a, Number b)
 }
 
 
+
+std::unique_ptr<AbstractExpression> toAbsEx(Number n)
+{
+    return abs_ex(new Number(n));
+}

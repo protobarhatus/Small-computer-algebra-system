@@ -118,7 +118,7 @@ Variable::Variable(int id)
     else
     {
         this->definition = VariablesDistributor::get().system_var_def;
-        this->name = "$system";
+        this->name = makeVariablesName(id);
     }
 }
 int Variable::getPositionRelativelyZeroIfHasVariables()

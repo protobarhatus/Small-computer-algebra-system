@@ -16,6 +16,7 @@
 #include "tangent.h"
 #include "cotangent.h"
 #include "variablesdistributor.h"
+#include "logarithm.h"
 std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, AbstractExpression * argument)
 {
     assert(type == argument->getId() || (type > 0 && argument->getId() > 0));
@@ -43,6 +44,8 @@ std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression typ
         return std::unique_ptr<AbstractExpression>(new Tangent(*static_cast<Tangent*>(argument)));
     case COTANGENT:
         return std::unique_ptr<AbstractExpression>(new Cotangent(*static_cast<Cotangent*>(argument)));
+    case LOGARITHM:
+        return std::unique_ptr<AbstractExpression>(new Logarithm(*static_cast<Logarithm*>(argument)));
     default:
         assert(false);
 
@@ -76,6 +79,7 @@ long long int gcd(long long int a, long long int b)
 }
 std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
 {
+   // qDebug() << a_p->makeStringOfExpression();
     Polynomial * a = new Polynomial(a_p);
     Polynomial * b = new Polynomial(b_p);
     assert(a->reduce().isOne());
@@ -105,7 +109,9 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
         b->changeSomePartOn(common, changing_var);
 
     }*/
-    std::vector<abs_ex> func_vec1 = replaceEveryFunctionOnSystemVariable()
+    std::map<QString, int> replaced_functions;
+    auto func_vec_a = replaceEveryFunctionOnSystemVariable(a, replaced_functions);
+    auto func_vec_b = replaceEveryFunctionOnSystemVariable(b, replaced_functions);
     assert(!a->getSetOfPolyVariables().empty() && !b->getSetOfPolyVariables().empty());
     auto div_result = a->divide(b);
     bool has_a_bigger_degree = true;
@@ -117,6 +123,7 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
 
     if (div_result.first == nullptr)
         return std::make_unique<Polynomial>(std::make_unique<Number>(1).get());
+    //qDebug() << "X: " << a_p->makeStringOfExpression();
     if (div_result.second->isZero())
         return std::make_unique<Polynomial>(has_a_bigger_degree ? b_p : a_p);
     std::unique_ptr<Polynomial> last_remainder = std::move(div_result.second);
@@ -138,8 +145,15 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
     }
     if (last_remainder->downcast()->getId() == NUMBER)
         return std::unique_ptr<Polynomial>(new Polynomial(std::make_unique<Number>(1).get()));
-    if (changed_func != nullptr)
-        last_remainder->changeSomePartOn(changing_var->makeStringOfExpression(), changed_func);
+
+    for (auto &it : func_vec_b)
+        func_vec_a.insert(std::move(it));
+    replaceSystemVariablesBackToFunctions(last_remainder.get(), func_vec_a);
+    if (!func_vec_a.empty())
+    {
+        delete a;
+        delete b;
+    }
   //  qDebug() << last_remainder->makeStringOfExpression();
     return last_remainder;
 }

@@ -24,6 +24,7 @@ enum AlgebraExpression
     TANGENT = -8,
     COTANGENT = -9,
     CONSTANT = -10,
+    LOGARITHM = -11,
     NUMBER = 0
 };
 
@@ -95,6 +96,8 @@ QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);
 //std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);
 std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr, std::map<QString, int> & funcs);
 void replaceSystemVariablesBackToFunctions(std::unique_ptr<AbstractExpression> &expr, std::map<int, abs_ex> & funcs);
+std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression * expr, std::map<QString, int> & funcs);
+void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
 //void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex> & functions);
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr);
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex & expr);

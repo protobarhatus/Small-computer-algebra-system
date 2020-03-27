@@ -11,18 +11,36 @@
 #include "absolutevalue.h"
 #include "trigonometrical_conversions.h"
 #include "number.h"
+#include "random"
 Polynomial::Polynomial()
 {
 
 }
+int rands(int min, int max)
+{
+   static std::random_device rt;
+     static std::mt19937_64 gen(rt());
+     std::uniform_int_distribution<int> dist(min, max);
+
+     return dist(rt);
+}
+
 void Polynomial::simplify()
 {
+
     SIM_IF_NEED
+         //   qDebug() << "Simplify: " << this->makeStringOfExpression();
+   // qDebug();
+   //   int randId = rands(0, 2000000000);
+  //  qDebug() << "S: " << randId << "   : " << this->makeStringOfExpression();
     for (auto &it : this->monomials)
         it->simplify();
+    std::map<QString, int> f;
+    auto funcs = replaceEveryFunctionOnSystemVariable(this, f);
 
     for (auto iter = this->monomials.begin(); iter != this->monomials.end();)
     {
+
         if (iter->get()->isPolynomial())
         {
             this->mergeWithoutSimplifiyng(static_cast<Polynomial*>(iter->get()->getFractal().first->begin()->get()), iter->get()->getCoefficient());
@@ -30,6 +48,7 @@ void Polynomial::simplify()
         }
         else
             ++iter;
+
     }
     this->openParentheses();
     this->leadLikeMembers();
@@ -48,10 +67,15 @@ void Polynomial::simplify()
 
     if (this->is_fractional_coefficients_allowed)
         return;
+replaceSystemVariablesBackToFunctions(this, funcs);
+
 
     if (this->canBecameFractal())
     {
-
+      //  qDebug() << this->makeStringOfExpression();
+        auto frac = this->toCommonDenominator();
+        this->monomials.clear();
+        this->monomials.push_back(std::move(frac));
         while(this->monomials.size() != 1)
         {
             *this->monomials.begin() = *this->monomials.begin()->get() + std::move((*(++this->monomials.begin())));
@@ -63,6 +87,7 @@ void Polynomial::simplify()
     this->castTrigonometry();
     if (this->monomials.size() > 1)
         this->castTrigonometryArguments();
+   // qDebug() << "Finished#: " << randId;
     this->simplified = true;
 }
 void Polynomial::castTrigonometry()
@@ -83,137 +108,18 @@ void Polynomial::castTrigonometryArguments()
     //аргумент, умноженный на какое-либо число.
     //ключ словаря - то самое число,  число в значении словаря - степени триг. функции с этим самым аргументом и то, есть ли у этой функции нечетная степень,
     //а строка - строковое представление функции с этим аргументом
+
     std::vector<std::pair<std::pair<abs_ex, std::pair<Number, bool>>, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>>>
                                                                                                                                                             arguments_multipliers;
-    auto comp = [](const Number & a, const Number & b)->bool { return a.less(b);};
     for (auto &it : this->monomials)
     {
         auto arguments = it->getTrigonometryMultipliersArgumentsCopyAndItsDegrees();
-        for (auto &it1 : arguments)
-        {
-            bool found_match = false;
-            for (auto &it2 : arguments_multipliers)
-            {
-                auto div_res = it1.first / it2.first.first;
-                if (div_res->getId() == NUMBER && !static_cast<Number*>(div_res.get())->isOne())
-                {
-                  //  qDebug() << it1.first->makeStringOfExpression();
-                   // qDebug() << it2.first.first->makeStringOfExpression();
-                  //  qDebug() << div_res->makeStringOfExpression();
-                    found_match = true;
-                    auto fres = it2.second.find(*static_cast<Number*>(div_res.get()));
-                    if (fres == it2.second.end())
-                        it2.second.insert({*static_cast<Number*>(div_res.get()), {{it1.second, it1.second.getNumerator() % 2}, it1.first->makeStringOfExpression()}});
-                    else
-                        fres->second.first = {max(fres->second.first.first, it1.second), fres->second.first.second || (it1.second.getNumerator() % 2)};
-                }
-
-            }
-            std::pair<abs_ex, std::pair<Number, bool>> p = {copy(it1.first), std::pair<Number, bool>{it1.second, it1.second.getNumerator() % 2}};
-            arguments_multipliers.push_back({std::move(p), std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>(comp)});
-        }
+        distributeTrigonometryArgumentsMultipliersRatios(arguments_multipliers, arguments);
     }
-    /*if (arguments_multipliers.size() > 0)
-    {
-        qDebug() << arguments_multipliers.begin()->first.first->makeStringOfExpression();
-        for (auto &it : arguments_multipliers.begin()->second)
-            qDebug() << it.second.second;
-    }*/
-    auto chooseInstructions = [&comp](Number its_degree, QString its_str, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>> & coefs)->std::vector<TrigonometricalFunctionsArgumentsCastType>
-    {
-        std::vector<TrigonometricalFunctionsArgumentsCastType> result(1 + coefs.size(), ARG_CAST_NONE);
-        if (coefs.size() == 0)
-            return result;
-        coefs.insert({1, {{its_degree, its_degree.getNumerator() % 2}, its_str}});
-        //иначе получается скорее переусложнение выражения, и вообще такие строить не надо
-        if (coefs.size() > 5)
-            return result;
-        //нормируем коэффициенты так, чтобы первый был единичным, убирая все, кроме 1, 2, 3, 4, 6
-        Number norma_coeff = Number(1) / coefs.begin()->first;
-        std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>> coes(comp);
-        for (auto &it : coefs)
-        {
-            Number new_coe = it.first * norma_coeff;
-            if (new_coe.isInteger() && new_coe.getNumerator() <= 6 && new_coe.getNumerator() != 5)
-                coes.insert({new_coe, it.second});
-        }
-        if (coes.size() < 2)
-            return result;
-        //степени при соответственно 1, 2, 3, 4, 6 коэффициентах. [0] и [5] не учитываются и остаются для удобства. Нулевая степень означает отсутствие данного коэффициента
-        std::vector<std::pair<int, bool>> degrs(7, {0, 0});
-        for (auto &it : coes)
-            degrs[it.first.getNumerator()] = {it.second.first.first.getNumerator(), it.second.first.second};
-        std::vector<TrigonometricalFunctionsArgumentsCastType> preresult(7, ARG_CAST_NONE);
-        //необходимо выбрать аргумент, к которому приводить
-        int cast_to_arg;
-        if (degrs[1].first % 2 == 1 || degrs[1].second)
-            cast_to_arg = 1;
-        else if (degrs[1].first != 0 && !degrs[1].second && degrs[2].first != 0)
-            cast_to_arg = 2;
-        else if (degrs[2].first != 0 && !degrs[1].second && ((degrs[4].first != 0 && degrs[2].first <= 2) || degrs[6].first == 1))
-            cast_to_arg = 2;
-        else if (degrs[1].first != 0 && !degrs[1].second && degrs[4].first != 0)
-            cast_to_arg = 2;
-        else if (degrs[1].first != 0 && degrs[3].first != 0)
-            cast_to_arg = 1;
-        else if (degrs[1].first == 2 && !degrs[1].second && (degrs[4].first != 0 || degrs[6].first != 0))
-            cast_to_arg = 2;
 
-        std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>::iterator map_it = coefs.begin();
-        int degrs_ind = 0;
-        int result_ind = 1;
-        while (degrs_ind < degrs.size())
-        {
-            while (degrs_ind < degrs.size() && degrs[degrs_ind].first == 0)
-                ++degrs_ind;
-            auto set_to_result = [&result](int & result_index, Number num, TrigonometricalFunctionsArgumentsCastType conv)->void
-            {
-                if (num == 1)
-                    result[0] = conv;
-                else
-                {
-                    result[result_index] = conv;
-                    ++result_index;
-                }
-            };
-            if (degrs_ind < degrs.size())
-            {
-                if (cast_to_arg == 2 * degrs_ind)
-                    set_to_result(result_ind, map_it->first, FROM_HALF_ARGUMENT);
-                else if (cast_to_arg * 2 == degrs_ind)
-                    set_to_result(result_ind, map_it->first, FROM_DOUBLE_ARGUMENT);
-                else if (cast_to_arg * 3 == degrs_ind)
-                    set_to_result(result_ind, map_it->first, FROM_TRIPPLE_ARGUMENT);
-
-                ++degrs_ind;
-                ++map_it;
-            }
-
-        }
-        return result;
-    };
-    std::map<QString, TrigonometricalFunctionsArgumentsCastType> instructions;
-    bool need_to_convert = false;
-    //qDebug() << arguments_multipliers.size();
-   // if (arguments_multipliers.size() > 0)
-    //    qDebug() << arguments_multipliers.begin()->first.second.makeStringOfExpression();
-    for (auto &it : arguments_multipliers)
-    {
-        auto vec_res = chooseInstructions(it.first.second.first, it.first.first->makeStringOfExpression(), it.second);
-        instructions.insert({it.first.first->makeStringOfExpression(), vec_res[0]});
-        if (vec_res[0] != ARG_CAST_NONE)
-            need_to_convert = true;
-        int res_ind = 1;
-        for (auto &it1 : it.second)
-        {
-            if (it1.second.second == it.first.first->makeStringOfExpression())
-                continue;
-            instructions.insert({it1.second.second, vec_res[res_ind]});
-            if (vec_res[res_ind] != ARG_CAST_NONE)
-                need_to_convert = true;
-            ++res_ind;
-        }
-    }
+   auto res = chooseInstructionsToCastTrigonometryArguments(arguments_multipliers);
+   bool need_to_convert = res.second;
+   auto instructions = std::move(res.first);
     if (need_to_convert)
         for (auto &it : this->monomials)
             it->convertTrigonometricalMultipliersToDifferentArgument(instructions);
@@ -224,6 +130,8 @@ void Polynomial::castTrigonometryArguments()
     }
 
 }
+
+
 void Polynomial::removeZeroes()
 {
     //in simplified()
@@ -241,7 +149,7 @@ void Polynomial::openParentheses()
     bool has_opened_parentheses = false;
     for (auto it = this->monomials.begin(); it != this->monomials.end();)
     {
-        if (it->get()->canTurnIntoPolynomWithOpeningParentheses())
+        if (it->get()->canTurnIntoPolynomWithOpeningParentheses(this->is_fractional_coefficients_allowed))
         {
             this->mergeWithoutSimplifiyng(it->get()->turnIntoPolynomWithOpeningParentheses());
             it = this->monomials.erase(it);
@@ -268,6 +176,8 @@ void Polynomial::mergeWithoutSimplifiyng(Polynomial *polynomial, Number coe)
 }
 bool Polynomial::canBecameFractal()
 {
+    if (this->monomials.size() == 1)
+        return false;
     for (auto &it : this->monomials)
     {
         if (!it->isDenominatorEqualToOne())
@@ -444,6 +354,8 @@ void Polynomial::mergeWithoutSimplifiyng(std::unique_ptr<Polynomial> && polynom,
     }
 
 }
+
+
 Number Polynomial::reduce()
 {
     NONCONST
@@ -520,9 +432,10 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
     //otherwise just divide coefficients. If polynomials has different sets of variables, it returns nullptr. If max degree of all variables in divider is less then in dividend,
     //it returns nullptr. For correct work, both of them must be simplified. Also, it can work only with variable with numeric degree, if there are no common numeric, it returns
     //nullptr.
+    /*
     abs_ex changed_func = nullptr;
     abs_ex changing_var = abs_ex(new Variable(systemVar(0)));
-    Polynomial * dividers, * dividend;
+
     if (this->getSetOfPolyVariables().empty() || _dividend->getSetOfPolyVariables().empty())
     {
         dividers = new Polynomial(this);
@@ -550,7 +463,25 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
     {
         dividend = _dividend;
         dividers = this;
+    }*/
+  //  qDebug() << "DIV: " << this->makeStringOfExpression();
+   // qDebug() << "ON" << _dividend->makeStringOfExpression();
+    Polynomial * dividers, * dividend;
+    if (this->getSetOfFunctions().empty() && _dividend->getSetOfFunctions().empty())
+    {
+        dividers = this;
+        dividend = _dividend;
     }
+    else
+    {
+        dividers = new Polynomial(this);
+        dividend = new Polynomial(_dividend);
+    }
+    std::map<QString, int> replaced_functions;
+    auto func_vec_dividers = replaceEveryFunctionOnSystemVariable(dividers, replaced_functions);
+    auto func_vec_dividend = replaceEveryFunctionOnSystemVariable(dividend, replaced_functions);
+
+
     int argument_variables_id = -1;
     std::set<int> dividers_set = dividers->getSetOfPolyVariables(), dividends_set = dividend->getSetOfPolyVariables();
     auto it1 = dividers_set.begin();
@@ -630,21 +561,31 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
         Degree var_multiplier = Degree(arg_variable, degree_diff);
         Fractal multiplier = *((coe_of_max_degree / &coefficient_of_max_degree_in_dividend) * Fractal(&var_multiplier));
         Polynomial subtrahend = *dividends_monomials * &multiplier;
+       // qDebug() << "SUBTRAHEND: " << subtrahend.makeStringOfExpression();
+       // qDebug() << "DIVINDER: " << divinders_monomials->makeStringOfExpression();
         *divinders_monomials = *divinders_monomials - &subtrahend;
+        //qDebug() << "DIFF: " << divinders_monomials->makeStringOfExpression();
         deg_of_max = divinders_monomials->getMaxDegreeOfVariable(argument_variables_id);
         if ((last_deg_of_max - deg_of_max).compareWith(0) < 0)
             return {nullptr, nullptr};
         last_deg_of_max = deg_of_max;
         result_list.push_back(std::unique_ptr<Fractal>(new Fractal(std::move(multiplier))));
+
     }
     std::unique_ptr<Polynomial> result = std::make_unique<Polynomial>(std::move(result_list));
     result->simplify();
-    if (changed_func == nullptr)
-        return std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>>(std::move(result), std::move(divinders_monomials));
-    result->changeSomePartOn(changing_var->makeStringOfExpression(), changed_func);
-    divinders_monomials->changeSomePartOn(changing_var->makeStringOfExpression(), changed_func);
-    delete dividers;
-    delete dividend;
+    for (auto &it : func_vec_dividend)
+        func_vec_dividers.insert(std::move(it));
+
+    replaceSystemVariablesBackToFunctions(result.get(), func_vec_dividers);
+    replaceSystemVariablesBackToFunctions(divinders_monomials.get(), func_vec_dividers);
+    if (!(this->getSetOfFunctions().empty() && _dividend->getSetOfFunctions().empty())) {
+        delete dividers;
+        delete dividend;
+    }
+   // qDebug() <<"RESULT: " << result->makeStringOfExpression();
+   // qDebug() << "REMAINDER: " << divinders_monomials->makeStringOfExpression();
+  //  qDebug();
     return {std::move(result), std::move(divinders_monomials)};
 }
 
@@ -1951,6 +1892,44 @@ std::unique_ptr<AbstractExpression> Polynomial::changeSomePartOn(QString part, s
 
     }
     return its_part;
+}
+
+std::unique_ptr<Fractal> Polynomial::toCommonDenominator()
+{
+    assert(this->canBecameFractal());
+  //  qDebug() << "To Common: " << this->makeStringOfExpression();
+   // qDebug();
+    fractal_argument arg;
+    abs_ex gcd(new Fractal(&arg, this->monomials.begin()->get()->getFractal().second, Number(1, this->monomials.begin()->get()->getCoefficient().getDenominator())));
+    std::unique_ptr<Fractal> denom(new Fractal(gcd.get()));
+    for (auto it = next(this->monomials.begin()); it != this->monomials.end(); ++it)
+    {
+        std::unique_ptr<Fractal> gcd_fr(new Fractal(gcd.get()));
+
+        std::unique_ptr<Fractal> monom_fr(new Fractal(&arg, it->get()->getFractal().second, Number(1, it->get()->getCoefficient().getDenominator())));
+        gcd = gcd_fr->findCommonPart(monom_fr.get());
+        denom = *denom * *monom_fr;
+    }
+    Fractal one_f = Number(1);
+    denom = one_f / denom;
+    denom = *denom / takeDegreeOf(gcd, Number(this->monomials.size() - 1));
+    std::list<std::unique_ptr<Fractal>> numer;
+    for (auto &it : this->monomials)
+    {
+        numer.push_back(*it * *denom);
+    }
+    std::unique_ptr<AbstractExpression> den(denom.release());
+    return std::unique_ptr<Fractal>(new Fractal(abs_ex(new Polynomial(numer)), std::move(den)));
+}
+
+bool Polynomial::isFractionalCoefficientsAllowed()
+{
+    return this->is_fractional_coefficients_allowed;
+}
+
+void Polynomial::setFractionalCoefficientsAllowed(bool allow)
+{
+    this->is_fractional_coefficients_allowed = allow;
 }
 
 

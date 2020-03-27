@@ -62,6 +62,7 @@ private:
 Number abs(Number num);
 Number max(Number a, Number b);
 Number min(Number a, Number b);
+abs_ex toAbsEx(Number n);
 /*
 
 abs_ex one = abs_ex(new Number(1));

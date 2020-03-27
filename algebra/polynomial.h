@@ -71,6 +71,9 @@ public:
     //шестое - имеет ли котангенс квадрат, седьмое - имеет ли котангенс
     std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> checkTrigonometricalFunctions();
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
+    std::unique_ptr<Fractal> toCommonDenominator();
+    bool isFractionalCoefficientsAllowed();
+    void setFractionalCoefficientsAllowed(bool allow);
 private:
     bool casted_trigonometry;
     void castTrigonometry();

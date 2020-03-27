@@ -6,6 +6,7 @@
 #include "cosinus.h"
 #include "tangent.h"
 #include "cotangent.h"
+#include "logarithm.h"
 AlgExpr::AlgExpr()
 {
 
@@ -326,4 +327,48 @@ AlgExpr cot(AlgExpr &&arg)
 AlgExpr cot(int arg)
 {
     return cot(AlgExpr(arg));
+}
+
+AlgExpr ln(AlgExpr &arg)
+{
+    AlgExpr expr;
+    expr.expression = ln(arg.expression)->downcast();
+    return expr;
+}
+
+AlgExpr ln(AlgExpr &&arg)
+{
+    AlgExpr expr;
+    expr.expression = ln(std::move(arg.expression))->downcast();
+    return expr;
+}
+
+AlgExpr ln(int arg)
+{
+    return ln(AlgExpr(arg));
+}
+
+AlgExpr log(AlgExpr &arg, AlgExpr &base)
+{
+    return ln(arg)/ln(base);
+}
+
+AlgExpr log(AlgExpr &&arg, AlgExpr &base)
+{
+    return ln(std::move(arg))/ln(base);
+}
+
+AlgExpr log(AlgExpr &arg, AlgExpr &&base)
+{
+    return ln(arg)/ln(std::move(base));
+}
+
+AlgExpr log(AlgExpr &&arg, AlgExpr &&base)
+{
+    return ln(std::move(arg))/ln(std::move(base));
+}
+
+AlgExpr e()
+{
+    return euler();
 }

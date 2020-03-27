@@ -10,6 +10,8 @@
 #include "factorization.h"
 #include "primetest.h"
 #include "absolutevalue.h"
+#include "logarithm.h"
+#include "constant.h"
 Degree::Degree(std::unique_ptr<AbstractExpression> && iargument, std::unique_ptr<AbstractExpression> && idegree)
 {
     this->argument = std::move(iargument);
@@ -83,11 +85,18 @@ bool Degree::canDowncastTo(AlgebraExpression expr)
         return true;
     if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isOne() && (expr == this->argument->getId() || (expr > 0 && this->argument->getId() > 0)))
         return true;
+    if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM && ((expr > 0 && static_cast<Logarithm*>(this->degree.get())->getArgument()->getId() > 0) ||
+                                                                                 expr == static_cast<Logarithm*>(this->degree.get())->getArgument()->getId()))
+        return true;
     return false;
 }
 std::unique_ptr<AbstractExpression> Degree::downcastTo(AlgebraExpression expr)
 {
+
     assert(canDowncastTo(expr));
+    if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM && ((expr > 0 && static_cast<Logarithm*>(this->degree.get())->getArgument()->getId() > 0) ||
+                                                                                 expr == static_cast<Logarithm*>(this->degree.get())->getArgument()->getId()))
+        return static_cast<Logarithm*>(this->degree.get())->getArgumentMoved();
     if ((this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isOne()) || static_cast<Number*>(this->degree.get())->isZero())
         return std::unique_ptr<AbstractExpression>(new Number(1));
 

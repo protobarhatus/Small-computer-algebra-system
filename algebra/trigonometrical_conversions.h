@@ -37,6 +37,12 @@ abs_ex cotangentToFractal(abs_ex && cotangent_degree);
 abs_ex tangentToCotangent(abs_ex && tangent_degree);
 abs_ex cotangentToTangent(abs_ex && cotangent_degree);
 
+
+std::vector<TrigonometricalFunctionsArgumentsCastType> chooseInstructionsToCastTrigonometryArguments (Number its_degree, QString its_str, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>> & coefs);
+void distributeTrigonometryArgumentsMultipliersRatios(std::vector<std::pair<std::pair<abs_ex, std::pair<Number, bool>>, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>>> &
+                                                      arguments_multipliers,
+                                                      std::vector<std::pair<abs_ex, Number>> & arguments);
+std::pair<std::map<QString, TrigonometricalFunctionsArgumentsCastType>, bool> chooseInstructionsToCastTrigonometryArguments(std::vector<std::pair<std::pair<abs_ex, std::pair<Number, bool>>, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>>> & arguments_multipliers);
 abs_ex convertTrigonometricalFunctionByArgument(abs_ex && func_degree, TrigonometricalFunctionsArgumentsCastType rule);
 abs_ex fromHalfArgument(abs_ex && func_degree);
 abs_ex fromDoubleArgument(abs_ex && func_degree);

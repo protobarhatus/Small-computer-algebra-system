@@ -27,4 +27,5 @@ void deleteVariables();
 Variable getVariable(int id);
 Variable systemVar(int num);
 Variable systemVar();
+QString makeVariablesName(int id);
 #endif // VARIABLESDISTRIBUTOR_H

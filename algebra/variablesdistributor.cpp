@@ -4,7 +4,7 @@
 VariablesDistributor::VariablesDistributor()
 {
     this->system_var_def = new VariablesDefinition;
-    Variable::system_id_counter = this->firstSystemNum();
+    Variable::system_id_counter = this->first_system_num;
 }
 VariablesDistributor& VariablesDistributor::get()
 {
@@ -84,7 +84,7 @@ int VariablesDistributor::firstSystemNum()
 Variable systemVar(int num)
 {
     //return Variable(num + VariablesDistributor::firstSystemNum(), makeVariablesName(num + VariablesDistributor::firstSystemNum()));
-    return Variable(num, makeVariablesName(num + VariablesDistributor::firstSystemNum()));
+    return Variable(num, makeVariablesName(num));
 }
 
 Variable systemVar()

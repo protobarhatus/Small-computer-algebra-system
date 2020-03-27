@@ -170,10 +170,10 @@ void testAlgMod()
             AlgExpr a = var();
             return pow(-8, a) == pow(-2, 3 * a);
 },
-            []()->bool {
+            []()->bool { //25
             return 1 * pow(2, AlgExpr(5) / 3) == 2 * pow(2, AlgExpr(2) / 3);
 },
-            []()->bool { //25
+            []()->bool {
             AlgExpr a  = var();
             return pow(64, a) == pow(2, 6 * a);
 },
@@ -190,10 +190,10 @@ void testAlgMod()
             []()->bool {
             return pow(-3, AlgExpr(1) / 3) + pow(3, AlgExpr(1) / 3) == AlgExpr(0);
 },
-            []()->bool {
+            []()->bool { //30
             return 1 * pow(-128, AlgExpr(1)/ 3) == -4 * pow(2, AlgExpr(1)/3);
 },
-            []()->bool { //30
+            []()->bool {
             AlgExpr c = sqrt(A(2)) + sqrt(A(2)) - sqrt(A(2)) + sqrt(A(3));
             return c == sqrt(A(2)) + sqrt(A(3));
 },
@@ -210,12 +210,12 @@ void testAlgMod()
             []()->bool {
             return 8 * A(5) / 4 == A(10);
 },
-            []()->bool {
+            []()->bool { //35
             AlgExpr a = var();
             AlgExpr b = var();
             return a - A(3) / (7 * b) == (7 * a * b - 3) / (7 * b);
 },
-            []()->bool { //35
+            []()->bool {
             AlgExpr a = var();
             AlgExpr b = var();
             return 3*(a + b) + 1 == 3 * a + 3 * b + 1;
@@ -239,14 +239,14 @@ void testAlgMod()
             AlgExpr y = var();
             return 3 * (x+y)*(a+b) + 1 == 1 + 3 * a*x + 3*a*y + 3*b*x + 3*b*y;
 },
-            []()->bool {
+            []()->bool { //40
             AlgExpr a = var();
             AlgExpr b = var();
             AlgExpr x = var();
             AlgExpr y = var();
             return 3 * b * (x+y)*(a+b) + 1 == 1 + 3 * b * a*x + 3*b*a*y + 3*b*b*x + 3*b*b*y;
 },
-            []()->bool { //40
+            []()->bool {
             AlgExpr a = var();
             AlgExpr b = var();
             return (a+b)*(a+b) + 1 == pow(a, 2) + pow(b, 2) + 2 * a * b + 1;
@@ -273,11 +273,11 @@ void testAlgMod()
             AlgExpr x = var();
             return (pow(x, 2) + 2 * x + 1) / (x + 1) == x + 1;
 },
-            []()->bool {
+            []()->bool {//45
             AlgExpr x = var();
             return (pow(x, 2) + 6 * x + 5) / (pow(x, 2) + 4 * x + 3) == (x + 5) / (x + 3);
 },
-            []()->bool { //45
+            []()->bool {
             AlgExpr a = var();
             AlgExpr b = var();
             return (pow(a, 2) + 2 * a * b + pow(b, 2))/ (a + b) == (a + b);
@@ -288,21 +288,21 @@ void testAlgMod()
             AlgExpr c = a / b - A(3) / (7 * b);
             return c == (7*a-3)/(7*b);
 },
-            []()->bool {
+            []()->bool {//48
             AlgExpr x = var();
             return (x + 2 * sqrt(x) + 1) / (sqrt(x) + 1) == sqrt(x) + 1;
 },
-            []()->bool { //48
+            []()->bool {
             AlgExpr x = var();
             AlgExpr y = var();
             return (x + 2 * sqrt(x) * sqrt(y) + y) / (sqrt(x) + sqrt(y)) == sqrt(x) + sqrt(y);
 },
-            []()->bool {
+            []()->bool {//50
             AlgExpr a = var();
             AlgExpr b = var();
             return (a - b) / (sqrt(a) + sqrt(b)) == sqrt(a) - sqrt(b);
 },
-            []()->bool { //50
+            []()->bool {
             AlgExpr a = var();
             AlgExpr b = var();
             AlgExpr y = var();
@@ -830,6 +830,48 @@ void testAlgMod()
             []()->bool { //170
             AlgExpr x = var();
             return sin(x)*sin(x) + sin(x) + cos(x) + 2*cos(x)*cos(x) == cos(x) + sin(x) + 2 - sin(x)*sin(x);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return (pow(x, 11) - 2*x-1)/(pow(x, 5) -2*x-1) == (pow(x, 10) + pow(x, 8) + pow(x, 6) + pow(x, 4) + pow(x, 2) - pow(x, 9) - pow(x, 7) - pow(x, 5) - pow(x, 3) -
+                                                               x - 1)/(pow(x, 4) + pow(x, 2) - pow(x, 3) -x - 1);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return sin(2*x)/sin(x) == 2*cos(x);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return tan(2*x)/sin(x) - 2*cos(x)/cos(2*x) == 0;
+},
+            []()->bool {
+            return ln(1) == 0;
+},
+            []()->bool { //175
+            return ln(e()) == 1;
+},
+            []()->bool {
+            return ln(pow(e(), e())) == e();
+},
+            []()->bool {
+            AlgExpr x = var();
+            AlgExpr y = var();
+            return ln(2*x*e()/y) == ln(2) + ln(x) + 1 - ln(y);
+},
+            []()->bool {
+            AlgExpr x = var();
+            AlgExpr y = var();
+            AlgExpr a = var();
+            AlgExpr b = var();
+            return ln(pow(x, y)*pow(a, b)) == y*ln(x) + b*ln(a);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return log(e(), x) == 1/ln(x);
+},
+            []()->bool { //180
+            AlgExpr x = var();
+            return  pow(e(), ln(x)) == x;
 }
 
 

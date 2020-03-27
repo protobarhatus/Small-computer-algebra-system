@@ -74,6 +74,7 @@ SOURCES += \
     algebra/exception.cpp \
     algebra/factorization.cpp \
     algebra/fractal.cpp \
+    algebra/logarithm.cpp \
     algebra/mathsets.cpp \
     algebra/number.cpp \
     algebra/polynomial.cpp \
@@ -151,6 +152,7 @@ HEADERS += \
     algebra/exception.h \
     algebra/factorization.h \
     algebra/fractal.h \
+    algebra/logarithm.h \
     algebra/mathsets.h \
     algebra/number.h \
     algebra/polynomial.h \

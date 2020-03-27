@@ -7,6 +7,8 @@
 #include "polynomial.h"
 #include "exception.h"
 #include <cmath>
+#include "cosinus.h"
+#include "sinus.h"
 Fractal::Fractal() : coefficient(1)
 {
 
@@ -39,6 +41,14 @@ Fractal::Fractal(fractal_argument && num, fractal_argument && denum, Number coe)
         this->pushBackToNumerator(std::move(it));
     for (auto &it : denum)
         this->pushBackToDenominator(std::move(it));
+    this->simplify();
+}
+
+Fractal::Fractal(abs_ex &&num, abs_ex &&denum, Number coe)
+{
+    this->pushBackToNumerator(std::move(num));
+    this->pushBackToDenominator(std::move(denum));
+    this->coefficient = coe;
     this->simplify();
 }
 Fractal::Fractal(fractal_argument * num, Number coe) : coefficient(coe)
@@ -321,9 +331,12 @@ void Fractal::simplify()
     //ye, its extra, but it is unimportant becouse fractals in requlary geometric are small. it's maden for reduced polynomial.
     this->reduceSameMembers();
     this->reducePolynomials();
+    this->takeCommonPartOfPolynomials();
+    this->reduceSameMembers();
     this->pullNumbersIntoCoefficient();
     this->setSameMembersIntoDegree();
     this->castTrigonometry();
+    this->castTrigonometryArguments();
     this->simplified = true;
 }
 void Fractal::reduceDegrees()
@@ -675,6 +688,7 @@ void Fractal::reducePolynomials()
                 auto gcf = gcd(static_cast<Polynomial*>(it1->get()), static_cast<Polynomial*>(it2->get()));
                // if (gcf == nullptr)
                //     continue;
+                //qDebug() << gcf->makeStringOfExpression();
                 auto it1_pol = static_cast<Polynomial*>(it1->get())->divide(gcf.get()).first;
                 if (it1_pol == nullptr)
                     continue;
@@ -746,10 +760,22 @@ bool Fractal::canTurnIntoPolynomWithOpeningParentheses()
     }
     return false;
 }
+
+bool Fractal::canTurnIntoPolynomWithOpeningParentheses(bool is_fractional_coefficient_allowed)
+{
+    if (!this->denominator.empty() || (this->coefficient.getDenominator() != 1 && !is_fractional_coefficient_allowed))
+        return false;
+    for (auto &it : this->numerator)
+    {
+        if (it->getId() == POLYNOMIAL || (it->getId() == DEGREE && static_cast<Degree*>(it.get())->canTurnIntoPolynomial()))
+            return true;
+    }
+    return false;
+}
 std::unique_ptr<Polynomial> Fractal::turnIntoPolynomWithOpeningParentheses()
 {
     //in this function, if fractal has several polynoms, it has to do those operations with 1. another will turning is polynom->simplify() which call this function
-    assert(canTurnIntoPolynomWithOpeningParentheses());
+    //assert(canTurnIntoPolynomWithOpeningParentheses());
   //  qDebug() << this->makeStringOfExpression();
     std::unique_ptr<Fractal> frac_without_polynom = std::unique_ptr<Fractal>(new Fractal(this));
     frac_without_polynom->turnDegreesIntoList();
@@ -758,7 +784,7 @@ std::unique_ptr<Polynomial> Fractal::turnIntoPolynomWithOpeningParentheses()
     {
         if (it->get()->getId() == POLYNOMIAL)
         {
-            polynom = std::unique_ptr<Polynomial>(new Polynomial(it->get()));
+            polynom = std::unique_ptr<Polynomial>(new Polynomial(*static_cast<Polynomial*>(it->get())));
             frac_without_polynom->numerator.erase(it);
             break;
         }
@@ -768,9 +794,11 @@ std::unique_ptr<Polynomial> Fractal::turnIntoPolynomWithOpeningParentheses()
   //  qDebug() << "POLYNOMS_MONOMS: ";
  //   for (auto &it : polynom->getMonomialsPointers())
   //      qDebug() << "    " << it->makeStringOfExpression();
+    bool fractional_coefficients = polynom->isFractionalCoefficientsAllowed();
     std::list<Fractal*> polynoms_monoms = polynom->getMonomialsPointers();
     polynom.release();
     polynom = std::unique_ptr<Polynomial>(new Polynomial());
+    polynom->setFractionalCoefficientsAllowed(fractional_coefficients);
     for (auto &it : polynoms_monoms)
     {
         polynom->addMonomial(*it * frac_without_polynom);
@@ -1323,9 +1351,18 @@ std::unique_ptr<AbstractExpression> Fractal::changeSomePartOn(QString part, std:
 
 std::vector<std::pair<abs_ex, Number>> Fractal::getTrigonometryMultipliersArgumentsCopyAndItsDegrees()
 {
-    assert(this->denominator.size() == 0);
+  //  assert(this->denominator.size() == 0);
     std::vector<std::pair<abs_ex, Number>> res;
     for (auto &it : this->numerator)
+    {
+        if (isDegreeOfTrigonometricalFunction(it) && Degree::getDegreeOfExpression(it.get())->getId() == NUMBER &&
+                static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->isInteger())
+        {
+            res.push_back({getArgumentOfTrigonometricalFunction(it), *static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())});
+
+        }
+    }
+    for (auto &it : this->denominator)
     {
         if (isDegreeOfTrigonometricalFunction(it) && Degree::getDegreeOfExpression(it.get())->getId() == NUMBER &&
                 static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->isInteger())
@@ -1352,7 +1389,21 @@ void Fractal::convertTrigonometricalMultipliersToDifferentArgument(const std::ma
         }
 
     }
+    for (auto &it : denominator)
+    {
+        if (isDegreeOfTrigonometricalFunction(it) && Degree::getDegreeOfExpression(it.get())->getId() == NUMBER &&
+                static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->isInteger())
+        {
+            NONCONST
+            it = convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfTrigonometricalFunction(it)->makeStringOfExpression())->second);
+            //qDebug() << "RES: " << convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfTrigonometricalFunction(it)->makeStringOfExpression())->second)->makeStringOfExpression();
+            //qDebug() << "IN FR: " << it->makeStringOfExpression();
+        }
+
+    }
 }
+
+
 
 void Fractal::castTrigonometry()
 {
@@ -1375,6 +1426,32 @@ void Fractal::castTrigonometry()
     this->simplified = false;
 
     this->simplify();
+}
+
+void Fractal::castTrigonometryArguments()
+{
+    //все степени здесь целые
+    //первое выражение - аргумент функции, второй - степень функции и то, есть у этой функции нечетная степень, затем в словаре аргументы, которые представляют собой тот
+    //аргумент, умноженный на какое-либо число.
+    //ключ словаря - то самое число,  число в значении словаря - степени триг. функции с этим самым аргументом и то, есть ли у этой функции нечетная степень,
+    //а строка - строковое представление функции с этим аргументом
+
+    std::vector<std::pair<std::pair<abs_ex, std::pair<Number, bool>>, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>>>
+                                                                                                                                                            arguments_multipliers;
+
+   auto arguments = this->getTrigonometryMultipliersArgumentsCopyAndItsDegrees();
+   distributeTrigonometryArgumentsMultipliersRatios(arguments_multipliers, arguments);
+
+   auto res = chooseInstructionsToCastTrigonometryArguments(arguments_multipliers);
+   bool need_to_convert = res.second;
+   auto instructions = std::move(res.first);
+    if (need_to_convert)
+        this->convertTrigonometricalMultipliersToDifferentArgument(instructions);
+    if (need_to_convert)
+    {
+        this->simplified = false;
+        this->simplify();
+    }
 }
 
 std::map<QString, TrigonometricalFunctionsCastType> Fractal::getTrigonometricalFunctionToTurnIntoIt()
@@ -1401,4 +1478,14 @@ std::unique_ptr<AbstractExpression> toAbsEx(std::unique_ptr<Fractal> &expr)
 std::unique_ptr<AbstractExpression> toAbsEx(std::unique_ptr<Fractal> &&expr)
 {
     return abs_ex(expr.release());
+}
+
+std::unique_ptr<Fractal> toFrac(std::unique_ptr<AbstractExpression> &expr)
+{
+    return std::unique_ptr<Fractal>(new Fractal(expr.get()));
+}
+
+std::unique_ptr<Fractal> toFrac(std::unique_ptr<AbstractExpression> &&expr)
+{
+    return std::unique_ptr<Fractal>(new Fractal(std::move(expr)));
 }

@@ -64,6 +64,8 @@ public:
     friend AlgExpr cot(AlgExpr && arg);
     friend AlgExpr pi();
     friend AlgExpr euler();
+    friend AlgExpr ln(AlgExpr & arg);
+    friend AlgExpr ln(AlgExpr && arg);
 private:
     AlgExpr (abs_ex && expr);
     bool isEqualTo(const AlgExpr & sec) const;
@@ -91,6 +93,7 @@ AlgExpr sin(AlgExpr && arg);
 AlgExpr sin(int arg);
 AlgExpr pi();
 AlgExpr euler();
+AlgExpr e();
 AlgExpr cos(AlgExpr & arg);
 AlgExpr cos(AlgExpr && arg);
 AlgExpr cos(int arg);
@@ -100,4 +103,11 @@ AlgExpr tan(int arg);
 AlgExpr cot(AlgExpr & arg);
 AlgExpr cot(AlgExpr && arg);
 AlgExpr cot(int arg);
+AlgExpr ln(AlgExpr & arg);
+AlgExpr ln(AlgExpr && arg);
+AlgExpr ln(int arg);
+AlgExpr log(AlgExpr & arg, AlgExpr & base);
+AlgExpr log(AlgExpr && arg, AlgExpr & base);
+AlgExpr log(AlgExpr & arg, AlgExpr && base);
+AlgExpr log(AlgExpr && arg, AlgExpr && base);
 #endif // ALGEXPR_H

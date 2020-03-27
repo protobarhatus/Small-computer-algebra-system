@@ -95,7 +95,10 @@ std::unique_ptr<AbstractExpression> AbstractExpression::downcast()
     std::unique_ptr<AbstractExpression> expr;
     for (AlgebraExpression exp = AlgebraExpression(-20); exp <= 1; exp = AlgebraExpression((int(exp) + 1)))
         if (canDowncastTo(exp))
+        {
             expr = this->downcastTo(exp);
+          //  break;
+        }
     while (expr->canDowncast())
         expr = expr->downcast();
     return expr;
@@ -196,6 +199,15 @@ std::vector<std::unique_ptr<AbstractExpression> > replaceEveryFunctionOnSystemVa
 }*/
 std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(std::unique_ptr<AbstractExpression> &expr, std::map<QString, int> &funcs)
 {
+    return replaceEveryFunctionOnSystemVariable(expr.get(), funcs);
+}
+void replaceSystemVariablesBackToFunctions(std::unique_ptr<AbstractExpression> &expr, std::map<int, abs_ex> & funcs)
+{
+    replaceSystemVariablesBackToFunctions(expr.get(), funcs);
+}
+std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression *expr, std::map<QString, int> &funcs)
+{
+   // qDebug() << "BEFORE: " << expr->makeStringOfExpression();
     auto functions = expr->getSetOfFunctions();
     std::map<int, abs_ex> result;
     for (auto &it : functions)
@@ -211,14 +223,17 @@ std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(std::unique_ptr<Abstr
             var = abs_ex(new Variable(systemVar(it1->second)));
         result.insert({var->getId(), expr->changeSomePartOn(it, var)});
     }
+    //qDebug() << "AFTER: " << expr->makeStringOfExpression();
     return result;
 }
-void replaceSystemVariablesBackToFunctions(std::unique_ptr<AbstractExpression> &expr, std::map<int, abs_ex> & funcs)
+void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<int, abs_ex> & funcs)
 {
+    //qDebug() << "WITH: " << expr->makeStringOfExpression();
     for (auto &it : funcs)
     {
         expr->changeSomePartOn(systemVar(it.first).makeStringOfExpression(), it.second);
     }
+   // qDebug() << "WITHOUT: " << expr->makeStringOfExpression();
 }
 /*
 void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<std::unique_ptr<AbstractExpression> > &functions)
