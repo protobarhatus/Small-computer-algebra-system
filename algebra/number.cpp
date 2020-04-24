@@ -3,11 +3,14 @@
 #include "some_algebra_expression_conversions.h"
 #include "exception.h"
 #include "algorithm"
+#include "variablesdistributor.h"
 abs_ex one = abs_ex(new Number(1));
 abs_ex two = abs_ex(new Number(2));
 abs_ex half = abs_ex(new Number(1, 2));
 abs_ex zero = abs_ex(new Number(0));
 abs_ex minus_one = abs_ex(new Number(-1));
+abs_ex three = abs_ex(new Number(3));
+abs_ex four = abs_ex(new Number(4));
 Number::Number(long long int ivalue)
 {
     this->numerator = ivalue;
@@ -324,6 +327,16 @@ std::unique_ptr<AbstractExpression> Number::changeSomePartOn(QString part, std::
 bool Number::less(const Number &b) const
 {
     return (*this - b).compareWith(0) < 0 && *this != b;
+}
+
+std::unique_ptr<AbstractExpression> Number::derivative(int var) const
+{
+    return copy(zero);
+}
+
+std::unique_ptr<AbstractExpression> Number::antiderivative(int var) const
+{
+    return abs_ex(new Number(*this)) * abs_ex(new Variable(getVariable(var)));
 }
 
 Number abs(Number num)

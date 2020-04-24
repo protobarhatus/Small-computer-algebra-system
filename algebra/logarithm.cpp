@@ -7,7 +7,8 @@
 #include "constant.h"
 #include "number.h"
 #include <cmath>
-Logarithm::Logarithm(std::unique_ptr<AbstractExpression> &argument)
+#include "absolutevalue.h"
+Logarithm::Logarithm(const std::unique_ptr<AbstractExpression> &argument)
 {
     this->argument = copy(argument);
     this->simplify();
@@ -46,6 +47,20 @@ void Logarithm::simplify()
     SIM_IF_NEED
     this->argument->simplify();
     this->argument = this->argument->downcast();
+    if (this->argument->getId() == POLYNOMIAL)
+    {
+        int rt = 2;
+        auto root = static_cast<Polynomial*>(this->argument.get())->tryToTakeRoot(rt);
+        if (root == nullptr)
+        {
+            rt = 3;
+            root = static_cast<Polynomial*>(this->argument.get())->tryToTakeRoot(rt);
+        }
+        if (root != nullptr)
+        {
+            this->argument = takeDegreeOf(root, rt);
+        }
+    }
     if (this->argument->getPositionRelativelyZero() < 0)
         throw Exception();
     this->simplified = true;
@@ -81,6 +96,12 @@ std::unique_ptr<AbstractExpression> Logarithm::downcastTo(AlgebraExpression expr
         return copy(zero);
     if (this->argument->getId() == DEGREE && *Degree::getArgumentOfDegree(this->argument.get()) == *getEuler())
         return Degree::getDegreeOfExpression(this->argument.get());
+    if (this->argument->getId() == DEGREE && Degree::getDegreeOfExpression(this->argument.get())->getId() == NUMBER &&
+            static_cast<Number*>(Degree::getDegreeOfExpression(this->argument.get()).get())->getNumerator() % 2 == 0)
+    {
+        AbstractExpression * arg = Degree::getArgumentOfDegree(this->argument.get());
+        return Degree::getDegreeOfExpression(this->argument.get()) * ln(abs(makeAbstractExpression(arg->getId(), arg)));
+    }
     if (this->argument->getId() == DEGREE)
         return Degree::getDegreeOfExpression(this->argument.get()) * ln(Degree::getArgumentOfDegree(this->argument.get()));
     if (this->argument->getId() == FRACTAL)
@@ -181,13 +202,31 @@ AbstractExpression *Logarithm::getArgument()
     return this->argument.get();
 }
 
+std::unique_ptr<AbstractExpression> Logarithm::derivative(int var) const
+{
+    return this->argument->derivative(var) / this->argument;
+}
+
+std::unique_ptr<AbstractExpression> Logarithm::antiderivative(int var) const
+{
+    auto ln_f = checkIfItsLinearFunction(this, var);
+    if (ln_f.first == nullptr)
+        return nullptr;
+    return one / ln_f.first * this->argument * (ln(this->argument) - one);
+}
+
+const std::unique_ptr<AbstractExpression> &Logarithm::getArgument() const
+{
+    return this->argument;
+}
+
 bool Logarithm::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == SINUS);
     return AbstractExpression::less(this->argument.get(), (static_cast<Logarithm*>(const_cast<AbstractExpression*>(&right))->argument.get()));
 }
 
-std::unique_ptr<AbstractExpression> ln(std::unique_ptr<AbstractExpression>& arg)
+std::unique_ptr<AbstractExpression> ln(const std::unique_ptr<AbstractExpression>& arg)
 {
     return abs_ex(new Logarithm(arg));
 }

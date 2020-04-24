@@ -872,6 +872,40 @@ void testAlgMod()
             []()->bool { //180
             AlgExpr x = var();
             return  pow(e(), ln(x)) == x;
+},
+            []()->bool {
+            AlgExpr x = var();
+            return derivative(x, x) == 1;
+},
+            []()->bool {
+            AlgExpr x = var();
+            AlgExpr y = var();
+            return derivative(x, y) == 0;
+},
+            []()->bool {
+            AlgExpr x = var();
+            return derivative(4*pow(x, 4) - 2 * pow(x, 3) + 5*pow(x, 2) -2*x + 1, x) == 16*pow(x, 3) - 6*pow(x, 2) + 10*x - 2;
+},
+            []()->bool {
+            AlgExpr x = var();
+            return derivative(pow(sin(2*x + 3), 2) + 5*pow(x, 4) - pow(cos(x), 3), x) ==
+            ((-32*cos(3)*sin(3)*pow(sin(x), 2))+(-16*cos(x)*sin(x)*pow(sin(3), 2))+(-8*cos(x)*sin(x))+(-3*pow(sin(x), 3))+(3*sin(x))+(4*cos(3)*sin(3))+(16*sin(x)*pow(cos(x), 3))+(20*x*x*x)+(32*cos(3)*sin(3)*pow(sin(x), 4))+(32*cos(x)*pow(sin(3), 2)*pow(sin(x), 3)));
+},
+            []()->bool { //185
+            AlgExpr x = var();
+            return derivative(pow(sin(2*x + 3), 2) + 5*pow(x, 4) - pow(cos(x), 3) + tan(x), x) == (((-36*cos(3)*sin(3)*pow(sin(x), 2))+(-32*cos(3)*sin(3)*pow(sin(x), 6))+(-32*cos(x)*pow(sin(3), 2)*pow(sin(x), 5))+(-28*cos(x)*pow(sin(x), 3))+(-24*cos(x)*sin(x)*pow(sin(3), 2))+(-20*pow(sin(x), 2)*pow(x, 3))+(-6*pow(sin(x), 3))+(-4*sin(x)*pow(cos(x), 3))+(1)+(3*sin(x))+(3*pow(sin(x), 5))+(4*cos(3)*sin(3))+(8*sin(x)*pow(sin(3), 2)*pow(cos(x), 3))+(12*cos(x)*sin(x))+(16*cos(x)*pow(sin(x), 5))+(20*pow(x, 3))+(56*cos(x)*pow(sin(3), 2)*pow(sin(x), 3))+(64*cos(3)*sin(3)*pow(sin(x), 4)))/pow(cos(x), 2));
+},
+            []()->bool {
+            AlgExpr x = var();
+            return derivative(pow(2 + 3*x, 2*x), x) == (2*pow(((2)+(3*x)),((-1)+(2*x)))*((2*ln(((2)+(3*x))))+(3*x)+(3*x*ln(((2)+(3*x))))));
+},
+            []()->bool {
+            AlgExpr x = var();
+            return derivative((x + 3) / (x + 5), x) == 2/pow(x + 5, 2);
+},
+            []()->bool {
+            AlgExpr x = var();
+            return derivative(ln(3+4*x) + ln(x), x) == (3 + 8*x)/x/(3+4*x);
 }
 
 

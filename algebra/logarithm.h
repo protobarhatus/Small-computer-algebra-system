@@ -5,9 +5,9 @@
 class Logarithm : public AbstractExpression
 {
     abs_ex argument;
-    bool simplified;
+    bool simplified = false;
 public:
-    Logarithm(abs_ex & argument);
+    Logarithm(const abs_ex & argument);
     Logarithm(abs_ex && argument);
     Logarithm(const Logarithm & copy);
     Logarithm(Logarithm && mov);
@@ -33,10 +33,14 @@ public:
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
     abs_ex getArgumentsCopy();
     AbstractExpression* getArgument();
+    virtual abs_ex derivative(int var) const override;
+    virtual abs_ex antiderivative(int var) const override;
+
+    const abs_ex& getArgument() const;
 private:
     virtual bool operator<(const AbstractExpression & right) const override;
 };
-abs_ex ln(abs_ex& arg);
+abs_ex ln(const abs_ex& arg);
 abs_ex ln(abs_ex&& arg);
 abs_ex ln(AbstractExpression * arg);
 #endif // LOGARITHM_H

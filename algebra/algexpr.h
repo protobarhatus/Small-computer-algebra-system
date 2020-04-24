@@ -66,6 +66,9 @@ public:
     friend AlgExpr euler();
     friend AlgExpr ln(AlgExpr & arg);
     friend AlgExpr ln(AlgExpr && arg);
+    friend AlgExpr derivative(const AlgExpr & arg, AlgExpr arg_variable);
+    friend AlgExpr D(const AlgExpr & arg);
+    friend AlgExpr D(AlgExpr && arg);
 private:
     AlgExpr (abs_ex && expr);
     bool isEqualTo(const AlgExpr & sec) const;
@@ -110,4 +113,8 @@ AlgExpr log(AlgExpr & arg, AlgExpr & base);
 AlgExpr log(AlgExpr && arg, AlgExpr & base);
 AlgExpr log(AlgExpr & arg, AlgExpr && base);
 AlgExpr log(AlgExpr && arg, AlgExpr && base);
+AlgExpr derivative(const AlgExpr & arg, AlgExpr arg_variable);
+//да, с большой буквы, но так надо. не буду же я называть ее dif или differential
+AlgExpr D(const AlgExpr & arg);
+AlgExpr D(AlgExpr && arg);
 #endif // ALGEXPR_H

@@ -11,7 +11,10 @@
 #include "polynomial.h"
 #include "exception.h"
 #include "cotangent.h"
-Tangent::Tangent(abs_ex & iargument)
+#include "cosinus.h"
+#include "logarithm.h"
+#include "absolutevalue.h"
+Tangent::Tangent(const abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
     this->simplify();
@@ -189,7 +192,7 @@ std::set<QString> Tangent::getSetOfFunctions() const
 
 Number Tangent::getMaxDegreeOfVariable(int id)
 {
-    return 0;
+    return Number::makeErrorNumber();
 }
 
 void Tangent::_qDebugOut()
@@ -264,13 +267,31 @@ std::unique_ptr<AbstractExpression> Tangent::getArgumentsCopy()
     return copy(this->argument);
 }
 
+std::unique_ptr<AbstractExpression> Tangent::derivative(int var) const
+{
+    return this->argument->derivative(var) / takeDegreeOf(cos(this->argument), 2);
+}
+
+std::unique_ptr<AbstractExpression> Tangent::antiderivative(int var) const
+{
+    auto ln_f = checkIfItsLinearFunction(this->argument, var);
+    if (ln_f.first == nullptr)
+        return nullptr;
+    return minus_one / ln_f.first * ln(abs(this->argument));
+}
+
+const std::unique_ptr<AbstractExpression> &Tangent::getArgument() const
+{
+    return this->argument;
+}
+
 bool Tangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == TANGENT);
     return AbstractExpression::less(this->argument.get(), (static_cast<Tangent*>(const_cast<AbstractExpression*>(&right))->argument.get()));
 }
 
-std::unique_ptr<AbstractExpression> tan(std::unique_ptr<AbstractExpression> &expr)
+std::unique_ptr<AbstractExpression> tan(const std::unique_ptr<AbstractExpression> &expr)
 {
     return abs_ex(new Tangent(expr));
 }

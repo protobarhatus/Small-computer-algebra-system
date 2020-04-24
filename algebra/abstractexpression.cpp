@@ -9,6 +9,7 @@
 #include "tangent.h"
 #include "cotangent.h"
 #include "variablesdistributor.h"
+#include "logarithm.h"
 AbstractExpression::AbstractExpression()
 {
 
@@ -21,6 +22,10 @@ AbstractExpression::~AbstractExpression()
 }
 bool AbstractExpression::less(const AbstractExpression * left, const AbstractExpression * right)
 {
+    if (left->getId() != DIFFERENTIAL && right->getId() == DIFFERENTIAL)
+        return true;
+    if (right->getId() == DIFFERENTIAL && left->getId() != DIFFERENTIAL)
+        return false;
     if (left->getId() != right->getId())
     {
 
@@ -36,6 +41,10 @@ bool AbstractExpression::less(const AbstractExpression * left, const AbstractExp
 }
 bool AbstractExpression::lessToSort(const std::unique_ptr<AbstractExpression> &left, const std::unique_ptr<AbstractExpression> &right)
 {
+    if (left->getId() != DIFFERENTIAL && right->getId() == DIFFERENTIAL)
+        return true;
+    if (right->getId() == DIFFERENTIAL && left->getId() != DIFFERENTIAL)
+        return false;
     if (left->getId() != right->getId())
     {
         if ((left->getId() < 0 && right->getId() < 0) || (left->getId() > 0 && right->getId() > 0))
@@ -132,6 +141,12 @@ int AbstractExpression::getPositionRelativelyZero()
     }
     return this->getPositionRelativelyZeroIfHasVariables();
 
+}
+
+bool AbstractExpression::hasVariable(int var)
+{
+    auto s = this->getSetOfVariables();
+    return s.find(var) != s.end();
 }
 
 
@@ -268,3 +283,116 @@ std::unique_ptr<AbstractExpression> absEx(int num)
     return abs_ex(new Number(num));
 }
 
+
+std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > checkIfItsLinearFunction(const std::unique_ptr<AbstractExpression> &func, int var)
+{
+    return checkIfItsLinearFunction(func.get(), var);
+}
+
+std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > checkIfItsLinearFunction(const AbstractExpression *func, int var)
+{
+    if (func->getId() == var)
+        return {copy(one), copy(zero)};
+    if (func->getId() == FRACTAL)
+        return static_cast<const Fractal*>(func)->checkIfItIsLinearFunction(var);
+    if (func->getId() == POLYNOMIAL)
+        return static_cast<const Polynomial*>(func)->checkIfItIsLinearFunction(var);
+    return {nullptr, nullptr};
+}
+
+std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > checkIfItsFunctionOfLinearArgument(const std::unique_ptr<AbstractExpression> &func, int var)
+{
+    return checkIfItsFunctionOfLinearArgument(func.get(), var);
+}
+
+std::unique_ptr<AbstractExpression> numToAbs(int num)
+{
+    return abs_ex(new Number(num));
+}
+
+std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > checkIfItsFunctionOfLinearArgument(const AbstractExpression *func, int var)
+{
+    switch (func->getId()) {
+    case SINUS:
+        return checkIfItsLinearFunction(static_cast<const Sinus*>(func)->getArgument(), var);
+    case COSINUS:
+        return checkIfItsLinearFunction(static_cast<const Cosinus*>(func)->getArgument(), var);
+    case TANGENT:
+        return checkIfItsLinearFunction(static_cast<const Tangent*>(func)->getArgument(), var);
+    case COTANGENT:
+        return checkIfItsLinearFunction(static_cast<const Cotangent*>(func)->getArgument(), var);
+    case LOGARITHM:
+        return checkIfItsLinearFunction(static_cast<const Logarithm*>(func)->getArgument(), var);
+    default:
+        return {nullptr, nullptr};
+    }
+}
+
+std::array<std::unique_ptr<AbstractExpression>, 3> checkIfItsQuadraticFunction(const AbstractExpression *func, int var)
+{
+    if (func->getId() == DEGREE && Degree::getArgumentOfDegree(const_cast<AbstractExpression*>(func))->getId() == var &&
+            *Degree::getDegreeOfExpression(const_cast<AbstractExpression*>(func)) == *two)
+        return {copy(one), copy(zero), copy(zero)};
+        if (func->getId() == DEGREE && *Degree::getDegreeOfExpression(const_cast<AbstractExpression*>(func)) == *two)
+        {
+            auto ln_f = checkIfItsLinearFunction(func, var);
+            return {pow(ln_f.first, 2), two*ln_f.first * ln_f.second, pow(ln_f.second, 2)};
+        }
+    if (func->getId() == FRACTAL)
+    {
+        const Fractal * fr = static_cast<const Fractal*>(func);
+
+        auto mult = fr->getFractalWithoutVariable(var);
+        auto var_fr = *fr / *mult;
+        if (var_fr->getId() == FRACTAL)
+        {
+            auto var_fr_list = var_fr->getFractal();
+            if (!var_fr_list.second->empty())
+                return {nullptr, nullptr, nullptr};
+            if (var_fr_list.first->size() != 2)
+                return {nullptr, nullptr, nullptr};
+
+            abs_ex & f = *var_fr_list.first->begin();
+            abs_ex & s = *next(var_fr_list.second->begin());
+            if ((f->getId() > 0 && s->getId() == POLYNOMIAL) || (f->getId() == POLYNOMIAL && s->getId() == POLYNOMIAL) && (f->getId() == POLYNOMIAL && s->getId() == FRACTAL))
+            {
+                auto res = checkIfItsQuadraticFunction(toAbsEx(var_fr) + zero, var);
+                if (res[0] == nullptr)
+                    return {nullptr, nullptr, nullptr};
+                auto a_m = toAbsEx(std::move(mult));
+                return {a_m * res[0], a_m * res[1], a_m * res[2]};
+            }
+            else
+                return {nullptr, nullptr, nullptr};
+        }
+
+    }
+    auto ln_f = checkIfItsLinearFunction(func, var);
+    if (ln_f.first != nullptr)
+    {
+        return {copy(zero), std::move(ln_f.first), std::move(ln_f.second)};
+    }
+    if (func->getId() != POLYNOMIAL)
+        return {nullptr, nullptr, nullptr};
+    return static_cast<const Polynomial*>(func)->checkQuadraticFunction(var);
+}
+
+std::array<std::unique_ptr<AbstractExpression>, 3> checkIfItsQuadraticFunction(const std::unique_ptr<AbstractExpression> &func, int var)
+{
+    return checkIfItsQuadraticFunction(func.get(), var);
+}
+
+bool isZero(const std::unique_ptr<AbstractExpression> &expr)
+{
+    return expr->getId() == NUMBER && static_cast<const Number*>(expr.get())->isZero();
+}
+
+std::unique_ptr<AbstractExpression> operator-(const std::unique_ptr<AbstractExpression> &arg)
+{
+    return minus_one * arg;
+}
+
+std::unique_ptr<AbstractExpression> operator-(std::unique_ptr<AbstractExpression> &&arg)
+{
+    return minus_one * std::move(arg);
+}

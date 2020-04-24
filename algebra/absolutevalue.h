@@ -5,7 +5,7 @@
 class AbsoluteValue : public AbstractExpression
 {
 public:
-    AbsoluteValue(std::unique_ptr<AbstractExpression> & expr);
+    AbsoluteValue(const std::unique_ptr<AbstractExpression> & expr);
     AbsoluteValue(std::unique_ptr<AbstractExpression> && expr);
     AbsoluteValue(AbsoluteValue & value);
     AbsoluteValue(AbsoluteValue && value);
@@ -29,6 +29,8 @@ public:
     //returns moved expression so it's not valid and must be destroyed
     std::unique_ptr<AbstractExpression> open();
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
+    virtual abs_ex derivative(int var) const override;
+    virtual abs_ex antiderivative(int var) const override;
 private:
     void checkIfNeedToCheckSignToLeadToTheAcceptedForm();
     virtual int getPositionRelativelyZeroIfHasVariables() override;
@@ -37,5 +39,6 @@ private:
     std::unique_ptr<AbstractExpression> expression;
     int expr_position;
 };
-
+abs_ex abs(const abs_ex & expr);
+abs_ex abs(abs_ex && expr);
 #endif // ABSOLUTEVALUE_H

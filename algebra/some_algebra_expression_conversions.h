@@ -8,7 +8,7 @@ class Fractal;
 
 std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, AbstractExpression * argument);
 abs_ex copy(AbstractExpression * arg);
-abs_ex copy(abs_ex & arg);
+abs_ex copy(const abs_ex & arg);
 long long int factorial(long long int N);
 long long int gcd(long long int a, long long int b);
 long long int lcm(long long int a, long long int b);

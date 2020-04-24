@@ -10,7 +10,9 @@
 #include "degree.h"
 #include "polynomial.h"
 #include "exception.h"
-Cotangent::Cotangent(abs_ex & iargument)
+#include "absolutevalue.h"
+#include "logarithm.h"
+Cotangent::Cotangent(const abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
     this->simplify();
@@ -169,7 +171,7 @@ std::set<QString> Cotangent::getSetOfFunctions() const
 
 Number Cotangent::getMaxDegreeOfVariable(int id)
 {
-    return 0;
+    return Number::makeErrorNumber();
 }
 
 void Cotangent::_qDebugOut()
@@ -244,13 +246,31 @@ std::unique_ptr<AbstractExpression> Cotangent::getArgumentsCopy()
     return copy(this->argument);
 }
 
+std::unique_ptr<AbstractExpression> Cotangent::derivative(int var) const
+{
+    return minus_one / takeDegreeOf(sin(this->argument), 2) * this->argument->derivative(var);
+}
+
+std::unique_ptr<AbstractExpression> Cotangent::antiderivative(int var) const
+{
+    auto ln_f = checkIfItsLinearFunction(this->argument, var);
+    if (ln_f.first == nullptr)
+        return nullptr;
+    return one/ln_f.first * ln(abs(sin(this->argument)));
+}
+
+const std::unique_ptr<AbstractExpression> &Cotangent::getArgument() const
+{
+    return this->argument;
+}
+
 bool Cotangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == COTANGENT);
     return AbstractExpression::less(this->argument.get(), (static_cast<Cotangent*>(const_cast<AbstractExpression*>(&right))->argument.get()));
 }
 
-std::unique_ptr<AbstractExpression> cot(std::unique_ptr<AbstractExpression> &expr)
+std::unique_ptr<AbstractExpression> cot(const std::unique_ptr<AbstractExpression> &expr)
 {
     return abs_ex(new Cotangent(expr));
 }

@@ -1,15 +1,16 @@
-#ifndef TANGENT_H
-#define TANGENT_H
+#ifndef ARCTANGENT_H
+#define ARCTANGENT_H
 #include "abstractexpression.h"
-class Fractal;
-class Tangent : public AbstractExpression
+
+class ArcTangent : public AbstractExpression
 {
+    abs_ex argument;
 public:
-    Tangent(const abs_ex & argument);
-    Tangent(abs_ex && argument);
-    Tangent(const Tangent & copy);
-    Tangent(Tangent && mov);
-    virtual ~Tangent();
+    ArcTangent(const abs_ex & arg);
+    ArcTangent(abs_ex && arg);
+    ArcTangent(const ArcTangent & cop);
+    ArcTangent(ArcTangent && mov);
+    virtual ~ArcTangent();
     virtual AlgebraExpression getId() const override;
     virtual void simplify() override;
     virtual bool operator==(AbstractExpression & right) override;
@@ -30,18 +31,13 @@ public:
     abs_ex getArgumentMoved();
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
     abs_ex getArgumentsCopy();
-
-    virtual abs_ex derivative(int var) const override;
+    abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
-
     const abs_ex& getArgument() const;
 private:
-    abs_ex argument;
-    //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может
-    std::unique_ptr<Fractal> pi_member;
-    bool is_pi_member_only = false;
     virtual bool operator<(const AbstractExpression & right) const override;
 };
-abs_ex tan(const abs_ex & expr);
-abs_ex tan(abs_ex && expr);
-#endif // TANGENT_H
+
+abs_ex atan(const abs_ex & arg);
+abs_ex atan(abs_ex && arg);
+#endif // ARCTANGENT_H

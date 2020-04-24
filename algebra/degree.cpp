@@ -12,6 +12,11 @@
 #include "absolutevalue.h"
 #include "logarithm.h"
 #include "constant.h"
+#include "sinus.h"
+#include "cosinus.h"
+#include "logarithm.h"
+#include "tangent.h"
+#include "cotangent.h"
 Degree::Degree(std::unique_ptr<AbstractExpression> && iargument, std::unique_ptr<AbstractExpression> && idegree)
 {
     this->argument = std::move(iargument);
@@ -24,7 +29,7 @@ Degree::Degree(const std::unique_ptr<AbstractExpression> & arg, const std::uniqu
     this->degree = makeAbstractExpression(deg->getId(), deg.get());
     this->simplify();
 }
-Degree::Degree(std::unique_ptr<AbstractExpression> & arg, Number deg)
+Degree::Degree(const std::unique_ptr<AbstractExpression> & arg, Number deg)
 {
     this->argument = makeAbstractExpression(arg->getId(), arg.get());
     this->degree = std::unique_ptr<AbstractExpression>(new Number(deg));
@@ -346,7 +351,7 @@ void Degree::transformPolynomialDegree(bool has_vars)
         }
         if (!has_vars && this->argument->getId() == POLYNOMIAL)
             this->reducePolynomialArgument();
-        long long int num = (this->degree->getId() == NUMBER ? static_cast<Number*>(this->degree.get())->getNumerator() : static_cast<Fractal*>(this->degree.get())->getCoefficient().getNumerator());
+        /*long long int num = (this->degree->getId() == NUMBER ? static_cast<Number*>(this->degree.get())->getNumerator() : static_cast<Fractal*>(this->degree.get())->getCoefficient().getNumerator());
         if (num > 1 && num < 20)
             try {
             this->argument = static_cast<Polynomial*>(this->argument.get())->toDegree(num);
@@ -354,7 +359,7 @@ void Degree::transformPolynomialDegree(bool has_vars)
                 *static_cast<Number*>(this->degree.get()) /= num;
             else
                 static_cast<Fractal*>(this->degree.get())->setCoefficinet(Number(1) / static_cast<Fractal*>(this->degree.get())->getCoefficient().getDenominator());
-        } catch (const Exception &) {}
+        } catch (const Exception &) {}*/
     }
 }
 bool Degree::isDegreeOfNumberThatLessThanOne()
@@ -533,7 +538,7 @@ long long int Degree::getRootValue()
         return static_cast<Fractal*>(this->degree.get())->getCoefficient().getDenominator();
 
 }
-std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> & argument, std::unique_ptr<AbstractExpression> & degree)
+std::unique_ptr<AbstractExpression> takeDegreeOf(const std::unique_ptr<AbstractExpression> & argument, const std::unique_ptr<AbstractExpression> & degree)
 {
     return Degree(argument, degree).downcast();
 }
@@ -541,7 +546,7 @@ std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpress
 {
     return Degree(argument, degree).downcast();
 }
-std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> & argument, Number degree)
+std::unique_ptr<AbstractExpression> takeDegreeOf(const std::unique_ptr<AbstractExpression> & argument, Number degree)
 {
     return Degree(argument, degree).downcast();
 }
@@ -587,7 +592,151 @@ std::unique_ptr<AbstractExpression> Degree::changeSomePartOn(QString part, std::
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> &&argument, std::unique_ptr<AbstractExpression> &degree)
+std::unique_ptr<AbstractExpression> Degree::derivative(int var) const
+{
+    return takeDegreeOf(copy(this->argument), this->degree - one) * (this->argument * this->degree->derivative(var) * ln(this->argument) + this->degree * this->argument->derivative(var));
+}
+
+std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
+{
+    /*if (this->argument->getId() == var && !this->degree->hasVariable(var))
+        return takeDegreeOf(copy(this->argument), this->degree + one) / (this->degree + one);
+    if (!this->argument->hasVariable(var) && this->degree->getId() == var)
+        return takeDegreeOf(this->argument, this->degree) / ln(this->argument);*/
+    auto ln_f = checkIfItsLinearFunction(this->argument, var);
+    if (ln_f.first != nullptr && !this->degree->hasVariable(var))
+    {
+        return one / ln_f.first * takeDegreeOf(copy(this->argument), this->degree + one) / (this->degree + one);
+    }
+    ln_f = checkIfItsLinearFunction(this->degree, var);
+    if (ln_f.first != nullptr && !this->argument->hasVariable(var))
+        return one / ln_f.first * takeDegreeOf(this->argument, this->degree) / ln(this->argument);
+
+    if (this->argument->getId() == SINUS && *this->degree == *two)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * (this->argument / two - one/four * sin(two * this->argument));
+    }
+    if (this->argument->getId() == COSINUS && *this->degree == *two)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * (this->argument / two + one/four*sin(two * this->argument));
+    }
+    if (this->argument->getId() == TANGENT && *this->degree == *two)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * (tan(this->argument) - this->argument);
+    }
+    if (this->argument->getId() == COTANGENT && *this->degree == *two)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * (minus_one * this->argument - cot(this->argument));
+    }
+    if (this->argument->getId() == LOGARITHM && *this->degree == *two)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * (this->argument * (ln(argument)*ln(argument) - two*ln(argument) + two));
+    }
+
+    if (this->argument->getId() == SINUS && *this->degree == *three)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * one / numToAbs(12) * (cos(three*argument) - numToAbs(9)*cos(argument));
+    }
+    if (this->argument->getId() == COSINUS && *this->degree == *three)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * one / numToAbs(12) * (sin(three*argument) + numToAbs(9)*sin(argument));
+    }
+    if (this->argument->getId() == TANGENT && *this->degree == *three)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * (one / (two * takeDegreeOf(cos(argument), 2)) + ln(cos(argument)));
+    }
+    if (this->argument->getId() == COTANGENT && *this->degree == *three)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * (minus_one / (two *takeDegreeOf(sin(argument), 2)) - ln(sin(argument)));
+    }
+    if (this->argument->getId() == LOGARITHM && *this->degree == *three)
+    {
+        ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+        if (ln_f.first == nullptr)
+            return nullptr;
+        return one / ln_f.first * (this->argument * (takeDegreeOf(ln(argument), 3) - three*takeDegreeOf(ln(argument), 2) + numToAbs(6)*ln(argument) - numToAbs(6)));
+    }
+    return nullptr;
+}
+
+std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> &&argument, const std::unique_ptr<AbstractExpression> &degree)
 {
     return takeDegreeOf(std::move(argument), copy(degree));
+}
+
+std::unique_ptr<AbstractExpression> sqrt(const std::unique_ptr<AbstractExpression> &arg)
+{
+    return takeDegreeOf(arg, half);
+}
+
+std::unique_ptr<AbstractExpression> sqrt(std::unique_ptr<AbstractExpression> &&arg)
+{
+    return takeDegreeOf(std::move(arg), half);
+}
+
+std::unique_ptr<AbstractExpression> sqr(const std::unique_ptr<AbstractExpression> &arg)
+{
+    return takeDegreeOf(arg, two);
+}
+
+std::unique_ptr<AbstractExpression> sqr(std::unique_ptr<AbstractExpression> &&arg)
+{
+    return takeDegreeOf(std::move(arg), two);
+}
+
+std::unique_ptr<AbstractExpression> pow(const std::unique_ptr<AbstractExpression> &arg, const std::unique_ptr<AbstractExpression> &deg)
+{
+    return takeDegreeOf(arg, deg);
+}
+
+std::unique_ptr<AbstractExpression> pow(std::unique_ptr<AbstractExpression> &&arg, const std::unique_ptr<AbstractExpression> &deg)
+{
+    return takeDegreeOf(std::move(arg), deg);
+}
+
+std::unique_ptr<AbstractExpression> pow(std::unique_ptr<AbstractExpression> &&arg, std::unique_ptr<AbstractExpression> &&deg)
+{
+    return takeDegreeOf(std::move(arg), std::move(deg));
+}
+
+std::unique_ptr<AbstractExpression> pow(const std::unique_ptr<AbstractExpression> &arg, Number deg)
+{
+    return takeDegreeOf(arg, deg);
+}
+
+std::unique_ptr<AbstractExpression> pow(std::unique_ptr<AbstractExpression> &&arg, Number deg)
+{
+    return takeDegreeOf(std::move(arg), deg);
+}
+
+std::unique_ptr<AbstractExpression> pow(Number arg, Number deg)
+{
+    return takeDegreeOf(arg, deg);
 }

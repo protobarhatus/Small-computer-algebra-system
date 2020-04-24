@@ -6,6 +6,7 @@
 #include <algebra/number.h>
 #include <tuple>
 #include "trigonometrical_conversions.h"
+#include <array>
 class Fractal;
 
 class Polynomial : public AbstractExpression
@@ -74,6 +75,12 @@ public:
     std::unique_ptr<Fractal> toCommonDenominator();
     bool isFractionalCoefficientsAllowed();
     void setFractionalCoefficientsAllowed(bool allow);
+    std::pair<abs_ex, abs_ex> checkIfItIsLinearFunction(int var) const;
+
+    virtual abs_ex derivative(int var) const override;
+    virtual abs_ex antiderivative(int var) const override;
+    //проверяет, является ли полином квадратичной функцией и возвращает коэффициенты a, b, c в выражении вида ax^2+bx+c
+    std::array<abs_ex, 3> checkQuadraticFunction(int var) const;
 private:
     bool casted_trigonometry;
     void castTrigonometry();

@@ -1,6 +1,8 @@
 #include "constant.h"
 #include "number.h"
 #include <QDebug>
+#include "some_algebra_expression_conversions.h"
+#include "variablesdistributor.h"
 bool eq(double a, double b)
 {
     return abs(a - b) <= 1e-10;
@@ -95,6 +97,17 @@ std::unique_ptr<AbstractExpression> Constant::changeSomePartOn(QString part, std
 {
     return nullptr;
 }
+
+std::unique_ptr<AbstractExpression> Constant::derivative(int var) const
+{
+
+    return copy(zero);
+}
+
+std::unique_ptr<AbstractExpression> Constant::antiderivative(int var) const
+{
+    return abs_ex(new Constant(this->value, this->name)) * abs_ex(new Variable(getVariable(var)));
+}
 bool Constant::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == CONSTANT);
@@ -108,3 +121,4 @@ abs_ex getEuler()
 {
     return abs_ex(new Constant(2.71828182845904523536, "e"));
 }
+

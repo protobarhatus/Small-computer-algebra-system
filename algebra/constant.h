@@ -24,11 +24,15 @@ public:
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> &choosing_value_rule) override;
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
+
+    virtual abs_ex derivative(int var) const override;
+    virtual abs_ex antiderivative(int var) const override;
 private:
     virtual bool operator<(const AbstractExpression & right) const override;
     double value;
     QString name;
 };
+
 abs_ex getPi();
 abs_ex getEuler();
 #endif // CONSTANT_H

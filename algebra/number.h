@@ -50,7 +50,8 @@ public:
     bool operator==(const Number & num);
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
     bool less(const Number & b) const;
-
+    virtual abs_ex derivative(int var) const override;
+    virtual abs_ex antiderivative(int var) const override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     long long int numerator;
@@ -75,4 +76,6 @@ extern abs_ex two;
 extern abs_ex half;
 extern abs_ex zero;
 extern abs_ex minus_one;
+extern abs_ex three;
+extern abs_ex four;
 #endif // NUMBER_H

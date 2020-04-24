@@ -7,6 +7,7 @@
 #include "tangent.h"
 #include "cotangent.h"
 #include "logarithm.h"
+#include "differential.h"
 AlgExpr::AlgExpr()
 {
 
@@ -371,4 +372,21 @@ AlgExpr log(AlgExpr &&arg, AlgExpr &&base)
 AlgExpr e()
 {
     return euler();
+}
+
+AlgExpr derivative(const AlgExpr &arg, AlgExpr arg_variable)
+{
+    if (arg_variable.expression->getId() <= 0)
+        throw (QString)"Arg_variable required to be a variable";
+    return AlgExpr(arg.expression->derivative(arg_variable.expression->getId()));
+}
+
+AlgExpr D(const AlgExpr &arg)
+{
+    return AlgExpr(abs_ex(new Differential(arg.expression)));
+}
+
+AlgExpr D(AlgExpr &&arg)
+{
+    return AlgExpr(abs_ex(new Differential(std::move(arg.expression))));
 }

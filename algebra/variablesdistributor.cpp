@@ -92,3 +92,9 @@ Variable systemVar()
     ++Variable::system_id_counter;
     return Variable(Variable::system_id_counter - 1, makeVariablesName(Variable::system_id_counter - 1));
 }
+
+Variable integratingConstant()
+{
+    ++Variable::integrating_constant_id_counter;
+    return Variable(Variable::integrating_constant_id_counter - 1, "C");
+}

@@ -19,12 +19,15 @@ public:
     Fractal(const Fractal & expr);
     Fractal(Fractal && expr);
     Fractal(AbstractExpression * num, AbstractExpression * denum, Number coe = Number(1));
-    Fractal(fractal_argument * num, fractal_argument * denum, Number coe = Number(1));
+    Fractal(const fractal_argument * num, const fractal_argument * denum, Number coe = Number(1));
+    Fractal(const fractal_argument & num, const fractal_argument & denum, Number coe = Number(1));
     Fractal(fractal_argument && num, fractal_argument && denum, Number coe = Number(1));
+    Fractal(fractal_argument && num, Number coe = Number(1));
     Fractal(abs_ex && num, abs_ex && denum, Number coe = Number(1));
     Fractal(Number coefficient);
     Fractal(AbstractExpression * num, Number coe = Number(1));
     Fractal(fractal_argument * num, Number coe = 1);
+    Fractal(const fractal_argument & num, Number coe = 1);
     Fractal(std::unique_ptr<AbstractExpression> && num, Number coe = 1);
     virtual void simplify() override;
     virtual AlgebraExpression getId() const override;
@@ -42,18 +45,18 @@ public:
     std::unique_ptr<Fractal> operator+(const std::unique_ptr<Fractal> & second_summary);
     std::unique_ptr<Fractal> operator-(const std::unique_ptr<Fractal> & subtrahend);
     bool isDenominatorEqualToOne();
-    bool isZero();
+    bool isZero() const;
     static std::unique_ptr<Fractal> makeZeroFractal();
     bool isPolynomial();
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
     virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
-    std::unique_ptr<Fractal> getFractalWithoutVariable(int id);
+    std::unique_ptr<Fractal> getFractalWithoutVariable(int id) const;
     std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & right);
     std::unique_ptr<Fractal> operator*(const Fractal & right);
     std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> & right);
-    std::unique_ptr<Fractal> operator/(const Fractal & right);
+    std::unique_ptr<Fractal> operator/(const Fractal & right) const;
     //can do if has polynom in numerator and empty denominator and coefficient with denominator = 1. transform expr like c(a+b)(d+e) into cad+cbd+cae+cbe
     bool canTurnIntoPolynomWithOpeningParentheses();
     bool canTurnIntoPolynomWithOpeningParentheses(bool is_fractional_coefficient_allowed);
@@ -78,6 +81,12 @@ public:
     //аргумент включается сюда только если он имеет числовую целую степень
     std::vector<std::pair<abs_ex, Number>> getTrigonometryMultipliersArgumentsCopyAndItsDegrees();
     void convertTrigonometricalMultipliersToDifferentArgument(const std::map<QString, TrigonometricalFunctionsArgumentsCastType> & instructions);
+
+    virtual abs_ex derivative(int var) const override;
+    virtual abs_ex antiderivative(int var) const override;
+
+    std::pair<abs_ex, abs_ex> checkIfItIsLinearFunction(int var) const;
+    bool isOne() const;
 
 private:
     bool casted_trigonometry;
@@ -110,7 +119,7 @@ private:
 
     Number coefficient;
 };
-abs_ex toAbsEx(std::unique_ptr<Fractal> & expr);
+abs_ex toAbsEx(const std::unique_ptr<Fractal> & expr);
 abs_ex toAbsEx(std::unique_ptr<Fractal> && expr);
 std::unique_ptr<Fractal> toFrac(abs_ex & expr);
 std::unique_ptr<Fractal> toFrac(abs_ex && expr);

@@ -67,10 +67,12 @@ SOURCES += \
     algebra/absolutevalue.cpp \
     algebra/abstractexpression.cpp \
     algebra/algexpr.cpp \
+    algebra/arctangent.cpp \
     algebra/constant.cpp \
     algebra/cosinus.cpp \
     algebra/cotangent.cpp \
     algebra/degree.cpp \
+    algebra/differential.cpp \
     algebra/exception.cpp \
     algebra/factorization.cpp \
     algebra/fractal.cpp \
@@ -145,10 +147,12 @@ HEADERS += \
     algebra/absolutevalue.h \
     algebra/abstractexpression.h \
     algebra/algexpr.h \
+    algebra/arctangent.h \
     algebra/constant.h \
     algebra/cosinus.h \
     algebra/cotangent.h \
     algebra/degree.h \
+    algebra/differential.h \
     algebra/exception.h \
     algebra/factorization.h \
     algebra/fractal.h \

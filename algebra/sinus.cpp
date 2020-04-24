@@ -9,7 +9,7 @@
 #include "degree.h"
 #include "polynomial.h"
 #include "cosinus.h"
-Sinus::Sinus(abs_ex & iargument)
+Sinus::Sinus(const abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
     this->simplify();
@@ -163,7 +163,7 @@ std::set<QString> Sinus::getSetOfFunctions() const
 Number Sinus::getMaxDegreeOfVariable(int id)
 {
     //return this->argument->getMaxDegreeOfVariable(id);
-    return 0;
+    return Number::makeErrorNumber();
 }
 void Sinus::_qDebugOut()
 {
@@ -247,7 +247,25 @@ std::unique_ptr<AbstractExpression> Sinus::getArgumentsCopy()
     return copy(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> sin(std::unique_ptr<AbstractExpression> &expr)
+std::unique_ptr<AbstractExpression> Sinus::derivative(int var) const
+{
+    return cos(this->argument) * this->argument->derivative(var);
+}
+
+std::unique_ptr<AbstractExpression> Sinus::antiderivative(int var) const
+{
+    auto ln_f = checkIfItsLinearFunction(this->argument, var);
+    if (ln_f.first == nullptr)
+        return nullptr;
+    return minus_one / ln_f.first * cos(this->argument);
+}
+
+const std::unique_ptr<AbstractExpression> &Sinus::getArgument() const
+{
+    return this->argument;
+}
+
+std::unique_ptr<AbstractExpression> sin(const std::unique_ptr<AbstractExpression> &expr)
 {
     return abs_ex(new Sinus(expr))->downcast();
 }

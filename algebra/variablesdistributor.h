@@ -17,15 +17,18 @@ public:
 private:
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
     const int first_system_num = 1000000000;
+    const int first_integrate_constant = 1500000000;
     VariablesDistributor();
     VariablesDistributor(const VariablesDistributor &) = delete;
     VariablesDistributor& operator=(const VariablesDistributor &) = delete;
     std::vector<VariablesDefinition> variables;
 
 };
+
 void deleteVariables();
 Variable getVariable(int id);
 Variable systemVar(int num);
 Variable systemVar();
+Variable integratingConstant();
 QString makeVariablesName(int id);
 #endif // VARIABLESDISTRIBUTOR_H

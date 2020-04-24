@@ -17,6 +17,8 @@
 #include "cotangent.h"
 #include "variablesdistributor.h"
 #include "logarithm.h"
+#include "differential.h"
+#include "arctangent.h"
 std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, AbstractExpression * argument)
 {
     assert(type == argument->getId() || (type > 0 && argument->getId() > 0));
@@ -46,6 +48,10 @@ std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression typ
         return std::unique_ptr<AbstractExpression>(new Cotangent(*static_cast<Cotangent*>(argument)));
     case LOGARITHM:
         return std::unique_ptr<AbstractExpression>(new Logarithm(*static_cast<Logarithm*>(argument)));
+    case DIFFERENTIAL:
+        return std::unique_ptr<AbstractExpression>(new Differential(*static_cast<Differential*>(argument)));
+    case ARCTANGENT:
+        return std::unique_ptr<AbstractExpression>(new ArcTangent(*static_cast<ArcTangent*>(argument)));
     default:
         assert(false);
 
@@ -55,7 +61,7 @@ abs_ex copy(AbstractExpression * arg)
 {
     return makeAbstractExpression(arg->getId(), arg);
 }
-abs_ex copy(abs_ex & arg)
+abs_ex copy(const abs_ex & arg)
 {
     return makeAbstractExpression(arg->getId(), arg.get());
 }

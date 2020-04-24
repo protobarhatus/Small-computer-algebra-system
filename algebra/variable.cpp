@@ -3,8 +3,11 @@
 #include "variablesnamedistributor.h"
 #include "variablesdistributor.h"
 #include "cmath"
+#include "some_algebra_expression_conversions.h"
+#include "degree.h"
 int Variable::id_counter = 0;
 int Variable::system_id_counter;
+int Variable::integrating_constant_id_counter = 0;
 Variable::Variable()
 {
     assert(false);
@@ -137,4 +140,17 @@ double Variable::getApproximateValue(const std::function<double (VariablesDefini
 std::unique_ptr<AbstractExpression> Variable::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
     return nullptr;
+}
+
+std::unique_ptr<AbstractExpression> Variable::derivative(int var) const
+{
+    if (var == this->id)
+        return copy(one);
+    return copy(zero);
+}
+
+std::unique_ptr<AbstractExpression> Variable::antiderivative(int var) const
+{
+    assert(this->id == var);
+    return takeDegreeOf(abs_ex(new Variable(getVariable(var))), 2) / two;
 }

@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QString>
 #include <vector>
+#include <array>
 #define SIM_IF_NEED if (this->simplified) return; else this->simplified = true;
 #define NONCONST this->simplified = false;
 #define abs_ex std::unique_ptr<AbstractExpression>
@@ -25,6 +26,8 @@ enum AlgebraExpression
     COTANGENT = -9,
     CONSTANT = -10,
     LOGARITHM = -11,
+    DIFFERENTIAL = -12,
+    ARCTANGENT = -13,
     NUMBER = 0
 };
 
@@ -81,8 +84,15 @@ public:
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) = 0;
     //1 is bigger than 0 (or equally), -1 is less, 0 is undefined
     int getPositionRelativelyZero();
-
+    bool hasVariable(int var);
     virtual abs_ex changeSomePartOn(QString function, abs_ex & on_what) = 0;
+
+    virtual abs_ex derivative(int var) const = 0;
+    //поиск первообразной и интеграла тут отличается. Интеграл требует наличие множителя-дифференциала. первообразная проверяет только по таблице,
+    //интеграл разделяет сумму на сумму интегралов, запускает поиск первообразной и, если это не табличный случай, переходит к другим методам.
+    //если первообразную найти не удается, возвращает nullptr
+    //поиск первообразной не добавляет константу интегрирования, это делает интеграл
+    virtual abs_ex antiderivative(int var) const = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -103,9 +113,22 @@ abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr);
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex & expr);
 bool isDegreeOfTrigonometricalFunction(abs_ex & expr);
 abs_ex absEx(int num);
+//проверяет, является ли func линейной функцией относительно переменной var
+//если да, то возвращает коэффициенты a и b в выражении ax+b. Если нет, то возвращает пару nullptr, nullptr. b может быть нулем
+std::pair<abs_ex, abs_ex> checkIfItsLinearFunction(const abs_ex & func, int var);
+std::pair<abs_ex, abs_ex> checkIfItsLinearFunction(const AbstractExpression * func, int var);
+std::array<abs_ex, 3> checkIfItsQuadraticFunction(const AbstractExpression * func, int var);
+std::array<abs_ex, 3> checkIfItsQuadraticFunction(const abs_ex & func, int var);
+bool isZero(const abs_ex & expr);
+abs_ex numToAbs(int num);
+//тригонометрические и логарифмическая функции
+std::pair<abs_ex, abs_ex> checkIfItsFunctionOfLinearArgument(const abs_ex & func, int var);
+std::pair<abs_ex, abs_ex> checkIfItsFunctionOfLinearArgument(const AbstractExpression * func, int var);
 std::unique_ptr<AbstractExpression> operator*(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
 std::unique_ptr<AbstractExpression> operator/(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
 
 std::unique_ptr<AbstractExpression> operator+(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
 std::unique_ptr<AbstractExpression> operator-(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
+abs_ex operator-(const abs_ex & arg);
+abs_ex operator-(abs_ex && arg);
 #endif // ABSTRACTEXPRESSION_H

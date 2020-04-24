@@ -29,8 +29,11 @@ public:
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
+    virtual abs_ex derivative(int var) const override;
+    virtual abs_ex antiderivative(int var) const override;
 private:
     friend Variable getVariable(int id);
+    friend Variable integratingConstant();
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     friend void deleteVariables();
     Variable(int id, VariablesDefinition * def);
@@ -39,6 +42,7 @@ private:
     int id;
     static int id_counter;
     static int system_id_counter;
+    static int integrating_constant_id_counter;
     QString name;
     VariablesDefinition * definition;
     friend VariablesDistributor;

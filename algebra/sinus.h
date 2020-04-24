@@ -6,7 +6,7 @@ class Fractal;
 class Sinus : public AbstractExpression
 {
 public:
-    Sinus(abs_ex & argument);
+    Sinus(const abs_ex & argument);
     Sinus(abs_ex && argument);
     Sinus(const Sinus & copy);
     Sinus(Sinus && mov);
@@ -31,6 +31,10 @@ public:
     abs_ex getArgumentMoved();
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
     abs_ex getArgumentsCopy();
+    virtual abs_ex derivative(int var) const override;
+    virtual abs_ex antiderivative(int var) const override;
+
+    const abs_ex& getArgument() const;
 private:
     abs_ex argument;
     //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может
@@ -38,6 +42,6 @@ private:
     bool is_pi_member_only = false;
     virtual bool operator<(const AbstractExpression & right) const override;
 };
-abs_ex sin(abs_ex & expr);
+abs_ex sin(const abs_ex & expr);
 abs_ex sin(abs_ex && expr);
 #endif // SINUS_H

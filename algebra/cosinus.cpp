@@ -9,7 +9,8 @@
 #include "degree.h"
 #include "polynomial.h"
 #include "sinus.h"
-Cosinus::Cosinus(abs_ex & iargument)
+#include "variablesdistributor.h"
+Cosinus::Cosinus(const abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
     this->simplify();
@@ -167,7 +168,7 @@ std::set<QString> Cosinus::getSetOfFunctions() const
 Number Cosinus::getMaxDegreeOfVariable(int id)
 {
     //return this->argument->getMaxDegreeOfVariable(id);
-    return 0;
+    return Number::makeErrorNumber();
 }
 void Cosinus::_qDebugOut()
 {
@@ -251,7 +252,26 @@ std::unique_ptr<AbstractExpression> Cosinus::getArgumentsCopy()
     return copy(argument);
 }
 
-std::unique_ptr<AbstractExpression> cos(std::unique_ptr<AbstractExpression> &expr)
+std::unique_ptr<AbstractExpression> Cosinus::derivative(int var) const
+{
+    return minus_one * sin(this->argument) * this->argument->derivative(var);
+}
+
+std::unique_ptr<AbstractExpression> Cosinus::antiderivative(int var) const
+{
+   //да, оно тут раскрывается по сумме и линейного
+    auto lin_f = checkIfItsLinearFunction(this, var);
+    if (lin_f.first == nullptr)
+        return nullptr;
+    return one/lin_f.first * sin(this->argument);
+}
+
+const std::unique_ptr<AbstractExpression> &Cosinus::getArgument() const
+{
+    return this->argument;
+}
+
+std::unique_ptr<AbstractExpression> cos(const std::unique_ptr<AbstractExpression> &expr)
 {
     return abs_ex(new Cosinus(expr))->downcast();
 }

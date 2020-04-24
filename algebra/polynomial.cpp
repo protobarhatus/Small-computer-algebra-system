@@ -691,6 +691,8 @@ QString Polynomial::makeStringOfExpression() const
 std::unique_ptr<AbstractExpression> Polynomial::reduceCommonPart()
 {
     NONCONST
+    if (this->monomials.size() < 2)
+            return copy(one);
     assert(this->monomials.size() >= 2);
     std::unique_ptr<AbstractExpression> common_part = this->monomials.begin()->get()->findCommonPart((++this->monomials.begin())->get());
     auto it = ++++this->monomials.begin();
@@ -703,6 +705,7 @@ std::unique_ptr<AbstractExpression> Polynomial::reduceCommonPart()
     {
         it = *it / *static_cast<Fractal*>(common_part.get());
     }
+    this->simplify();
     return common_part;
 }
 bool Polynomial::isIrrationalSum()
@@ -1714,7 +1717,7 @@ int Polynomial::getPositionRelativelyZeroIfHasVariables()
 
     //теперь проверка на то, является ли это параболой или прямой и пересекает ли она 0 в области определения переменной, если да
     //РЕШЕНИЕ КВАДРАТНОГО УРАВНЕНИЯ ЗДЕСЬ ПЕРЕНЕСТИ В ОТДЕЛЬНЫЙ МОДУЛЬ ДЛЯ УРАВНЕНИЯ, НЕ ДУБЛИРОВАТЬ КОД. ЭТОТ ОГРОМНЫЙ БЛОК ЗДЕСЬ ВРЕМЕННО
-    if (vars.size() == 1 && this->getMaxDegreeOfVariable(*vars.begin()).compareWith(2) == 0)
+    if (vars.size() == 1 &&  this->getMaxDegreeOfVariable(*vars.begin()).isCorrect() && this->getMaxDegreeOfVariable(*vars.begin()).compareWith(2) == 0)
     {
         int var_id = *vars.begin();
         bool succes = true;
@@ -1741,6 +1744,7 @@ int Polynomial::getPositionRelativelyZeroIfHasVariables()
                 break;
             }
         }
+        //как a может быть нулем? лол я сам не помню что за хрень. очевидно, надо будет переделать
         bool is_a_zero = false;
         if (a == nullptr)
         {
@@ -1930,6 +1934,74 @@ bool Polynomial::isFractionalCoefficientsAllowed()
 void Polynomial::setFractionalCoefficientsAllowed(bool allow)
 {
     this->is_fractional_coefficients_allowed = allow;
+}
+
+std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > Polynomial::checkIfItIsLinearFunction(int var) const
+{
+    abs_ex a = copy(zero), b = copy(zero);
+    for (auto &it : monomials)
+    {
+        if (it->hasVariable(var))
+        {
+            auto addict = it->checkIfItIsLinearFunction(var);
+            if (addict.first == nullptr)
+                return addict;
+            a = a + addict.first;
+        }
+        else
+            b = b + toAbsEx(it);
+
+    }
+    return {std::move(a), std::move(b)};
+
+}
+
+std::unique_ptr<AbstractExpression> Polynomial::derivative(int var) const
+{
+    abs_ex der = copy(zero);
+    for (auto &it : this->monomials)
+        der = der + it->derivative(var);
+    return der;
+}
+
+std::unique_ptr<AbstractExpression> Polynomial::antiderivative(int var) const
+{
+    //сумма раскладывается при раскрытии интеграла, сюда программа заходить не должна
+    assert(false);
+    return nullptr;
+}
+
+std::array<std::unique_ptr<AbstractExpression>, 3> Polynomial::checkQuadraticFunction(int var_id) const
+{
+    std::unique_ptr<AbstractExpression> a, b, c;
+    a = std::unique_ptr<AbstractExpression>(new Number(0));
+    b = std::unique_ptr<AbstractExpression>(new Number(0));
+    c = std::unique_ptr<AbstractExpression>(new Number(0));
+    for (auto &it : this->monomials)
+    {
+        //может возникнуть подозрение, что узнавать так о степени переменной некоректно, ведь это запрос на максимальную степень. Однако в дроби может быть только одно вхождение
+        //переменной
+        Number degr = it->getMaxDegreeOfVariable(var_id);
+        if (degr.compareWith(2) == 0)
+            a = a + it->getFractalWithoutVariable(var_id);
+        else if (degr.isOne())
+            b = b + it->getFractalWithoutVariable(var_id);
+        else if (degr.isZero())
+            c = c + makeAbstractExpression(FRACTAL, it.get());
+        else
+        {
+            return {nullptr, nullptr, nullptr};
+        }
+    }
+    if (a == nullptr)
+    {
+        return {nullptr, nullptr, nullptr};
+    }
+    if (b == nullptr)
+        b = std::unique_ptr<AbstractExpression>(new Number(0));
+    if (c == nullptr)
+        c = std::unique_ptr<AbstractExpression>(new Number(0));
+    return {std::move(a), std::move(b), std::move(c)};
 }
 
 

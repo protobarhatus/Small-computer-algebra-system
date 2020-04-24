@@ -45,9 +45,10 @@ int main(int argc, char *argv[])
 
 
    // c = tan(x/2)*tan(x/2) + 2*tan(x) + tan(2*x);
+   // c = sqrt(2*x*x - 2*sqrt(2)*x + 1);
+   c = x*D(x);
 
-
-
+    //c = ;
    // c.out();
 
     qDebug();
@@ -68,5 +69,3 @@ int main(int argc, char *argv[])
 
     return sdsd.exec();
 }
-
-

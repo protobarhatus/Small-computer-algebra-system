@@ -9,6 +9,13 @@
 #include <cmath>
 #include "cosinus.h"
 #include "sinus.h"
+#include "abstractexpression.h"
+#include "logarithm.h"
+#include "absolutevalue.h"
+#include "tangent.h"
+#include "cotangent.h"
+#include "variablesdistributor.h"
+#include "arctangent.h"
 Fractal::Fractal() : coefficient(1)
 {
 
@@ -23,13 +30,26 @@ Fractal::Fractal(AbstractExpression * num, AbstractExpression * denum, Number co
     this->pushBackToDenominator(makeAbstractExpression(denum->getId(), denum));
     this->simplify();
 }
-Fractal::Fractal(fractal_argument * num, fractal_argument * denum, Number coe) : coefficient(coe)
+Fractal::Fractal(const fractal_argument * num, const fractal_argument * denum, Number coe) : coefficient(coe)
 {
     for (auto &it : *num)
     {
         this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
     }
     for (auto &it : *denum)
+    {
+        this->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+    }
+    this->simplify();
+}
+
+Fractal::Fractal(const fractal_argument &num, const fractal_argument &denum, Number coe) : coefficient(coe)
+{
+    for (auto &it : num)
+    {
+        this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+    }
+    for (auto &it : denum)
     {
         this->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
     }
@@ -44,6 +64,13 @@ Fractal::Fractal(fractal_argument && num, fractal_argument && denum, Number coe)
     this->simplify();
 }
 
+Fractal::Fractal(fractal_argument &&num, Number coe) : coefficient(coe)
+{
+    for (auto &it : num)
+        this->pushBackToNumerator(std::move(it));
+    this->simplify();
+}
+
 Fractal::Fractal(abs_ex &&num, abs_ex &&denum, Number coe)
 {
     this->pushBackToNumerator(std::move(num));
@@ -54,6 +81,15 @@ Fractal::Fractal(abs_ex &&num, abs_ex &&denum, Number coe)
 Fractal::Fractal(fractal_argument * num, Number coe) : coefficient(coe)
 {
     for (auto &it : *num)
+    {
+        this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+    }
+    this->simplify();
+}
+
+Fractal::Fractal(const fractal_argument &num, Number coe) : coefficient(coe)
+{
+    for (auto &it : num)
     {
         this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
     }
@@ -192,7 +228,7 @@ std::unique_ptr<AbstractExpression> Fractal::downcastTo(AlgebraExpression expr)
     }
     return makeAbstractExpression(expr, this->numerator.begin()->get());
 }
-bool Fractal::isZero()
+bool Fractal::isZero() const
 {
     return this->coefficient.getNumerator() == 0;
 }
@@ -332,6 +368,10 @@ void Fractal::simplify()
     this->reduceSameMembers();
     this->reducePolynomials();
     this->takeCommonPartOfPolynomials();
+    for (auto &it: this->numerator)
+        it = it->downcast();
+    for (auto &it: this->denominator)
+        it = it->downcast();
     this->reduceSameMembers();
     this->pullNumbersIntoCoefficient();
     this->setSameMembersIntoDegree();
@@ -655,7 +695,7 @@ Number Fractal::getMaxDegreeOfVariable(int id)
     return 0;
 }
 
-std::unique_ptr<Fractal> Fractal::getFractalWithoutVariable(int id)
+std::unique_ptr<Fractal> Fractal::getFractalWithoutVariable(int id) const
 {
     std::unique_ptr<Fractal> result = std::make_unique<Fractal>(this);
     for (auto it = result->numerator.begin(); it != result->numerator.end();)
@@ -738,7 +778,7 @@ std::unique_ptr<Fractal> Fractal::operator/(const std::unique_ptr<Fractal> & rig
     result->simplify();
     return result;
 }
-std::unique_ptr<Fractal> Fractal::operator/(const Fractal & right)
+std::unique_ptr<Fractal> Fractal::operator/(const Fractal & right) const
 {
     std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&this->numerator, &this->denominator));
     result->setCoefficinet( this->coefficient / right.coefficient);
@@ -1403,6 +1443,457 @@ void Fractal::convertTrigonometricalMultipliersToDifferentArgument(const std::ma
     }
 }
 
+std::unique_ptr<AbstractExpression> Fractal::derivative(int var) const
+{
+    if (this->coefficient != 1)
+    {
+        abs_ex fr(new Fractal(*this));
+        abs_ex coe(new Number(this->coefficient));
+        fr = fr / coe;
+        return coe * fr->derivative(var);
+    }
+    if (!this->denominator.empty())
+    {
+        abs_ex f(new Fractal(this->numerator, Number(this->coefficient.getNumerator())));
+        f = f->downcast();
+        abs_ex g(new Fractal(this->denominator, Number(this->coefficient.getDenominator())));
+        g = g->downcast();
+        return (f->derivative(var) * g - f * g->derivative(var)) / takeDegreeOf(g, 2);
+
+    }
+    if (this->numerator.size() == 1)
+        return (*this->numerator.begin())->derivative(var);
+    if (this->numerator.size() == 0)
+        return copy(zero);
+    assert(this->numerator.size() > 1);
+    abs_ex f = copy(*this->numerator.begin());
+    fractal_argument other_mults;
+    for (auto it = std::next(this->numerator.begin()); it != this->numerator.end(); ++it)
+    {
+        other_mults.push_back(copy(*it));
+    }
+    abs_ex g (new Fractal(std::move(other_mults)));
+    g = g->downcast();
+    return f->derivative(var) * g + g->derivative(var) * f;
+}
+//да, это будет очередная большая функция. Здесь нет сложного поведения, только проверка на различные табличные интегралы
+//рассчитываем на то, что сработало takeCommonPartOfPolynomial()
+//еще рассчитываем на то, что все полиномы которые можно разложить - разложены
+std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
+{
+    auto fr_without_var = this->getFractalWithoutVariable(var);
+    if (!fr_without_var->isOne())
+        return toAbsEx(fr_without_var) * (*this / *fr_without_var)->antiderivative(var);
+    abs_ex x(new Variable(getVariable(var)));
+    if (numerator.size() == 0 && denominator.size() == 1)
+    {
+        // 1/(ax+b)
+        auto ln_f = checkIfItsLinearFunction(*denominator.begin(), var);
+        if (ln_f.first != nullptr)
+            return one / ln_f.first * ln(abs(*denominator.begin()));
+        if ((*denominator.begin())->getId() == SINUS)
+        { // 1/sin(x)
+            ln_f = checkIfItsFunctionOfLinearArgument(*denominator.begin(), var);
+            if (ln_f.first == nullptr)
+                return nullptr;
+            auto arg = static_cast<Sinus*>(denominator.begin()->get())->getArgumentsCopy();
+            return one / ln_f.first * minus_one * ln(abs(tan(arg/two)));
+        }
+        if ((*denominator.begin())->getId() == COSINUS)
+        { // 1/cos(x)
+            ln_f = checkIfItsFunctionOfLinearArgument(*denominator.begin(), var);
+            if (ln_f.first == nullptr)
+                return nullptr;
+            auto arg = static_cast<Cosinus*>(denominator.begin()->get())->getArgumentsCopy();
+            return one / ln_f.first * ln(abs(cot(arg/two)));
+        }
+        if ((*denominator.begin())->getId() == TANGENT)
+        { // 1/tan(x)
+            ln_f = checkIfItsFunctionOfLinearArgument(*denominator.begin(), var);
+            if (ln_f.first == nullptr)
+                return nullptr;
+            auto arg = static_cast<Tangent*>(denominator.begin()->get())->getArgumentsCopy();
+            return one / ln_f.first * ln(sin(arg));
+        }
+        if ((*denominator.begin())->getId() == COTANGENT)
+        { // 1/ctg(x)
+            ln_f = checkIfItsFunctionOfLinearArgument(*denominator.begin(), var);
+            if (ln_f.first == nullptr)
+                return nullptr;
+            auto arg = static_cast<Cotangent*>(denominator.begin()->get())->getArgumentsCopy();
+            return minus_one / ln_f.first * ln(cos(arg));
+        }
+        if ((*denominator.begin())->getId() == DEGREE)
+        {
+            auto deg = Degree::getDegreeOfExpression(denominator.begin()->get());
+            auto arg = Degree::getArgumentOfDegree(denominator.begin()->get());
+            if (!arg->hasVariable(var))
+            { // 1/a^x
+                ln_f = checkIfItsLinearFunction(deg, var);
+                if (ln_f.first == nullptr)
+                    return nullptr;
+                return minus_one/ln_f.first * takeDegreeOf(copy(arg), (*minus_one) * (*deg)) / ln(arg);
+            }
+            if (deg->hasVariable(var))
+                return nullptr;
+            if (*deg == *two)
+            {
+                if (arg->getId() == SINUS)
+                {// 1/sin(x)^2
+                    ln_f = checkIfItsFunctionOfLinearArgument(arg, var);
+                    if (ln_f.first == nullptr)
+                        return nullptr;
+                    return minus_one / ln_f.first * cot(copy(static_cast<Sinus*>(arg)->getArgumentsCopy()));
+                }
+                if (arg->getId() == COSINUS)
+                {//  1/cos(x)^2
+                    ln_f = checkIfItsFunctionOfLinearArgument(arg, var);
+                    if (ln_f.first == nullptr)
+                        return nullptr;
+                    return one/ln_f.first * tan(copy(static_cast<Cosinus*>(arg)->getArgumentsCopy()));
+                }
+                if (arg->getId() == TANGENT)
+                {// 1/tan(x)^2
+                    ln_f = checkIfItsFunctionOfLinearArgument(arg, var);
+                    if (ln_f.first == nullptr)
+                        return nullptr;
+                    auto x = static_cast<Tangent*>(arg)->getArgumentsCopy();
+                    return one/ln_f.first * minus_one * (x + cot(x));
+                }
+                if (arg->getId() == COTANGENT)
+                {// 1/cot(x)^2
+                    ln_f = checkIfItsFunctionOfLinearArgument(arg, var);
+                    if (ln_f.first == nullptr)
+                        return nullptr;
+                    auto x = static_cast<Tangent*>(arg)->getArgumentsCopy();
+                    return one/ln_f.first * (tan(x) - x);
+                }
+                auto qc_f = ::checkIfItsQuadraticFunction(arg, var);
+                if (qc_f[0] != nullptr)
+                {
+                    //здесь мы считаем, что если дискриминант положителен, то оно уже разложено на множители(вообще мы и вдругих местах могли бы так считать), но там код
+                    //я уже написал(
+                    auto D = sqr(qc_f[1]) - four * qc_f[0]*qc_f[2];
+                    auto d = arg->derivative(var);
+                    return -(d / copy(arg) + four*qc_f[0] * atan(d/sqrt(-D))/sqrt(-D)) / D;
+                }
+
+
+            }
+            if (*deg == *three)
+            {
+                //здесь мы также считаем, что если дискриминант положителен, то оно уже разложено на множители(вообще мы и вдругих местах могли бы так считать), но там код
+                //я уже написал(. Ну и в следющих кодах я также из этого предположения исходить буду
+                auto qc_f = ::checkIfItsQuadraticFunction(arg, var);
+                if (qc_f[0] != nullptr)
+                {
+                    auto D = sqr(qc_f[1]) - four * qc_f[0]*qc_f[2];
+                    abs_ex &a = qc_f[0];
+                    abs_ex &b = qc_f[1];
+                    abs_ex &c = qc_f[2];
+                    return (-(((b + two* a* x)* (sqr(b) - numToAbs(6)* a* b* x - two* a* (numToAbs(5)* c + three* a *sqr(x))))/sqr(c +
+                                                                                   x* (b + a *x))) + (
+                                                                                numToAbs(24)* sqr(a)* atan((b + two* a* x)/sqrt(-D)))/sqrt(-D))/(two* sqr(D));
+                }
+
+            }
+            ln_f = checkIfItsLinearFunction(arg, var);
+            if (ln_f.first != nullptr)
+            { // 1/x^n
+                return one/ln_f.first * takeDegreeOf(copy(arg), one - copy(deg)) / (one - copy(deg));
+            }
+            if (deg->getId() != NUMBER)
+                return nullptr;
+
+            Number num_d = *static_cast<Number*>(deg.get());
+            if (num_d == Number(1, 2))
+            {
+                auto qc_f = checkIfItsQuadraticFunction(arg, var);
+                abs_ex x (new Variable(getVariable(var)));
+                return one / takeDegreeOf(qc_f[0], half) * ln(abs(two*qc_f[0]*x + qc_f[1] + two*takeDegreeOf(qc_f[0]*copy(arg), half)));
+            }
+
+        }
+        if ((*denominator.begin())->getId() == POLYNOMIAL)
+        {
+            auto arg = denominator.begin()->get();
+            auto qc_f = checkIfItsQuadraticFunction(arg, var);
+            if (qc_f[0] == nullptr)
+                return nullptr;
+            auto D = qc_f[1]*qc_f[1] - four*qc_f[0]*qc_f[2];
+            abs_ex x (new Variable(getVariable(var)));
+            if (::isZero(D))
+                return minus_one * two / (two*qc_f[0]*x + qc_f[1]);
+            //здесь воспользуемся формулами: dx/(x+w)/(x+u) -> 1/(w-u)*ln(|(x+u)/(x+w)|), ax^2+bx+c = a(x-x1)(x-x2), x1,2 = (-b+-sqrt(D))/2a
+            int pos = D->getPositionRelativelyZero();
+            if (pos > 0)
+            {
+                auto w = -(-qc_f[1] + sqrt(D))/(two*qc_f[0]);
+                auto u = -(-qc_f[1] - sqrt(D))/(two*qc_f[0]);
+                return (one / (w - u) * ln(abs((x + u) / (x + w)))) / qc_f[0];
+            }
+            if (pos < 0)
+                return two * atan((two*qc_f[0]*x + qc_f[1])/sqrt(-D))/sqrt(-D);
+            return nullptr;
+        }
+        return nullptr;
+    }
+    auto linearDivideQuadraticFormula = [&var](std::pair<abs_ex, abs_ex> & ln_f, std::array<abs_ex, 3> & qc_f2)->abs_ex {
+        auto D = qc_f2[1]*qc_f2[1] - four*qc_f2[0]*qc_f2[2];
+        abs_ex x (new Variable(getVariable(var)));
+        if (::isZero(D)) // (ax+b)/(x+c)^2
+        {
+            //c это МИНУС КОРЕНЬ
+            auto c = qc_f2[1]/two/qc_f2[0];
+            return one / qc_f2[0] * ((ln_f.first*c - ln_f.second)/(x + c) + ln_f.first * ln(abs(c + x)));
+        }
+        //здесь воспользуемся формулами: dx/(x+w)/(x+u) -> 1/(w-u)*ln(|(x+u)/(x+w)|), ax^2+bx+c = a(x-x1)(x-x2), x1,2 = (-b+-sqrt(D))/2a
+        int pos = D->getPositionRelativelyZero();
+        if (pos > 0)
+        {
+            auto w = -(-qc_f2[1] + sqrt(D))/(two*qc_f2[0]);
+            auto u = -(-qc_f2[1] - sqrt(D))/(two*qc_f2[0]);
+            return one / qc_f2[0] * ((ln_f.first * u - ln_f.second) * ln(abs(u + x)) + (ln_f.second - ln_f.first * w) * ln(abs(w + x))) / (u - w);
+        }
+
+            return ((two * (two * ln_f.second * qc_f2[0] - ln_f.first * qc_f2[1]) * atan((two*qc_f2[0]*x + qc_f2[1])/sqrt(-D)))/sqrt(-D) + ln_f.first*ln(abs(x*(qc_f2[0]*x + qc_f2[1]) + qc_f2[2]))) / two / qc_f2[0];
+    };
+    auto quadraticDivideLinearFormula = [&var](std::array<abs_ex, 3> & qc_f, std::pair<abs_ex, abs_ex> & ln_f2)->abs_ex {
+       /* auto D = qc_f[1]*qc_f[1] - four*qc_f[0]*qc_f[2];
+        abs_ex x (new Variable(getVariable(var)));
+        if (::isZero(D)) // (x-c)^2/(ax+b)
+        {
+            auto c = -qc_f[1]/two/qc_f[0];
+            return qc_f[0] * (ln_f2.first * x * (ln_f2.first * (x - four * c) - two * ln_f2.second) + two * sqr(ln_f2.first * c + ln_f2.second) * ln(abs(ln_f2.first * x + ln_f2.second))) / two / takeDegreeOf(ln_f2.first, three);
+        }
+        //здесь воспользуемся формулами: dx/(x+w)/(x+u) -> 1/(w-u)*ln(|(x+u)/(x+w)|), ax^2+bx+c = a(x-x1)(x-x2), x1,2 = (-b+-sqrt(D))/2a
+        if (D->getPositionRelativelyZero() > 0)
+        {
+            auto w = -(-qc_f[1] + sqrt(D))/(two*qc_f[0]);
+            auto u = -(-qc_f[1] - sqrt(D))/(two*qc_f[0]);
+            return qc_f[0] * (ln_f2.first * x * (ln_f2.first * (two*u + two*w + x) - two*ln_f2.second) + two * (ln_f2.second - ln_f2.first * w) * (ln_f2.second - ln_f2.first * u) * ln(abs(ln_f2.first * x + ln_f2.second))) / two / pow(ln_f2.first, three);
+        }*/
+        abs_ex& a = qc_f[0];
+        abs_ex& b = qc_f[1];
+        abs_ex& c = qc_f[2];
+        abs_ex& f = ln_f2.first;
+        abs_ex &g = ln_f2.second;
+        abs_ex x (new Variable(getVariable(var)));
+        return (two * ln(abs(f*x + g))*(g*(a*g - b*f) + c*f*f) + f*x*(a*f*x - two*a*g + two*b*f)) /two / pow(f, three);
+    };
+    auto quadraticDivideQuadraticFormula = [&var](std::array<abs_ex, 3> && qc_f1, std::array<abs_ex, 3> && qc_f2)->abs_ex {
+      // (ax^2+bx+c)/(ex^2+fx+g)
+        abs_ex a = std::move(qc_f1[0]), b = std::move(qc_f1[1]), c = std::move(qc_f1[2]), e = std::move(qc_f2[0]), f = std::move(qc_f2[1]), g = std::move(qc_f2[2]);
+        abs_ex D1 = sqr(b) - four * a * c;
+        abs_ex D2 = sqr(f) - four * e * g;
+        abs_ex x(new Variable(getVariable(var)));
+        if ((*D1 == *zero || D1->getPositionRelativelyZero() > 0) && *D2 == *zero)
+        {//(x-w)(x-u)/(x-t)^2
+            abs_ex w = (-b + sqrt(D1))/two/a;
+            abs_ex u = (-b - sqrt(D1))/two/a;
+            abs_ex t = -f/two/e;
+            return qc_f1[0] * qc_f2[0] * ((t - u)*(t - w) / (t - x) - (-two * t + u + w)*ln(abs(t - x)) + x);
+        }
+        if ((*D1 == *zero || D1->getPositionRelativelyZero() > 0) && (D2->getPositionRelativelyZero() > 0))
+        {
+            // (x-w)(x-u)/(x-t)/(x-z)
+            abs_ex w = (-b + sqrt(D1))/two/a;
+            abs_ex u = (-b - sqrt(D1))/two/a;
+            abs_ex t = (-f + sqrt(D2))/two/a;
+            abs_ex z = (-f - sqrt(D2))/two/a;
+            return qc_f1[0] / qc_f2[0] * ((t - u)*(t - w) * ln(abs(x - t)) + x*(t - z) + (u - z)*(z - w)*ln(abs(x - z))) / (t - z);
+        }
+        return (two*a*e*x + (two*(two*c*sqr(e) -b*e*f + a*(sqr(f) - two*e*g))*atan((f + two*e*x) / sqrt(-D2)))/sqrt(-D2) + (b*e - a*f)*ln(abs(g + x*(f + e*x))))/two/sqr(e);
+    };
+
+    if (numerator.size() == 1 && denominator.size() == 1)
+    {
+        auto num = numerator.begin()->get();
+        auto denom = denominator.begin()->get();
+        auto ln_f = checkIfItsLinearFunction(num, var);
+        auto ln_f2 = checkIfItsLinearFunction(denom, var);
+        auto x = abs_ex(new Variable(getVariable(var)));
+        if (ln_f.first != nullptr && ln_f2.first != nullptr) // (ax+b)/(cx+d) dx
+            return ln_f.first / ln_f2.first * x + (ln_f.second * ln_f2.first - ln_f.first * ln_f2.second) * ln(abs(*denominator.begin())) / sqr(ln_f2.first);
+        if (ln_f.first != nullptr && ln_f2.first == nullptr)
+        {
+            auto qc_f2 = checkIfItsQuadraticFunction(denom, var);
+            if (qc_f2[0] != nullptr) // (ax+b)/(cx^2+dx+e)
+            {
+                return linearDivideQuadraticFormula(ln_f, qc_f2);
+            }
+
+            if (denom->getId() == DEGREE)
+            {
+                //аналогично если дискриминант больше нуля, то трехчлен должен быть уже автоматом разложенный
+                auto deg = Degree::getDegreeOfExpression(denom);
+                if (*deg == *two)
+                {
+                    auto arg = Degree::getArgumentOfDegree(denom);
+                    auto qc_f = ::checkIfItsQuadraticFunction(arg, var);
+                    if (qc_f[0] != nullptr)
+                    {
+                        abs_ex &a = ln_f.first;
+                        abs_ex &b = ln_f.second;
+                        abs_ex &c = qc_f[0];
+                        abs_ex &d = qc_f[1];
+                        abs_ex &e = qc_f[2];
+                        auto D = sqr(d) - four*c*e;
+                        return ((-b *(d + two* c* x) + a* (two* e + d* x))/(e + x* (d + c* x)) + (
+                         two* (-two* b* c + a* d)* atan((d + two* c* x)/sqrt(-D)))/sqrt(-D))/(D);
+                    }
+                }
+                if (*deg == *three)
+                {
+                    auto arg = Degree::getArgumentOfDegree(denom);
+                    auto qc_f = ::checkIfItsQuadraticFunction(arg, var);
+                    if (qc_f[0] != nullptr)
+                    {
+                        abs_ex &a = ln_f.first;
+                        abs_ex &b = ln_f.second;
+                        abs_ex &c = qc_f[0];
+                        abs_ex &d = qc_f[1];
+                        abs_ex &e = qc_f[2];
+                        auto D = sqr(d) - four*c*e;
+                        return ((three* (two* b* c - a* d)* (d + two* c* x))/(
+                         e + x* (d + c *x)) + ((D)* (-b* (d + two* c* x) +
+                            a (2 e + d x)))/(e + x (d + c x))^2 - (
+                         12 c (-2 b c + a d) ArcTan[(d + 2 c x)/
+                           Sqrt[-d^2 + 4 c e]])/Sqrt[-d^2 + 4 c e])/(2 (d^2 - 4 c e)^2)
+
+                    }
+                }
+            }
+        }
+        if (ln_f.first == nullptr && ln_f2.first != nullptr)
+        {
+            auto qc_f = checkIfItsQuadraticFunction(num, var);
+            if (qc_f[0] != nullptr)
+            {
+                return quadraticDivideLinearFormula(qc_f, ln_f);
+            }
+        }
+        auto qc_f = checkIfItsQuadraticFunction(num, var);
+        auto qc_f2 = checkIfItsQuadraticFunction(denom, var);
+        if (qc_f[0] != nullptr && qc_f2[0] != nullptr)
+            return quadraticDivideQuadraticFormula(std::move(qc_f), std::move(qc_f2));
+    }
+    if (numerator.size() == 0 && denominator.size() == 2)
+    {
+        auto ln_f1 = ::checkIfItsLinearFunction(*denominator.begin(), var);
+        auto ln_f2 = ::checkIfItsLinearFunction(*next(denominator.begin()), var);
+        if (ln_f1.first != nullptr && ln_f2.second != nullptr)
+        {// (ax+b)/(cx+d)
+            return (ln(abs(*denominator.begin())) - ln(abs(*next(denominator.begin()))))/(ln_f1.first * ln_f2.second - ln_f1.second * ln_f2.first);
+        }
+        auto den_beg = denominator.begin();
+        auto den_next = next(denominator.begin());
+        if (ln_f2.first != nullptr && ln_f1.first == nullptr)
+        {
+            std::swap(ln_f1, ln_f2);
+            std::swap(den_beg, den_next);
+        }
+        if (ln_f1.first != nullptr)
+        {//   1/(a*x + b)*(c*x^2 + d*x + e)
+            auto qc_f = ::checkIfItsQuadraticFunction(*den_next, var);
+            if (qc_f[0] != nullptr)
+            {
+                abs_ex& a = ln_f1.first;
+                abs_ex& b = ln_f1.second;
+                abs_ex &c = qc_f[0];
+                abs_ex &d = qc_f[1];
+                abs_ex &e = qc_f[2];
+               // (a x (-2 b c + 2 a d + a c x) +
+                // 2 (b^2 c - a b d + a^2 e) Log[b + a x])/(2 a^3)
+                return (a* x *(-two* b* c + two* a* d + a* c* x) +
+                                 two* (sqr(b)* c - a* b* d + sqr(a)*e) *ln(abs(*den_beg)))/(two*pow(a, 3));
+            }
+        }
+        auto qc_f1 = ::checkIfItsQuadraticFunction(*den_beg, var);
+        auto qc_f2 = ::checkIfItsQuadraticFunction(*den_next, var);
+        if (qc_f1[0] != nullptr && qc_f2[0] != nullptr)
+        {//   1/(a*x^2 + b*x + f)*(c*x^2 + d*x + e)
+            abs_ex &c = qc_f2[0];
+            abs_ex &d = qc_f2[1];
+            abs_ex &e = qc_f2[2];
+            abs_ex &a = qc_f1[0];
+            abs_ex &b = qc_f1[1];
+            abs_ex &f = qc_f1[2];
+
+            abs_ex D1 = sqr(b) - four * a * f;
+            abs_ex D2 = sqr(d) - four * c * e;
+
+        }
+    }
+    if (numerator.size() == 1 && denominator.size() == 2)
+    {
+        auto ln_f = ::checkIfItsLinearFunction(*numerator.begin(), var);
+        auto ln_f1 = ::checkIfItsLinearFunction(*denominator.begin(), var);
+        auto ln_f2 = ::checkIfItsLinearFunction(*next(denominator.begin()), var);
+        if (ln_f.first != nullptr && ln_f1.first != nullptr && ln_f2.first != nullptr)
+        {// (ex+f)/((ax+b)(cx+d))
+            return ((-ln_f1.second * ln_f2.first * ln_f.first + ln_f1.first * ln_f2.first * ln_f.second) * ln(abs(*denominator.begin())) +
+                    ln_f1.first * (ln_f2.second * ln_f.first - ln_f2.first * ln_f.second) * ln(abs(*next(denominator.begin())))) /
+                    (ln_f1.first * ln_f2.first * (ln_f1.first * ln_f2.second - ln_f1.second * ln_f2.first));
+        }
+    }
+    if (numerator.size() == 2 && denominator.size() == 2)
+    {
+        auto ln_f1 = ::checkIfItsLinearFunction(*numerator.begin(), var);
+        auto ln_f2 = ::checkIfItsLinearFunction(*next(numerator.begin()), var);
+        auto ln_f3 = ::checkIfItsLinearFunction(*denominator.begin(), var);
+        auto ln_f4 = ::checkIfItsLinearFunction(*next(denominator.begin()), var);
+        if (ln_f1.first != nullptr && ln_f2.first != nullptr && ln_f3.first != nullptr && ln_f4.first != nullptr)
+        {// (e*x + f)*(g*x + h)/((a*x + b)*(c*x + d)
+            abs_ex &e = ln_f1.first;
+            abs_ex &f = ln_f1.second;
+            abs_ex &g = ln_f2.first;
+            abs_ex &h = ln_f2.second;
+            abs_ex &a = ln_f3.first;
+            abs_ex &b = ln_f3.second;
+            abs_ex &c = ln_f4.first;
+            abs_ex &d = ln_f4.second;
+            return (sqr(c) * (b*e - a*f)*(b*g - a*h) * ln(abs(*denominator.begin())) + a*(c*(a*d - b*c)*e*g*x - a*(d*e - c*f)*(d*g - c*h)*ln(abs(*next(denominator.begin()))))) /
+                    (sqr(a)*sqr(c) * (a*d - b*c));
+        }
+    }
+
+
+}
+
+std::pair<abs_ex, abs_ex> Fractal::checkIfItIsLinearFunction(int var) const
+{
+    bool has_first_deg_var = false;
+    bool has_other_deg_var = false;
+    for (auto &it : numerator)
+    {
+        if (Degree::getArgumentOfDegree(it.get())->getId() != var)
+            continue;
+        auto degr = Degree::getDegreeOfExpression(it.get());
+        if (*degr == *one)
+            has_first_deg_var = true;
+        else
+        {
+            has_other_deg_var = true;
+            break;
+        }
+    }
+    for (auto &it : denominator)
+        if (Degree::getArgumentOfDegree(it.get())->getId() == var)
+        {
+            has_other_deg_var = true;
+            break;
+        }
+    if (has_other_deg_var || !has_first_deg_var)
+        return {nullptr, nullptr};
+    return {toAbsEx(this->getFractalWithoutVariable(var)), copy(zero)};
+}
+
+bool Fractal::isOne() const
+{
+    return this->numerator.empty() && this->denominator.empty() && this->coefficient.isOne();
+}
+
 
 
 void Fractal::castTrigonometry()
@@ -1470,7 +1961,7 @@ std::unique_ptr<Fractal> operator-(const std::unique_ptr<Fractal> & left, const 
     return *left - right;
 }
 
-std::unique_ptr<AbstractExpression> toAbsEx(std::unique_ptr<Fractal> &expr)
+std::unique_ptr<AbstractExpression> toAbsEx(const std::unique_ptr<Fractal> &expr)
 {
     return abs_ex(new Fractal(expr.get()));
 }

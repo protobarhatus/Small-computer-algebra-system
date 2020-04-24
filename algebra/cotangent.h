@@ -7,7 +7,7 @@ class Fractal;
 class Cotangent : public AbstractExpression
 {
 public:
-    Cotangent(abs_ex & argument);
+    Cotangent(const abs_ex & argument);
     Cotangent(abs_ex && argument);
     Cotangent(const Cotangent & copy);
     Cotangent(Cotangent && mov);
@@ -32,6 +32,9 @@ public:
     abs_ex getArgumentMoved();
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
     abs_ex getArgumentsCopy();
+    abs_ex derivative(int var) const override;
+    virtual abs_ex antiderivative(int var) const override;
+    const abs_ex& getArgument() const;
 private:
     abs_ex argument;
     //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может
@@ -39,6 +42,6 @@ private:
     bool is_pi_member_only = false;
     virtual bool operator<(const AbstractExpression & right) const override;
 };
-abs_ex cot(abs_ex & expr);
+abs_ex cot(const abs_ex & expr);
 abs_ex cot(abs_ex && expr);
 #endif // Cotangent

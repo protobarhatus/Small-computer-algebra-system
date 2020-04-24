@@ -4,7 +4,7 @@
 #include <QDebug>
 #include "fractal.h"
 #include "degree.h"
-AbsoluteValue::AbsoluteValue(std::unique_ptr<AbstractExpression> & expr)
+AbsoluteValue::AbsoluteValue(const std::unique_ptr<AbstractExpression> & expr)
 {
     this->expression = makeAbstractExpression(expr->getId(), expr.get());
     this->simplify();
@@ -162,4 +162,26 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::changeSomePartOn(QString part
         return cop;
     }
     return this->expression->changeSomePartOn(part, on_what);
+}
+
+std::unique_ptr<AbstractExpression> AbsoluteValue::derivative(int var) const
+{
+    assert(false);
+    return nullptr;
+}
+
+std::unique_ptr<AbstractExpression> AbsoluteValue::antiderivative(int var) const
+{
+    assert(false);
+    return nullptr;
+}
+
+std::unique_ptr<AbstractExpression> abs(const std::unique_ptr<AbstractExpression> &expr)
+{
+    return abs_ex(new AbsoluteValue(expr));
+}
+
+std::unique_ptr<AbstractExpression> abs(std::unique_ptr<AbstractExpression> &&expr)
+{
+    return abs_ex(new AbsoluteValue(std::move(expr)));
 }
