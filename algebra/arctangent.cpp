@@ -49,13 +49,22 @@ void ArcTangent::simplify()
 bool ArcTangent::operator==(AbstractExpression &right)
 {
     assert(this->getId() == right.getId());
-    return *this == *static_cast<ArcTangent*>(&right);
+    return *this->argument == *static_cast<ArcTangent*>(&right)->argument;
 }
 
 bool ArcTangent::canDowncastTo(AlgebraExpression expr)
 {
     if (this->argument->getId() == TANGENT)
+    {
+        auto tan_arg = getArgumentOfTrigonometricalFunction(this->argument);
+        int pos = (tan_arg + getPi()/two)->getPositionRelativelyZero();
+        if (!(pos > 0))
+            return false;
+        pos = (tan_arg - getPi()/two)->getPositionRelativelyZero();
+        if (!(pos < 0))
+            return false;
         return true;
+    }
     abs_ex & arg = this->argument;
     if (*arg == *-sqrt(numToAbs(3)) || *arg == *numToAbs(-1) || *arg == *(-sqrt(numToAbs(3))/numToAbs(3)) || *arg == *zero || *arg == *(sqrt(three)/three) ||
             *arg == *one || *arg == *sqrt(three))
@@ -66,7 +75,7 @@ bool ArcTangent::canDowncastTo(AlgebraExpression expr)
 std::unique_ptr<AbstractExpression> ArcTangent::downcastTo(AlgebraExpression expr)
 {
     if (this->argument->getId() == TANGENT)
-        return std::move(argument);
+        return getArgumentOfTrigonometricalFunction(std::move(this->argument));
     abs_ex & arg = this->argument;
     if (*arg == *-sqrt(numToAbs(3)))
         return -getPi()/three;

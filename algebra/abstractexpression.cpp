@@ -10,6 +10,8 @@
 #include "cotangent.h"
 #include "variablesdistributor.h"
 #include "logarithm.h"
+#include "arcsinus.h"
+#include "arctangent.h"
 AbstractExpression::AbstractExpression()
 {
 
@@ -323,6 +325,10 @@ std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpressio
         return checkIfItsLinearFunction(static_cast<const Cotangent*>(func)->getArgument(), var);
     case LOGARITHM:
         return checkIfItsLinearFunction(static_cast<const Logarithm*>(func)->getArgument(), var);
+    case ARCTANGENT:
+        return checkIfItsLinearFunction(static_cast<const ArcTangent*>(func)->getArgument(), var);
+    case ARCSINUS:
+        return checkIfItsLinearFunction(static_cast<const ArcSinus*>(func)->getArgument(), var);
     default:
         return {nullptr, nullptr};
     }

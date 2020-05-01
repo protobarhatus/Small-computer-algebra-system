@@ -17,6 +17,8 @@
 #include "logarithm.h"
 #include "tangent.h"
 #include "cotangent.h"
+#include "variablesdistributor.h"
+#include "arcsinus.h"
 Degree::Degree(std::unique_ptr<AbstractExpression> && iargument, std::unique_ptr<AbstractExpression> && idegree)
 {
     this->argument = std::move(iargument);
@@ -682,6 +684,38 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         if (ln_f.first == nullptr)
             return nullptr;
         return one / ln_f.first * (this->argument * (takeDegreeOf(ln(argument), 3) - three*takeDegreeOf(ln(argument), 2) + numToAbs(6)*ln(argument) - numToAbs(6)));
+    }
+    if (*this->degree == *half)
+    {
+        auto qc_f = checkIfItsQuadraticFunction(argument, var);
+        auto x = abs_ex(new Variable(getVariable(var)));
+
+        if (*qc_f[1] == *zero)
+        {
+            int pos = qc_f[0]->getPositionRelativelyZero();
+            if (pos > 0)
+            {
+                auto div = std::move(qc_f[0]);
+                qc_f[0] = copy(one);
+                qc_f[2] = qc_f[2]/div;
+                int pos_a = qc_f[2]->getPositionRelativelyZero();
+                if (pos_a > 0)
+                    return sqrt(div) * (x/two * sqrt(argument) + qc_f[2]/two * ln(abs(x + sqrt(argument))));
+                if (pos_a < 0)
+                    return sqrt(div) * (x/two * sqrt(argument) - qc_f[2]/two * ln(abs(x + sqrt(argument))));
+                return nullptr;
+            }
+            if (pos < 0)
+            {
+                auto div = -std::move(qc_f[0]);
+                qc_f[0] = copy(minus_one);
+                qc_f[2] = qc_f[2]/div;
+                int pos_a = qc_f[2]->getPositionRelativelyZero();
+                if (pos_a > 0)
+                    return sqrt(div) * (x/two * sqrt(argument) + qc_f[2]/two * asin(x/sqrt(qc_f[2])));
+                return nullptr;
+            }
+        }
     }
     return nullptr;
 }

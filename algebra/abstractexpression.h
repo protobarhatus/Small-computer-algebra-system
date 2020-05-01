@@ -28,6 +28,7 @@ enum AlgebraExpression
     LOGARITHM = -11,
     DIFFERENTIAL = -12,
     ARCTANGENT = -13,
+    ARCSINUS = -14,
     NUMBER = 0
 };
 

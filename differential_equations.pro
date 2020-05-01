@@ -67,6 +67,7 @@ SOURCES += \
     algebra/absolutevalue.cpp \
     algebra/abstractexpression.cpp \
     algebra/algexpr.cpp \
+    algebra/arcsinus.cpp \
     algebra/arctangent.cpp \
     algebra/constant.cpp \
     algebra/cosinus.cpp \
@@ -147,6 +148,7 @@ HEADERS += \
     algebra/absolutevalue.h \
     algebra/abstractexpression.h \
     algebra/algexpr.h \
+    algebra/arcsinus.h \
     algebra/arctangent.h \
     algebra/constant.h \
     algebra/cosinus.h \
