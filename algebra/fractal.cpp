@@ -1627,6 +1627,27 @@ std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
                     return pow(cot(getArgumentOfTrigonometricalFunction(arg)), deg)->antiderivative(var);
                 if (arg->getId() == COTANGENT)
                     return pow(tan(getArgumentOfTrigonometricalFunction(arg)), deg)->antiderivative(var);
+                auto qc_f = ::checkIfItsQuadraticFunction(arg, var);
+                if (qc_f[0] != nullptr)
+                {//  1/(ax^2+bx+c)^n == 1/((sqrt(a)x+ b/sqrt(a)/2)^2 + c - b^2/(2a))^n
+                    abs_ex & k = deg;
+                    if (*qc_f[0] == *one && *qc_f[1] == *zero)
+                    {
+                        //иначе оно должно быть разложенно на множители
+                        assert(qc_f[2]->getPositionRelativelyZero() >= 0);
+                        return x/(two*qc_f[2] * (k - one) * pow(copy(arg), k - one)) + (two*k - three)/(two*qc_f[2]*(k - one)) * pow(copy(arg), k - one)->antiderivative(var);
+                    }
+                    abs_ex t (new Variable(systemVar()));
+                    //если c-b^2/2/a окажется меньше нуля, то в вызове рекурсивного интеграла произойдет
+                    //ассерт. Однако, если оно меньше нуля, то этот квадратный трехчлен можно разложить на множители,
+                    //что должно было произойти, и тогда сюда мы не придем
+                    abs_ex pre_int = one / sqrt(qc_f[0]) *
+                            (one/pow(sqr(t) + qc_f[2] - sqr(qc_f[1])/(two*qc_f[0]), deg))->antiderivative(t->getId());
+                    std::map<int, abs_ex> t_repl;
+                    t_repl.insert({t->getId(), sqrt(qc_f[0])*x + qc_f[1]/sqrt(qc_f[0])/two});
+                    replaceSystemVariablesToExpressions(pre_int, t_repl);
+                    return pre_int;
+                }
             }
             if (*deg == *three)
             {
