@@ -5,7 +5,7 @@
 #include "algebra\some_algebra_expression_conversions.h"
 #include "random"
 #include "QDataStream"
-#define IN_MOSCOW
+//#define IN_MOSCOW
 #ifdef IN_MOSCOW
 #include <G:\QTProjects\mo2\ExprMake\texpr_builder.h>
 #include <G:\QTProjects\mo2\testpaintwidget.h>
@@ -26,9 +26,10 @@ int rand(int min, int max)
 
 int main(int argc, char *argv[])
 {
-    testAlgMod();
+   // testAlgMod();
     qDebug() << "#########";
     AlgExpr x = var();
+
     AlgExpr y = var();
     AlgExpr z = var();
 
@@ -43,10 +44,14 @@ int main(int argc, char *argv[])
    // TExpr_Builder builder;
    // auto expr = builder.BuildExpr("x^2+x+1");
 
+//TODO: разобраться с ситуациями по типу
+    //log(tan(x)) - (log(sin(x)) - log(cos(x))
+    //2log(cos(x)) - log(1-sin(x)^2)
+    //ТАКЖЕ, если  синусы и косинусы раскрываются по сумме всегда сразу, то мы лишаемся
+    //возможности взять интегралы вида 1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
+    //это надо исправить
 
-   // c = tan(x/2)*tan(x/2) + 2*tan(x) + tan(2*x);
-   // c = sqrt(2*x*x - 2*sqrt(2)*x + 1);
-   c = x*D(x);
+   c = sqrt(x*x);
 
     //c = ;
    // c.out();
