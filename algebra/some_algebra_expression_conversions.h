@@ -6,7 +6,7 @@
 class Polynomial;
 class Fractal;
 
-std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, AbstractExpression * argument);
+std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, const AbstractExpression * argument);
 abs_ex copy(AbstractExpression * arg);
 abs_ex copy(const abs_ex & arg);
 long long int factorial(long long int N);

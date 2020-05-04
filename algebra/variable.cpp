@@ -142,6 +142,11 @@ std::unique_ptr<AbstractExpression> Variable::changeSomePartOn(QString part, std
     return nullptr;
 }
 
+std::unique_ptr<AbstractExpression> Variable::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    return nullptr;
+}
+
 std::unique_ptr<AbstractExpression> Variable::derivative(int var) const
 {
     if (var == this->id)

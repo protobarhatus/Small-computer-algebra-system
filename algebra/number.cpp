@@ -187,7 +187,7 @@ bool Number::isZero() const
 {
     return this->numerator == 0;
 }
-bool Number::isInteger()
+bool Number::isInteger() const
 {
     return this->denominator == 1;
 }
@@ -324,6 +324,11 @@ std::unique_ptr<AbstractExpression> Number::changeSomePartOn(QString part, std::
     return nullptr;
 }
 
+std::unique_ptr<AbstractExpression> Number::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    return nullptr;
+}
+
 bool Number::less(const Number &b) const
 {
     return (*this - b).compareWith(0) < 0 && *this != b;
@@ -361,4 +366,11 @@ Number min(Number a, Number b)
 std::unique_ptr<AbstractExpression> toAbsEx(Number n)
 {
     return abs_ex(new Number(n));
+}
+
+bool isIntegerNumber(const std::unique_ptr<AbstractExpression> &expr)
+{
+    if (expr->getId() != NUMBER)
+        return false;
+    return static_cast<const Number*>(expr.get())->isInteger();
 }

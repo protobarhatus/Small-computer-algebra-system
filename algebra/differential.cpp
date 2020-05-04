@@ -1,6 +1,7 @@
 #include "differential.h"
 #include "some_algebra_expression_conversions.h"
 #include "number.h"
+#include <cmath>
 Differential::Differential(const std::unique_ptr<AbstractExpression> &arg)
 {
     this->argument = copy(arg);
@@ -128,7 +129,14 @@ std::unique_ptr<AbstractExpression> Differential::getArgumentMoved()
 
 std::unique_ptr<AbstractExpression> Differential::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
+   // NONCONST
     return this->argument->changeSomePartOn(part, on_what);
+}
+
+std::unique_ptr<AbstractExpression> Differential::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    NONCONST
+        return this->argument->changeSomePartOn(part, on_what);
 }
 
 std::unique_ptr<AbstractExpression> Differential::getArgumentsCopy()

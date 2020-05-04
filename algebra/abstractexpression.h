@@ -26,9 +26,9 @@ enum AlgebraExpression
     COTANGENT = -9,
     CONSTANT = -10,
     LOGARITHM = -11,
-    DIFFERENTIAL = -12,
-    ARCTANGENT = -13,
-    ARCSINUS = -14,
+    DIFFERENTIAL = -19,
+    ARCTANGENT = -12,
+    ARCSINUS = -13,
     NUMBER = 0
 };
 
@@ -87,7 +87,8 @@ public:
     int getPositionRelativelyZero();
     bool hasVariable(int var);
     virtual abs_ex changeSomePartOn(QString function, abs_ex & on_what) = 0;
-
+    //отличие от changeSomePartOn в том, что то не снимает simplified, а это - снимает
+    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) = 0;
     virtual abs_ex derivative(int var) const = 0;
     //поиск первообразной и интеграла тут отличается. Интеграл требует наличие множителя-дифференциала. первообразная проверяет только по таблице,
     //интеграл разделяет сумму на сумму интегралов, запускает поиск первообразной и, если это не табличный случай, переходит к другим методам.
@@ -109,9 +110,14 @@ std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr, std::m
 void replaceSystemVariablesBackToFunctions(std::unique_ptr<AbstractExpression> &expr, std::map<int, abs_ex> & funcs);
 std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression * expr, std::map<QString, int> & funcs);
 void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
+//отличие от ...BackToFunctions в том, что она снимает simplified с выражения и упрощает его.
+//делать это в ...BackToFunctions нельзя, так как это вызовет бесконечную рекурсию
+void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
+void replaceSystemVariablesToExpressions(abs_ex &expr, std::map<int, abs_ex> & funcs);
 //void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex> & functions);
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr);
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex & expr);
+abs_ex getArgumentOfTrigonometricalFunction(AbstractExpression * expr);
 bool isDegreeOfTrigonometricalFunction(abs_ex & expr);
 abs_ex absEx(int num);
 //проверяет, является ли func линейной функцией относительно переменной var

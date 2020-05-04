@@ -78,6 +78,7 @@ public:
     void convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> & instructions);
     void checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> & params);
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
     //аргумент включается сюда только если он имеет числовую целую степень
     std::vector<std::pair<abs_ex, Number>> getTrigonometryMultipliersArgumentsCopyAndItsDegrees();
     void convertTrigonometricalMultipliersToDifferentArgument(const std::map<QString, TrigonometricalFunctionsArgumentsCastType> & instructions);

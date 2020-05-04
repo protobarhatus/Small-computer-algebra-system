@@ -232,6 +232,7 @@ std::unique_ptr<AbstractExpression> Cotangent::getArgumentMoved()
 
 std::unique_ptr<AbstractExpression> Cotangent::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
+   // NONCONST
     if (this->argument->makeStringOfExpression() == part)
     {
         abs_ex cop = copy(on_what);
@@ -239,6 +240,18 @@ std::unique_ptr<AbstractExpression> Cotangent::changeSomePartOn(QString part, st
         return cop;
     }
     return this->argument->changeSomePartOn(part, on_what);
+}
+
+std::unique_ptr<AbstractExpression> Cotangent::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    NONCONST
+        if (this->argument->makeStringOfExpression() == part)
+        {
+            abs_ex cop = copy(on_what);
+            this->argument.swap(cop);
+            return cop;
+        }
+        return this->argument->changeSomePartOn(part, on_what);
 }
 
 std::unique_ptr<AbstractExpression> Cotangent::getArgumentsCopy()

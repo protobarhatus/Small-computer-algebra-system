@@ -17,6 +17,7 @@
 #include "variablesdistributor.h"
 #include "arctangent.h"
 #include "arcsinus.h"
+#include "constant.h"
 Fractal::Fractal() : coefficient(1)
 {
 
@@ -650,16 +651,23 @@ std::set<int> Fractal::getSetOfVariables() const
 
 std::set<QString> Fractal::getSetOfFunctions() const
 {
+
     std::set<QString> set;
+    auto merge = [&set](const std::set<QString> & s) {
+        for (auto &it : s)
+            set.insert(it);
+    };
     for (auto &it : this->numerator)
     {
         auto itset = it->getSetOfFunctions();
-        set.merge(itset);
+        merge(itset);
+       // set.merge(itset);
     }
     for (auto &it : this->denominator)
     {
         auto itset = it->getSetOfFunctions();
-        set.merge(itset);
+        merge(itset);
+       // set.merge(itset);
     }
     return set;
 }
@@ -698,7 +706,8 @@ Number Fractal::getMaxDegreeOfVariable(int id)
 
 std::unique_ptr<Fractal> Fractal::getFractalWithoutVariable(int id) const
 {
-    std::unique_ptr<Fractal> result = std::make_unique<Fractal>(this);
+    //std::unique_ptr<Fractal> result = std::make_unique<Fractal>(this);
+    std::unique_ptr<Fractal> result(new Fractal(makeAbstractExpression(FRACTAL, this)));
     for (auto it = result->numerator.begin(); it != result->numerator.end();)
     {
         if (Degree::getArgumentOfDegree(it->get())->getId() == id)
@@ -1355,6 +1364,7 @@ void Fractal::checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bo
 
 std::unique_ptr<AbstractExpression> Fractal::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
+  //  NONCONST
     abs_ex its_part = nullptr;
     auto add = [&on_what, &its_part](abs_ex & part)->void {
         if (its_part == nullptr)
@@ -1388,6 +1398,12 @@ std::unique_ptr<AbstractExpression> Fractal::changeSomePartOn(QString part, std:
 
     }
     return its_part;
+}
+
+std::unique_ptr<AbstractExpression> Fractal::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    NONCONST
+           return changeSomePartOn(part, on_what);
 }
 
 std::vector<std::pair<abs_ex, Number>> Fractal::getTrigonometryMultipliersArgumentsCopyAndItsDegrees()
@@ -1580,6 +1596,37 @@ std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
                 }
 
 
+            }
+            if (deg->getId() == NUMBER && static_cast<Number*>(deg.get())->isInteger())
+            {
+                //ну и deg > 0 по определению, иначе быть не может
+                if (arg->getId() == SINUS)
+                {
+                    auto ln_f = checkIfItsFunctionOfLinearArgument(arg, var);
+                    if (ln_f.first == nullptr)
+                        return nullptr;
+                    auto sin_arg = getArgumentOfTrigonometricalFunction(arg);
+                    //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
+                    //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
+                    return one/ln_f.first * (-one/(deg - one) * cos(sin_arg)/pow(copy(arg), deg - one) +
+                                             (deg - two)/(deg - one)*ln_f.first*(one/pow(copy(arg), deg-two))->antiderivative(var));
+                }
+                if (arg->getId() == COSINUS)
+                {
+                    auto ln_f = checkIfItsFunctionOfLinearArgument(arg, var);
+                    if (ln_f.first == nullptr)
+                        return nullptr;
+                    auto cos_arg = getArgumentOfTrigonometricalFunction(arg);
+                    //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
+                    //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
+                    //я кстати не совсем уверен в этой формуле
+                    return one/ln_f.first * (one/(deg - one) * sin(cos_arg)/pow(copy(arg), deg - one) +
+                                             (deg - two)/(deg - one)*ln_f.first*(one/pow(copy(arg), deg-two))->antiderivative(var));
+                }
+                if (arg->getId() == TANGENT)
+                    return pow(cot(getArgumentOfTrigonometricalFunction(arg)), deg)->antiderivative(var);
+                if (arg->getId() == COTANGENT)
+                    return pow(tan(getArgumentOfTrigonometricalFunction(arg)), deg)->antiderivative(var);
             }
             if (*deg == *three)
             {
@@ -1933,6 +1980,7 @@ std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
                 }
             }
         }
+
     }
     if (numerator.size() == 0 && denominator.size() == 2)
     {
@@ -2010,6 +2058,68 @@ std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
             abs_ex D2 = sqr(d) - four * c * e;
 
         }
+        //сортировка прошла также в порядке котангенс, тангенс, косинус, синус, степень
+        const abs_ex & first = *den_beg;
+        const abs_ex & second = *den_next;
+        if (first->getId() == COSINUS && second->getId() == SINUS)
+        {
+            auto ln_f_cos = ::checkIfItsFunctionOfLinearArgument(first, var);
+            auto ln_f_sin = ::checkIfItsFunctionOfLinearArgument(second, var);
+            if (ln_f_cos.first != nullptr && ln_f_sin.first != nullptr && *(ln_f_cos.first - ln_f_sin.first) == *zero)
+            {
+                abs_ex & a = ln_f_cos.first;
+                abs_ex & b = ln_f_cos.second;
+                abs_ex & d = ln_f_sin.second;
+                if (isIntegerNumber((b - d)/(::getPi()/two)))
+                    return cot(a*x + b)/a;
+                return (ln(second) - ln(first))/(a*cos(b - d));
+            }
+        }
+        if (first->getId() == COSINUS && second->getId() == DEGREE &&
+                Degree::getArgumentOfDegree(second.get())->getId() == SINUS &&
+                *Degree::getDegreeOfExpression(second.get()) == *two)
+        {//          1 / ( sin(ax+b)^2*cos(ax + b))
+            auto arg = Degree::getArgumentOfDegree(second.get());
+            auto ln_f_cos = ::checkIfItsFunctionOfLinearArgument(first, var);
+            auto ln_f_sin = ::checkIfItsFunctionOfLinearArgument(arg, var);
+            if (ln_f_cos.first != nullptr && ln_f_sin.first != nullptr && *(ln_f_cos.first - ln_f_sin.first) == *zero &&
+                    *(ln_f_cos.second - ln_f_sin.second) == *zero)
+            {
+                abs_ex & a = ln_f_cos.first;
+                abs_ex & b = ln_f_cos.second;
+                return one / a * (-one/sin(a*x+b) + ln(abs(cot((a*x + b)/two))));
+            }
+        }
+        if (first->getId() == SINUS && second->getId() == DEGREE &&
+                Degree::getArgumentOfDegree(second.get())->getId() == COSINUS &&
+                *Degree::getDegreeOfExpression(second.get()) == *two)
+        {//     1 / (sin(ax+b)*cos(ax+b)^2)
+            auto arg = Degree::getArgumentOfDegree(second.get());
+            auto ln_f_sin = ::checkIfItsFunctionOfLinearArgument(first, var);
+            auto ln_f_cos = ::checkIfItsFunctionOfLinearArgument(arg, var);
+            if (ln_f_cos.first != nullptr && ln_f_sin.first != nullptr && *(ln_f_cos.first - ln_f_sin.first) == *zero &&
+                    *(ln_f_cos.second - ln_f_sin.second) == *zero)
+            {
+                abs_ex & a = ln_f_cos.first;
+                abs_ex & b = ln_f_cos.second;
+                return one / a * (one/cos(a*x+b) + ln(abs(tan((a*x + b)/two))));
+            }
+        }
+        if (first->getId() == DEGREE && second->getId() == DEGREE &&
+                Degree::getArgumentOfDegree(first.get())->getId() == COSINUS &&
+                Degree::getArgumentOfDegree(second.get())->getId() == SINUS &&
+                *Degree::getDegreeOfExpression(first.get()) == *two &&
+                *Degree::getDegreeOfExpression(second.get()) == *two)
+        {//    1 / ( sin(ax+b)^2 * cos(ax + b)^2 )
+            auto ln_f_sin = ::checkIfItsFunctionOfLinearArgument(Degree::getArgumentOfDegree(first.get()), var);
+            auto ln_f_cos = ::checkIfItsFunctionOfLinearArgument(Degree::getDegreeOfExpression(second.get()), var);
+            if (ln_f_cos.first != nullptr && ln_f_sin.first != nullptr && *(ln_f_cos.first - ln_f_sin.first) == *zero &&
+                    *(ln_f_cos.second - ln_f_sin.second) == *zero)
+            {
+                auto arg = getArgumentOfTrigonometricalFunction(Degree::getArgumentOfDegree(first.get()));
+                return one/ln_f_sin.first * (tan(arg) - cot(arg));
+            }
+        }
     }
     if (numerator.size() == 1 && denominator.size() == 2)
     {
@@ -2043,8 +2153,150 @@ std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
                     (sqr(a)*sqr(c) * (a*d - b*c));
         }
     }
-
-
+    //Учитываем, что сортировка произойдет в следующем порядке : котангенс, тангенс, косинус, синус, степень
+    if (numerator.size() == 2 && denominator.size() == 0)
+    {
+        const abs_ex& first = *numerator.begin();
+        const abs_ex& second = *denominator.begin();
+        if (first->getId() == COSINUS && second->getId() == SINUS)
+        {
+            auto ln_f_cos = ::checkIfItsFunctionOfLinearArgument(first, var);
+            auto ln_f_sin = ::checkIfItsFunctionOfLinearArgument(second, var);
+            if (ln_f_cos.first != nullptr && ln_f_sin.first != nullptr)
+            {//  cos(cx + d)sin(ax+b)
+                abs_ex& c = ln_f_cos.first;
+                abs_ex& d = ln_f_cos.second;
+                abs_ex& a = ln_f_sin.first;
+                abs_ex& b = ln_f_sin.second;
+                if (*(a - c) != *zero)
+                    return -(cos(x*(a - c) +b - d))/(two*(a - c)) - cos(x*(a + c) +b + d)/(two * (a + c));
+                return -((cos(two*a*x + b + d) - two*a*x*sin(b - d))/(four * a));
+            }
+        }
+        if (first->getId() == COSINUS && second->getId() == COSINUS)
+        {
+            auto ln_f1 = ::checkIfItsFunctionOfLinearArgument(first, var);
+            auto ln_f2 = ::checkIfItsFunctionOfLinearArgument(second, var);
+            if (ln_f1.first != nullptr && ln_f2.first != nullptr)
+            {// cos(ax + b)cos(cx + d)
+                abs_ex & a = ln_f1.first;
+                abs_ex & b = ln_f1.second;
+                abs_ex & c = ln_f2.first;
+                abs_ex & d = ln_f2.second;
+                if (*(a - c) == *zero)
+                    return (sin(two*a*x + b + d) + two*a*x*cos(b - d))/ (four * a);
+                return sin(x*(a - c) + b - d)/(two*(a - c)) + sin(x*(a + c) + b + d)/(two*(a + c));
+            }
+        }
+        if (first->getId() == SINUS && second->getId() == SINUS)
+        {
+            auto ln_f1 = ::checkIfItsFunctionOfLinearArgument(first, var);
+            auto ln_f2 = ::checkIfItsFunctionOfLinearArgument(second, var);
+            if (ln_f1.first != nullptr && ln_f2.first != nullptr)
+            {// sin(ax + b)sin(cx + d)
+                abs_ex & a = ln_f1.first;
+                abs_ex & b = ln_f1.second;
+                abs_ex & c = ln_f2.first;
+                abs_ex & d = ln_f2.second;
+                if (*(a - c) == *zero)
+                    return -(sin(two*a*x + b + d) - two*a*x*cos(b - d))/ (four * a);
+                return sin(x*(a - c) + b - d)/(two*(a - c)) - sin(x*(a + c) + b + d)/(two*(a + c));
+            }
+        }
+        if (first->getId() == SINUS && second->getId() == DEGREE)
+        {
+            auto arg = Degree::getArgumentOfDegree(second.get());
+            if (arg->getId() == COSINUS)
+            {
+                auto deg = Degree::getDegreeOfExpression(second.get());
+                auto ln_f_sin = ::checkIfItsFunctionOfLinearArgument(first, var);
+                if (ln_f_sin.first == nullptr)
+                    return nullptr;
+                auto ln_f_cos = ::checkIfItsFunctionOfLinearArgument(second, var);
+                if (ln_f_cos.first != nullptr && *ln_f_cos.first == *ln_f_sin.first &&
+                        *ln_f_sin.second == *ln_f_cos.second)
+                {//  sin(ax+b)cos(ax+b)^n
+                    abs_ex &a = ln_f_sin.first;
+                    //abs_ex &b = ln_f_sin.second;
+                    return -pow(copy(arg), deg + one) / (a * (deg + one));
+                }
+            }
+        }
+        if (first->getId() == COSINUS && second->getId() == DEGREE)
+        {
+            auto arg = Degree::getArgumentOfDegree(second.get());
+            if (arg->getId() == SINUS)
+            {
+                auto deg = Degree::getDegreeOfExpression(second.get());
+                auto ln_f_cos = ::checkIfItsFunctionOfLinearArgument(first, var);
+                if (ln_f_cos.first == nullptr)
+                    return nullptr;
+                auto ln_f_sin = ::checkIfItsFunctionOfLinearArgument(second, var);
+                if (ln_f_sin.first != nullptr && *ln_f_cos.first == *ln_f_sin.first &&
+                        *ln_f_sin.second == *ln_f_cos.second)
+                {//  cos(ax+b)sin(ax+b)^n
+                    abs_ex &a = ln_f_sin.first;
+                   // abs_ex &b = ln_f_sin.second;
+                    return -pow(copy(arg), deg + one) / (a * (deg + one));
+                }
+            }
+        }
+        if (first->getId() == DEGREE && second->getId() == DEGREE)
+        { //sin(x)^n * cos(x)^m
+            auto arg1 = Degree::getArgumentOfDegree(first.get());
+            auto arg2 = Degree::getArgumentOfDegree(second.get());
+            auto deg1 = Degree::getDegreeOfExpression(first.get());
+            auto deg2 = Degree::getDegreeOfExpression(second.get());
+            if (arg1->getId() == COSINUS && arg2->getId() == SINUS)
+            {
+                std::swap(arg1, arg2);
+                std::swap(deg1, deg2);
+            }
+            if (arg1->getId() == SINUS && arg2->getId() == COSINUS && deg1->getId() == NUMBER &&
+                    deg2->getId() == NUMBER && static_cast<Number*>(deg1.get())->isInteger() &&
+                    static_cast<Number*>(deg2.get()))
+            {
+                auto ln_f1 = ::checkIfItsFunctionOfLinearArgument(arg1, var);
+                if (ln_f1.first == nullptr)
+                    return nullptr;
+                auto ln_f2 = ::checkIfItsFunctionOfLinearArgument(arg2, var);
+                if (ln_f2.first == nullptr || ln_f1.first != ln_f2.first || ln_f2.second != ln_f1.second)
+                    return nullptr;
+                long long int ideg1 = static_cast<Number*>(deg1.get())->getNumerator();
+                long long int ideg2 = static_cast<Number*>(deg2.get())->getNumerator();
+                if (ideg1 % 2 != 0)
+                {//  sin^(2k+1)cos^mdx = (1 - cos^2)^k*cos^m*sin dx = |t=-cosx |=(1-t^2)^2*(-t)^m dt
+                    abs_ex t = abs_ex(new Variable(systemVar()));
+                    abs_ex pre_integral = (pow(one - sqr(t), ideg1/2) * pow(-t, ideg2))->antiderivative(t->getId());
+                    std::map<int, abs_ex> to_change;
+                    to_change.insert({t->getId(), *arg2 * *minus_one});
+                    replaceSystemVariablesToExpressions(pre_integral, to_change);
+                    return one/ln_f2.first * pre_integral;
+                }
+                else if (ideg2 % 2 != 0)
+                {//  sin^ncos^(2k+1)dx = sin^n (1 - sin^2)^k cos dx = |t=sin x |= t^n (1 - t^2) dt
+                    abs_ex t = abs_ex(new Variable(systemVar()));
+                    abs_ex pre_integral = (pow(t, ideg1) * pow(one - sqr(t), ideg2/2))->antiderivative(t->getId());
+                    std::map<int, abs_ex> to_change;
+                    to_change.insert({t->getId(), copy(arg1)});
+                    replaceSystemVariablesToExpressions(pre_integral, to_change);
+                    return one/ln_f2.first * pre_integral;
+                }
+                else
+                {
+                    if (ideg1 > ideg2)
+                    {
+                        return (pow(copy(arg1), ideg1) * pow(one - sqr(copy(arg1)), ideg2/2))->antiderivative(var);
+                    }
+                    else if (ideg1 == ideg2)
+                        return pow(half * sin(two* getArgumentOfTrigonometricalFunction(arg1)), ideg1)->antiderivative(var);
+                    else
+                        return (pow(one - sqr(copy(arg2)), ideg1/2) * pow(copy(arg2), ideg2))->antiderivative(var);
+                }
+            }
+        }
+    }
+    return nullptr;
 }
 
 std::pair<abs_ex, abs_ex> Fractal::checkIfItIsLinearFunction(int var) const

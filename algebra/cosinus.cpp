@@ -238,6 +238,7 @@ std::unique_ptr<AbstractExpression> Cosinus::getArgumentMoved()
 
 std::unique_ptr<AbstractExpression> Cosinus::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
+   // NONCONST
     if (this->argument->makeStringOfExpression() == part)
     {
         abs_ex cop = copy(on_what);
@@ -245,6 +246,18 @@ std::unique_ptr<AbstractExpression> Cosinus::changeSomePartOn(QString part, std:
         return cop;
     }
     return this->argument->changeSomePartOn(part, on_what);
+}
+
+std::unique_ptr<AbstractExpression> Cosinus::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    NONCONST
+        if (this->argument->makeStringOfExpression() == part)
+        {
+            abs_ex cop = copy(on_what);
+            this->argument.swap(cop);
+            return cop;
+        }
+        return this->argument->changeSomePartOn(part, on_what);
 }
 
 std::unique_ptr<AbstractExpression> Cosinus::getArgumentsCopy()

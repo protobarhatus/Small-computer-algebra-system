@@ -7,6 +7,7 @@
 #include "variablesdistributor.h"
 #include "logarithm.h"
 #include "exception.h"
+#include <cmath>
 ArcSinus::ArcSinus(const std::unique_ptr<AbstractExpression> &arg)
 {
     this->argument = copy(arg);
@@ -167,6 +168,7 @@ std::unique_ptr<AbstractExpression> ArcSinus::getArgumentMoved()
 
 std::unique_ptr<AbstractExpression> ArcSinus::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
+  //  NONCONST
     if (this->argument->makeStringOfExpression() == part)
     {
         abs_ex cop = copy(on_what);
@@ -175,6 +177,19 @@ std::unique_ptr<AbstractExpression> ArcSinus::changeSomePartOn(QString part, std
     }
     return this->argument->changeSomePartOn(part, on_what);
 }
+
+std::unique_ptr<AbstractExpression> ArcSinus::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    NONCONST
+        if (this->argument->makeStringOfExpression() == part)
+        {
+            abs_ex cop = copy(on_what);
+            this->argument.swap(cop);
+            return cop;
+        }
+        return this->argument->changeSomePartOn(part, on_what);
+    }
+
 
 std::unique_ptr<AbstractExpression> ArcSinus::getArgumentsCopy()
 {

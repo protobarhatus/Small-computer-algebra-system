@@ -24,7 +24,7 @@ public:
     //that's algebrasting function and comparing is made with all rules
     short int compareWith(long long int value) const;
     short int compareWith(Number num) const;
-    bool isInteger();
+    bool isInteger() const;
     Number operator+(const Number & number) const;
     Number operator-(const Number & number) const;
     Number operator*(const Number & number) const;
@@ -49,6 +49,7 @@ public:
     bool operator==(long long int num);
     bool operator==(const Number & num);
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
     bool less(const Number & b) const;
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
@@ -64,6 +65,7 @@ Number abs(Number num);
 Number max(Number a, Number b);
 Number min(Number a, Number b);
 abs_ex toAbsEx(Number n);
+bool isIntegerNumber(const abs_ex & expr);
 /*
 
 abs_ex one = abs_ex(new Number(1));

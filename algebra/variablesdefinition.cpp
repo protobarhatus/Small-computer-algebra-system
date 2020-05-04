@@ -8,10 +8,12 @@ VariablesDefinition::VariablesDefinition()
 void VariablesDefinition::setMinValue(definition_area_type imin)
 {
     this->min = imin;
+    this->has_min_border = true;
 }
 void VariablesDefinition::setMaxValue(definition_area_type imax)
 {
     this->max = imax;
+    this->has_max_border = true;
 }
 VariablesDefinition getPositiveDefinition()
 {

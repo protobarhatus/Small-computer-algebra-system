@@ -19,39 +19,42 @@
 #include "logarithm.h"
 #include "differential.h"
 #include "arctangent.h"
-std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, AbstractExpression * argument)
+#include "arcsinus.h"
+std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, const AbstractExpression * argument)
 {
     assert(type == argument->getId() || (type > 0 && argument->getId() > 0));
     if (type > 0)
-        return std::unique_ptr<AbstractExpression>(new Variable(*(static_cast<Variable*>(argument))));
+        return std::unique_ptr<AbstractExpression>(new Variable(*(static_cast<const Variable*>(argument))));
     switch(type)
     {
     case NUMBER:
-        return std::unique_ptr<AbstractExpression>(new Number(*static_cast<Number*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Number(*static_cast<const Number*>(argument)));
     case POLYNOMIAL:
-        return std::unique_ptr<AbstractExpression>(new Polynomial(*static_cast<Polynomial*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Polynomial(*static_cast<const Polynomial*>(argument)));
     case FRACTAL:
-        return std::unique_ptr<AbstractExpression>(new Fractal(*static_cast<Fractal*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Fractal(*static_cast<const Fractal*>(argument)));
     case DEGREE:
-        return std::unique_ptr<AbstractExpression>(new Degree(*static_cast<Degree*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Degree(*static_cast<const Degree*>(argument)));
     case ABSOLUTE_VALUE:
-        return std::unique_ptr<AbstractExpression>(new AbsoluteValue(*static_cast<AbsoluteValue*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new AbsoluteValue(*static_cast<const AbsoluteValue*>(argument)));
     case CONSTANT:
-        return std::unique_ptr<AbstractExpression>(new Constant(*static_cast<Constant*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Constant(*static_cast<const Constant*>(argument)));
     case SINUS:
-        return std::unique_ptr<AbstractExpression>(new Sinus(*static_cast<Sinus*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Sinus(*static_cast<const Sinus*>(argument)));
     case COSINUS:
-        return std::unique_ptr<AbstractExpression>(new Cosinus(*static_cast<Cosinus*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Cosinus(*static_cast<const Cosinus*>(argument)));
     case TANGENT:
-        return std::unique_ptr<AbstractExpression>(new Tangent(*static_cast<Tangent*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Tangent(*static_cast<const Tangent*>(argument)));
     case COTANGENT:
-        return std::unique_ptr<AbstractExpression>(new Cotangent(*static_cast<Cotangent*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Cotangent(*static_cast<const Cotangent*>(argument)));
     case LOGARITHM:
-        return std::unique_ptr<AbstractExpression>(new Logarithm(*static_cast<Logarithm*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Logarithm(*static_cast<const Logarithm*>(argument)));
     case DIFFERENTIAL:
-        return std::unique_ptr<AbstractExpression>(new Differential(*static_cast<Differential*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new Differential(*static_cast<const Differential*>(argument)));
     case ARCTANGENT:
-        return std::unique_ptr<AbstractExpression>(new ArcTangent(*static_cast<ArcTangent*>(argument)));
+        return std::unique_ptr<AbstractExpression>(new ArcTangent(*static_cast<const ArcTangent*>(argument)));
+    case ARCSINUS:
+        return std::unique_ptr<AbstractExpression> (new ArcSinus(*static_cast<const ArcSinus*>(argument)));
     default:
         assert(false);
 

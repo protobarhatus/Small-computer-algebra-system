@@ -52,11 +52,13 @@ Variable VariablesDistributor::createVariable(VariablesDefinition definition)
     QString name = makeVariablesName(Variable::id_counter);
     VariablesNameDistributor::addVariable(Variable::id_counter, name);
     VariablesDistributor& distr = VariablesDistributor::get();
-    distr.variables.push_back(definition);
-    return Variable(Variable::id_counter, &distr.variables[Variable::id_counter - 1]);
+    distr.variables.push_back(new VariablesDefinition(definition));
+    return Variable(Variable::id_counter, distr.variables[Variable::id_counter - 1]);
 }
 void VariablesDistributor::deleteVariables()
 {
+    for (auto &it : this->variables)
+        delete it;
     this->variables.clear();
 }
 void deleteVariables()
@@ -71,7 +73,7 @@ VariablesDefinition * VariablesDistributor::getVariablesDefinition(int id)
     if (id > ref.variables.size())
         return ref.system_var_def;
     assert(id <= ref.variables.size());
-    return &ref.variables[id - 1];
+    return ref.variables[id - 1];
 }
 Variable getVariable(int id)
 {
@@ -80,6 +82,12 @@ Variable getVariable(int id)
 int VariablesDistributor::firstSystemNum()
 {
     return VariablesDistributor::get().first_system_num;
+}
+
+VariablesDistributor::~VariablesDistributor()
+{
+    for (auto &it : this->variables)
+        delete it;
 }
 Variable systemVar(int num)
 {

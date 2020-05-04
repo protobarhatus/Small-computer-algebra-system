@@ -585,6 +585,7 @@ double Degree::getApproximateValue(const std::function<double (VariablesDefiniti
 
 std::unique_ptr<AbstractExpression> Degree::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
+  //  NONCONST
     if (this->argument->makeStringOfExpression() == part)
     {
         abs_ex cop = copy(on_what);
@@ -592,6 +593,18 @@ std::unique_ptr<AbstractExpression> Degree::changeSomePartOn(QString part, std::
         return cop;
     }
     return this->argument->changeSomePartOn(part, on_what);
+}
+
+std::unique_ptr<AbstractExpression> Degree::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    NONCONST
+        if (this->argument->makeStringOfExpression() == part)
+        {
+            abs_ex cop = copy(on_what);
+            this->argument.swap(cop);
+            return cop;
+        }
+        return this->argument->changeSomePartOn(part, on_what);
 }
 
 std::unique_ptr<AbstractExpression> Degree::derivative(int var) const
@@ -684,6 +697,51 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         if (ln_f.first == nullptr)
             return nullptr;
         return one / ln_f.first * (this->argument * (takeDegreeOf(ln(argument), 3) - three*takeDegreeOf(ln(argument), 2) + numToAbs(6)*ln(argument) - numToAbs(6)));
+    }
+    //должен быть больше нуля, иначе оно бы распалось в downcast-е
+    if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isInteger())
+    {
+        if (this->argument->getId() == SINUS)
+        {
+            ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+            if (ln_f.first == nullptr)
+                return nullptr;
+            auto arg = getArgumentOfTrigonometricalFunction(argument.get());
+            //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
+            //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
+            return one/ln_f.first *(-one/degree * pow(argument, degree - one) * cos(arg) +
+                                    (degree - one)/degree * ln_f.first * pow(argument, degree - two)->antiderivative(var));
+        }
+        if (this->argument->getId() == COSINUS)
+        {
+            ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+            if (ln_f.first == nullptr)
+                return nullptr;
+            auto arg = getArgumentOfTrigonometricalFunction(argument.get());
+            //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
+            //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
+            return one/ln_f.first *(one/degree * pow(argument, degree - one) * sin(arg) +
+                                    (degree - one)/degree  * ln_f.first* pow(argument, degree - two)->antiderivative(var));
+        }
+        if (this->argument->getId() == TANGENT)
+        {
+            ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+            if (ln_f.first == nullptr)
+                return nullptr;
+            //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
+            //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
+            return one/ln_f.first * (pow(argument, degree - one)/(degree - one) -  ln_f.first*pow(argument, degree - two)->antiderivative(var));
+        }
+        if (this->argument->getId() == COTANGENT)
+        {
+            ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
+            if (ln_f.first == nullptr)
+                return nullptr;
+            //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
+            //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
+            return one/ln_f.first * (-pow(argument, degree - one)/(degree - one) -  ln_f.first* pow(argument, degree - two)->antiderivative(var));
+        }
+
     }
     if (*this->degree == *half)
     {

@@ -14,7 +14,7 @@ AbsoluteValue::AbsoluteValue(std::unique_ptr<AbstractExpression> && expr)
     this->expression = std::move(expr);
     this->simplify();
 }
-AbsoluteValue::AbsoluteValue(AbsoluteValue & value)
+AbsoluteValue::AbsoluteValue(const AbsoluteValue & value)
 {
     this->expression = makeAbstractExpression(value.expression->getId(), value.expression.get());
     this->simplified = value.simplified;
@@ -154,7 +154,7 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::open()
 
 std::unique_ptr<AbstractExpression> AbsoluteValue::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
-
+   // NONCONST
     if (this->expression->makeStringOfExpression() == part)
     {
         abs_ex cop = copy(on_what);
@@ -162,6 +162,18 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::changeSomePartOn(QString part
         return cop;
     }
     return this->expression->changeSomePartOn(part, on_what);
+}
+
+std::unique_ptr<AbstractExpression> AbsoluteValue::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    NONCONST
+        if (this->expression->makeStringOfExpression() == part)
+        {
+            abs_ex cop = copy(on_what);
+            this->expression.swap(cop);
+            return cop;
+        }
+        return this->expression->changeSomePartOn(part, on_what);
 }
 
 std::unique_ptr<AbstractExpression> AbsoluteValue::derivative(int var) const

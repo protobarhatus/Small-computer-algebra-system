@@ -98,6 +98,11 @@ std::unique_ptr<AbstractExpression> Constant::changeSomePartOn(QString part, std
     return nullptr;
 }
 
+std::unique_ptr<AbstractExpression> Constant::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    return nullptr;
+}
+
 std::unique_ptr<AbstractExpression> Constant::derivative(int var) const
 {
 

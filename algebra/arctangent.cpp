@@ -6,6 +6,7 @@
 #include "constant.h"
 #include "variablesdistributor.h"
 #include "logarithm.h"
+#include <cmath>
 ArcTangent::ArcTangent(const std::unique_ptr<AbstractExpression> &arg)
 {
     this->argument = copy(arg);
@@ -155,6 +156,7 @@ std::unique_ptr<AbstractExpression> ArcTangent::getArgumentMoved()
 
 std::unique_ptr<AbstractExpression> ArcTangent::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
+    //NONCONST
     if (this->argument->makeStringOfExpression() == part)
     {
         abs_ex cop = copy(on_what);
@@ -162,6 +164,18 @@ std::unique_ptr<AbstractExpression> ArcTangent::changeSomePartOn(QString part, s
         return cop;
     }
     return this->argument->changeSomePartOn(part, on_what);
+}
+
+std::unique_ptr<AbstractExpression> ArcTangent::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    NONCONST
+        if (this->argument->makeStringOfExpression() == part)
+        {
+            abs_ex cop = copy(on_what);
+            this->argument.swap(cop);
+            return cop;
+        }
+        return this->argument->changeSomePartOn(part, on_what);
 }
 
 std::unique_ptr<AbstractExpression> ArcTangent::getArgumentsCopy()

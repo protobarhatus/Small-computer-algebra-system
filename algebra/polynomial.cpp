@@ -397,10 +397,15 @@ std::set<int> Polynomial::getSetOfVariables() const
 std::set<QString> Polynomial::getSetOfFunctions() const
 {
     std::set<QString> set;
+    auto merge = [&set](const std::set<QString> & s) {
+        for (auto &it : s)
+            set.insert(it);
+    };
     for (auto &it : monomials)
     {
         auto r = it->getSetOfFunctions();
-        set.merge(r);
+       // set.merge(r);
+        merge(r);
     }
     return set;
 }
@@ -1872,6 +1877,7 @@ std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > P
 
 std::unique_ptr<AbstractExpression> Polynomial::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
 {
+    //NONCONST
     abs_ex its_part = nullptr;
     auto add = [&on_what, &its_part](abs_ex & part)->void {
         if (its_part == nullptr)
@@ -1896,6 +1902,12 @@ std::unique_ptr<AbstractExpression> Polynomial::changeSomePartOn(QString part, s
 
     }
     return its_part;
+}
+
+std::unique_ptr<AbstractExpression> Polynomial::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+{
+    NONCONST
+            return changeSomePartOn(part, on_what);
 }
 
 std::unique_ptr<Fractal> Polynomial::toCommonDenominator()

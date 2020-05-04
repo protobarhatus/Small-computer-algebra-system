@@ -3,7 +3,6 @@
 #include "variable.h"
 #include <vector>
 #include "variablesdefinition.h"
-
 class VariablesDistributor
 {
 public:
@@ -13,7 +12,8 @@ public:
     void deleteVariables();
     static VariablesDefinition * getVariablesDefinition(int id);
     static int firstSystemNum();
-
+    //не знаю насколько синглтону нужен деструктор, но да пусть будет
+    ~VariablesDistributor();
 private:
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
     const int first_system_num = 1000000000;
@@ -21,7 +21,10 @@ private:
     VariablesDistributor();
     VariablesDistributor(const VariablesDistributor &) = delete;
     VariablesDistributor& operator=(const VariablesDistributor &) = delete;
-    std::vector<VariablesDefinition> variables;
+    //мы используем указатели, так как когда при добавлении переменной вектор перевыделяется, адреса объектов
+    //изменяются, а так как переменные хранят указатели на область определения, то, если бы тут были объекты, то
+    //после перевыделения указатели стали бы невалидными
+    std::vector<VariablesDefinition*> variables;
 
 };
 

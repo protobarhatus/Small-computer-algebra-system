@@ -26,7 +26,7 @@ bool AbstractExpression::less(const AbstractExpression * left, const AbstractExp
 {
     if (left->getId() != DIFFERENTIAL && right->getId() == DIFFERENTIAL)
         return true;
-    if (right->getId() == DIFFERENTIAL && left->getId() != DIFFERENTIAL)
+    if (left->getId() == DIFFERENTIAL && right->getId() != DIFFERENTIAL)
         return false;
     if (left->getId() != right->getId())
     {
@@ -45,7 +45,7 @@ bool AbstractExpression::lessToSort(const std::unique_ptr<AbstractExpression> &l
 {
     if (left->getId() != DIFFERENTIAL && right->getId() == DIFFERENTIAL)
         return true;
-    if (right->getId() == DIFFERENTIAL && left->getId() != DIFFERENTIAL)
+    if (left->getId() == DIFFERENTIAL && right->getId() != DIFFERENTIAL)
         return false;
     if (left->getId() != right->getId())
     {
@@ -250,7 +250,22 @@ void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<in
     {
         expr->changeSomePartOn(systemVar(it.first).makeStringOfExpression(), it.second);
     }
+
    // qDebug() << "WITHOUT: " << expr->makeStringOfExpression();
+}
+void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int, abs_ex> & funcs)
+{
+    //qDebug() << "WITH: " << expr->makeStringOfExpression();
+    for (auto &it : funcs)
+    {
+        expr->changeSomePartOnExpression(systemVar(it.first).makeStringOfExpression(), it.second);
+    }
+    expr->simplify();
+   // qDebug() << "WITHOUT: " << expr->makeStringOfExpression();
+}
+void replaceSystemVariablesToExpressions(abs_ex & expr, std::map<int, abs_ex> & funcs)
+{
+    replaceSystemVariablesToExpressions(expr.get(), funcs);
 }
 /*
 void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<std::unique_ptr<AbstractExpression> > &functions)
@@ -401,4 +416,23 @@ std::unique_ptr<AbstractExpression> operator-(const std::unique_ptr<AbstractExpr
 std::unique_ptr<AbstractExpression> operator-(std::unique_ptr<AbstractExpression> &&arg)
 {
     return minus_one * std::move(arg);
+}
+
+std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(AbstractExpression *expr)
+{
+    AbstractExpression *arg = Degree::getArgumentOfDegree(expr);
+    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT);
+    switch (arg->getId()) {
+    case SINUS:
+        return static_cast<Sinus*>(arg)->getArgumentsCopy();
+    case COSINUS:
+        return static_cast<Cosinus*>(arg)->getArgumentsCopy();
+    case TANGENT:
+        return static_cast<Tangent*>(arg)->getArgumentsCopy();
+    case COTANGENT:
+        return static_cast<Cotangent*>(arg)->getArgumentsCopy();
+    default:
+        assert(false);
+
+    }
 }
