@@ -64,6 +64,10 @@ SOURCES += \
     ../../mo2/exprguidewidget.cpp \
     ../../mo2/testexprmakewidget.cpp \
     ../../mo2/testpaintwidget.cpp \
+    algebra/Matrix.cpp \
+    algebra/Vector.cpp \
+    algebra/Vector2.cpp \
+    algebra/Vector3.cpp \
     algebra/absolutevalue.cpp \
     algebra/abstractexpression.cpp \
     algebra/algexpr.cpp \
@@ -83,6 +87,7 @@ SOURCES += \
     algebra/polynomial.cpp \
     algebra/primetest.cpp \
     algebra/sinus.cpp \
+    algebra/solving_equations.cpp \
     algebra/some_algebra_expression_conversions.cpp \
     algebra/tangent.cpp \
     algebra/trigonometrical_conversions.cpp \
@@ -145,6 +150,10 @@ HEADERS += \
     ../../mo2/exprguidewidget.h \
     ../../mo2/testexprmakewidget.h \
     ../../mo2/testpaintwidget.h \
+    algebra/Matrix.h \
+    algebra/Vector.h \
+    algebra/Vector2.h \
+    algebra/Vector3.h \
     algebra/absolutevalue.h \
     algebra/abstractexpression.h \
     algebra/algexpr.h \
