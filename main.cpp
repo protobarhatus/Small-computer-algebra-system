@@ -26,7 +26,7 @@ int rand(int min, int max)
 
 int main(int argc, char *argv[])
 {
-    testAlgMod();
+   // testAlgMod();
     qDebug() << "#########";
     AlgExpr x = var();
 
@@ -45,13 +45,13 @@ int main(int argc, char *argv[])
    // auto expr = builder.BuildExpr("x^2+x+1");
 
 //TODO: разобраться с ситуациями по типу
-    //log(tan(x)) - (log(sin(x)) - log(cos(x))
+    //log(tan(x)) - (log(sin(x)) - log(cos(x)))
     //2log(cos(x)) - log(1-sin(x)^2)
     //ТАКЖЕ, если  синусы и косинусы раскрываются по сумме всегда сразу, то мы лишаемся
     //возможности взять интегралы вида 1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
     //это надо исправить
 
-   c = sqrt(x*x);
+   c = ln(tan(x)) - (ln(sin(x)) - ln(cos(x)));
 
     //c = ;
    // c.out();

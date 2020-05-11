@@ -5,6 +5,7 @@
 #include "fractal.h"
 #include "polynomial.h"
 #include "variablesdistributor.h"
+#include "Matrix.h"
 std::vector<abs_ex> solveEquation(const abs_ex & equation, int var)
 {
     //is linear equation
@@ -71,13 +72,25 @@ std::vector<abs_ex> checkIfEquationIsLinearAnsGetCoefficients(const abs_ex & equ
 }
 //возвращает корни в том же порядке, что и vars. если система нелинейна, то возвращает { , -2}. Если система линейна, но не имеет решений, то возвращает { , -1}
 //если система имеет единственное решение, то возвращает { , 0}. если бесконечное множество решений, вернет { , > 0},
+//теоретически здесь я бы мог продумать вариант с параметром, но для текущих целей - метода неопределенных
+//коэффициентов, это не нужно.
 std::pair<std::vector<abs_ex>, int> checkIfSystemOfEquationsLinearAndTryToSolveIt(const std::vector<abs_ex> & system, const std::vector<int>& vars)
 {
-
+    Matrix system_matrix(system.size(), vars.size() + 1);
+    for (int i = 0; i < system.size(); ++i)
+    {
+        auto coefs = checkIfEquationIsLinearAnsGetCoefficients(system[i], vars);
+        if (coefs[0] == nullptr)
+            return {std::vector<abs_ex>(0), -2};
+        coefs.back() = -coefs.back();
+        //system_matrix[i] = std::move(coefs);
+    }
+    return {std::vector<abs_ex>(0), -2};
 }
 std::vector<std::vector<abs_ex>> solveSystemOfEquations(const std::vector<abs_ex>& equations, const std::vector<int>& vars)
 {
     //возможность решать это с параметром, если необходимо, введу позже
     assert(equations.size() >= vars.size());
-
+    return {{nullptr}};
 }
+
