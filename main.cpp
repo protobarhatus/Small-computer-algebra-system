@@ -28,6 +28,7 @@ int main(int argc, char *argv[])
 {
    // testAlgMod();
     qDebug() << "#########";
+
     AlgExpr x = var();
 
     AlgExpr y = var();

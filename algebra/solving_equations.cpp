@@ -6,18 +6,23 @@
 #include "polynomial.h"
 #include "variablesdistributor.h"
 #include "Matrix.h"
-std::vector<abs_ex> solveEquation(const abs_ex & equation, int var)
+std::vector<abs_ex>&& solveEquation(const abs_ex & equation, int var)
 {
     //is linear equation
     auto ln_f = checkIfItsLinearFunction(equation, var);
     if (ln_f.first != nullptr)
-        return std::vector<abs_ex>(1, -ln_f.second / ln_f.first);
+    {
+        std::vector<abs_ex> res(1);
+        res[0] = -ln_f.second / ln_f.first;
+        return std::move(res);
+    }
+        //return { -ln_f.second / ln_f.first};
     assert(false);
 }
 //возвращает коэффициент и индекс переменной в векторе, к которой этот коэффициент принадлежит. Если там есть другие переменные из вектора или оно нелинейно относительно
 //какой-л переменной то возвразщает {nullptr, }
 //индекс vars.size() означает что это свободный член
-std::pair<abs_ex, int> getLinearCoeffientOfVariable(AbstractExpression * monom, const std::vector<int> & vars)
+std::pair<abs_ex, int>&& getLinearCoeffientOfVariable(AbstractExpression * monom, const std::vector<int> & vars)
 {
     assert(monom->getId() != POLYNOMIAL);
     int variable_id_in_monom = -1;
@@ -41,7 +46,7 @@ std::pair<abs_ex, int> getLinearCoeffientOfVariable(AbstractExpression * monom, 
 
 }
 //последний коэффициент - свободный член. result[0] == nullptr значит что уравнение не линейно относительно этого набора переменных
-std::vector<abs_ex> checkIfEquationIsLinearAnsGetCoefficients(const abs_ex & equation, const std::vector<int> & vars)
+std::vector<abs_ex>&& checkIfEquationIsLinearAnsGetCoefficients(const abs_ex & equation, const std::vector<int> & vars)
 {
     std::vector<abs_ex> result(vars.size() + 1);
     for (auto &it : result)
@@ -55,20 +60,20 @@ std::vector<abs_ex> checkIfEquationIsLinearAnsGetCoefficients(const abs_ex & equ
             if (coefficient.first == nullptr)
             {
                 result[0] = nullptr;
-                return result;
+                return std::move(result);
             }
             result[coefficient.second] = std::move(result[coefficient.second]) + std::move(coefficient.first);
         }
-        return result;
+        return std::move(result);
     }
     auto coefficient = getLinearCoeffientOfVariable(equation.get(), vars);
     if (coefficient.first == nullptr)
     {
         result[0] = nullptr;
-        return result;
+        return std::move(result);
     }
     result[coefficient.second] =  std::move(coefficient.first);
-    return result;
+    return std::move(result);
 }
 //возвращает корни в том же порядке, что и vars. если система нелинейна, то возвращает { , -2}. Если система линейна, но не имеет решений, то возвращает { , -1}
 //если система имеет единственное решение, то возвращает { , 0}. если бесконечное множество решений, вернет { , > 0},
@@ -83,14 +88,18 @@ std::pair<std::vector<abs_ex>, int> checkIfSystemOfEquationsLinearAndTryToSolveI
         if (coefs[0] == nullptr)
             return {std::vector<abs_ex>(0), -2};
         coefs.back() = -coefs.back();
-        //system_matrix[i] = std::move(coefs);
+        system_matrix[i] = std::move(coefs);
     }
+    auto result = gauss(std::move(system_matrix));
+    if (result.size() == 0)
+        return {std::vector<abs_ex>(0), -2};
     return {std::vector<abs_ex>(0), -2};
 }
-std::vector<std::vector<abs_ex>> solveSystemOfEquations(const std::vector<abs_ex>& equations, const std::vector<int>& vars)
+std::vector<std::vector<abs_ex>>&& solveSystemOfEquations(const std::vector<abs_ex>& equations, const std::vector<int>& vars)
 {
     //возможность решать это с параметром, если необходимо, введу позже
     assert(equations.size() >= vars.size());
-    return {{nullptr}};
+    std::vector<std::vector<abs_ex>> res(0);
+    return std::move(res);
 }
 

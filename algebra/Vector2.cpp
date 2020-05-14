@@ -18,18 +18,7 @@ Vector2::Vector2(const Vector2 & copy) : _x(copy._x), _y(copy._y)
 {
 
 }
-Vector2::Vector2(const Vector& vec)
-{
-	if (vec.size() != 2)
-		throw "Conversion of different sized vector";
-	this->_x = vec.x();
-	this->_y = vec.y();
-}
-Vector2& Vector2::operator=(const Vector& vec)
-{
-	*this = Vector2(vec);
-	return *this;
-}
+
 long double Vector2::x() const
 {
 	return this->_x;

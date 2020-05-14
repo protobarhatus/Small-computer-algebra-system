@@ -17,6 +17,16 @@ AbstractExpression::AbstractExpression()
 
 }
 
+AbstractExpression &AbstractExpression::operator=(const AbstractExpression &expr)
+{
+    return *this;
+}
+
+AbstractExpression::AbstractExpression(const AbstractExpression &expr)
+{
+
+}
+
 
 AbstractExpression::~AbstractExpression()
 {

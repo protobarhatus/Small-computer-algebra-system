@@ -10,7 +10,7 @@ public:
 	Matrix(std::vector<Vector>&& matrix);
 	Matrix(int m, int n);
 	
-	Matrix(int m, int n, const std::function<long double(int, int)>& formula);
+	Matrix(int m, int n, const std::function<abs_ex(int, int)>& formula);
 	Matrix(const Matrix& copy);
 	Matrix(Matrix&& matr) noexcept;
 
@@ -28,8 +28,8 @@ public:
 
 	Matrix operator+(const Matrix& sec) const;
 	Matrix operator-(const Matrix& sec) const;
-	Matrix operator*(long double num) const;
-	Matrix operator/(long double num) const;
+	Matrix operator*(const abs_ex& num) const;
+	Matrix operator/(const abs_ex& num) const;
 	Matrix operator*(const Matrix& sec) const;
 	Vector operator*(const Vector& sec) const;
 
@@ -38,12 +38,12 @@ public:
 
 	Matrix& operator+=(const Matrix& sec);
 	Matrix& operator-=(const Matrix& sec);
-	Matrix& operator*=(long double num);
-	Matrix& operator/=(long double num);
+	Matrix& operator*=(const abs_ex& num);
+	Matrix& operator/=(const abs_ex& num);
 	bool isSquare() const;
 };
 
 Matrix makeUnitMatrix(int size);
-long double det(const Matrix& matrix);
-std::vector<std::vector<long double> > gauss(Matrix extended_equation_matrix);
+abs_ex det(const Matrix& matrix);
+std::vector<std::vector<abs_ex> > gauss(Matrix&& extended_equation_matrix);
 Matrix inverse(Matrix matrix);

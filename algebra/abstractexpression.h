@@ -42,8 +42,8 @@ class AbstractExpression
 {
 public:
     AbstractExpression();
-    AbstractExpression & operator=(AbstractExpression & expr);
-    AbstractExpression(AbstractExpression & expr);
+    AbstractExpression & operator=(const AbstractExpression & expr);
+    AbstractExpression(const AbstractExpression & expr);
     virtual ~AbstractExpression();
     virtual void simplify() = 0;
     virtual AlgebraExpression getId() const = 0;
@@ -136,6 +136,8 @@ std::unique_ptr<AbstractExpression> operator/(const std::unique_ptr<AbstractExpr
 
 std::unique_ptr<AbstractExpression> operator+(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
 std::unique_ptr<AbstractExpression> operator-(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
+
+
 abs_ex operator-(const abs_ex & arg);
 abs_ex operator-(abs_ex && arg);
 #endif // ABSTRACTEXPRESSION_H

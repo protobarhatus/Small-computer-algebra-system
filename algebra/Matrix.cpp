@@ -1,5 +1,7 @@
 #include "Matrix.h"
 #include <algorithm>
+#include "some_algebra_expression_conversions.h"
+#include "number.h"
 Matrix::Matrix(const std::vector<Vector>& _matrix)
 {
 	this->matrix = _matrix;
@@ -14,13 +16,13 @@ Matrix::Matrix(std::vector<Vector>&& _matrix)
 }
 Matrix::Matrix(int m, int n)
 {
-	this->matrix = std::vector<Vector>(m, std::vector<long double>(n, 0));
+	this->matrix = std::vector<Vector>(m, std::vector<abs_ex>(n, 0));
 	this->_lines = matrix.size();
 	this->_columns = matrix[0].size();
 }
-Matrix::Matrix(int m, int n, const std::function<long double(int, int)>& formula)
+Matrix::Matrix(int m, int n, const std::function<abs_ex(int, int)>& formula)
 {
-	this->matrix = std::vector<Vector>(m, std::vector<long double>(n, 0));
+	this->matrix = std::vector<Vector>(m, std::vector<abs_ex>(n, 0));
 	for (int i = 0; i < m; ++i)
 		for (int j = 0; j < n; ++j)
 			this->matrix[i][j] = formula(i, j);
@@ -117,7 +119,7 @@ Matrix Matrix::operator-(const Matrix& sec) const
 	return res;
 }
 
-Matrix Matrix::operator*(long double num) const
+Matrix Matrix::operator*(const abs_ex& num) const
 {
 	Matrix res(this->_lines, this->_columns);
 	for (int i = 0; i < this->_lines; ++i)
@@ -126,7 +128,7 @@ Matrix Matrix::operator*(long double num) const
 	return res;
 }
 
-Matrix Matrix::operator/(long double num) const
+Matrix Matrix::operator/(const abs_ex& num) const
 {
 	Matrix res(this->_lines, this->_columns);
 	for (int i = 0; i < this->_lines; ++i)
@@ -143,10 +145,10 @@ Matrix Matrix::operator*(const Matrix& sec) const
 	for (int i = 0; i < this->_lines; ++i)
 		for (int j = 0; j < sec._columns; ++j)
 		{
-			long double sum = 0;
+			abs_ex sum = copy(zero);
 			for (int r = 0; r < this->_columns; ++r)
-				sum += this->matrix[i][r] * sec[r][j];
-			res[i][j] = sum;
+				sum = sum + this->matrix[i][r] * sec[r][j];
+			res[i][j] = std::move(sum);
 		}
 	return res;
 }
@@ -160,7 +162,7 @@ Vector Matrix::operator*(const Vector& sec) const
 	{
 		for (int j = 0; j < res.size(); ++j)
 		{
-			res[i] += this->matrix[i][j] * sec[j];
+			res[i] = res[i] + this->matrix[i][j] * sec[j];
 		}
 	}
 	return res;
@@ -185,13 +187,13 @@ Matrix& Matrix::operator-=(const Matrix& sec)
 	return *this;
 }
 
-Matrix& Matrix::operator*=(long double num)
+Matrix& Matrix::operator*=(const abs_ex& num)
 {
 	*this = *this * num;
 	return *this;
 }
 
-Matrix& Matrix::operator/=(long double num)
+Matrix& Matrix::operator/=(const abs_ex& num)
 {
 	*this = *this / num;
 	return *this;
@@ -204,20 +206,20 @@ bool Matrix::isSquare() const
 
 Matrix makeUnitMatrix(int size)
 {
-	return Matrix(size, size, [](int i, int j) {return (i == j ? 1 : 0); });
+	return Matrix(size, size, [](int i, int j) {return (i == j ? copy(one) : copy(zero)); });
 }
 
-long double det(const Matrix& matrix)
+abs_ex det(const Matrix& matrix)
 {
 	if (!matrix.isSquare())
 		throw "Attemt to count determinant of non square matrix";
 	if (matrix.lines() == 1)
-		return matrix[0][0];
+        return copy(matrix[0][0]);
 	if (matrix.lines() == 2)
 		return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
-	long double d = 0;
+    abs_ex d = copy(zero);
 	for (int i = 0; i < matrix.columns(); ++i)
-		d += (i % 2 == 0 ? 1 : -1) * det(Matrix(matrix.lines() - 1, matrix.columns() - 1, [i, &matrix](int k, int j)->long double { return matrix[k + 1][j + (j >= i ? 1 : 0)]; }));
+        d = d + (i % 2 == 0 ? copy(one) : -one) * det(Matrix(matrix.lines() - 1, matrix.columns() - 1, [i, &matrix](int k, int j)->abs_ex { return copy(matrix[k + 1][j + (j >= i ? 1 : 0)]); }));
 	return d;
 }
 
@@ -230,7 +232,7 @@ Matrix inverse(Matrix matrix)
 	int width = matrix[0].size();
 	auto get_index_of_first_non_zero = [](Vector& vec)->int {
 		for (int i = 0; i < vec.size(); ++i)
-			if (vec[i] != 0)
+            if (*vec[i] != *zero)
 				return i;
 		return vec.size();
 	};
@@ -252,14 +254,14 @@ Matrix inverse(Matrix matrix)
 		}
 	};
 	auto divide_on_lead_element = [&matrix, &result](int x)->void {
-		double lead_el = matrix[x][x];
+        abs_ex lead_el = copy(matrix[x][x]);
 		for (int i = x; i < matrix.size(); ++i)
 		{
-			matrix[x][i] /= lead_el;
+            matrix[x][i] = matrix[x][i] / lead_el;
 		}
 		for (int i = 0; i < matrix.size(); ++i)
 		{
-			result[x][i] /= lead_el;
+            result[x][i]  = result[x][i] / lead_el;
 		}
 	};
 	sort_rows();
@@ -268,7 +270,7 @@ Matrix inverse(Matrix matrix)
 		divide_on_lead_element(n);
 		for (int i = n + 1; i < height; ++i)
 		{
-			long double multiplier = -matrix[i][n] / matrix[n][n];
+			abs_ex multiplier = -matrix[i][n] / matrix[n][n];
 			matrix[i] = matrix[i] + matrix[n] * (multiplier);
 			result[i] = result[i] + result[n] * (multiplier);
 
@@ -277,32 +279,32 @@ Matrix inverse(Matrix matrix)
 
 		//sort_rows();
 	}
-	for (int i = 0; i < matrix.size(); ++i)
+    /*for (int i = 0; i < matrix.size(); ++i)
 		for (int j = 0; j < matrix[i].size(); ++j)
 			if (abs(matrix[i][j]) < 1e-15)
-				matrix[i][j] = 0;
+                matrix[i][j] = 0;*/
 	for (int n = height - 1; n >= 0; --n)
 	{
 		for (int i = n - 1; i >= 0; --i)
 		{
-			long double multiplier = -matrix[i][n] / matrix[n][n];
+			abs_ex multiplier = -matrix[i][n] / matrix[n][n];
 			matrix[i] = matrix[i] + matrix[n] * (multiplier);
 			result[i] = result[i] + result[n] * (multiplier);
 		}
 	}
-	for (int i = 0; i < matrix.size(); ++i)
+    /*for (int i = 0; i < matrix.size(); ++i)
 		for (int j = 0; j < matrix[i].size(); ++j)
 			if (abs(matrix[i][j]) < 1e-15)
-				matrix[i][j] = 0;
+                matrix[i][j] = 0;*/
 	return result;
 }
-std::vector<std::vector<long double> > gauss(Matrix extended_equation_matrix)
+std::vector<std::vector<abs_ex> > gauss(Matrix&& extended_equation_matrix)
 {
 	int height = extended_equation_matrix.lines();
 	int width = extended_equation_matrix.columns();
 	auto get_index_of_first_non_zero = [](Vector& vec)->int {
 		for (int i = 0; i < vec.size(); ++i)
-			if (vec[i] != 0)
+            if (*vec[i] != *zero)
 				return i;
 		return vec.size();
 	};
@@ -335,39 +337,39 @@ std::vector<std::vector<long double> > gauss(Matrix extended_equation_matrix)
 		sort_rows();
 	}
 	//!!!!!!!!!!!!!!!
-	for (int i = 0; i < extended_equation_matrix.lines(); ++i)
+    /*for (int i = 0; i < extended_equation_matrix.lines(); ++i)
 		for (int j = 0; j < extended_equation_matrix[i].size(); ++j)
 			if (abs(extended_equation_matrix[i][j]) < 1e-15)
-				extended_equation_matrix[i][j] = 0;
+                extended_equation_matrix[i][j] = 0;*/
 	int first_non_zero = height - 1;
-	for (first_non_zero = height - 1; extended_equation_matrix[first_non_zero][width - 2] == 0; --first_non_zero)
-		if (extended_equation_matrix[first_non_zero][width - 1] != 0)
-			return std::vector<std::vector<long double> >();
+    for (first_non_zero = height - 1; *extended_equation_matrix[first_non_zero][width - 2] == *zero; --first_non_zero)
+        if (*extended_equation_matrix[first_non_zero][width - 1] != *zero)
+			return std::vector<std::vector<abs_ex> >();
 	auto div_on_lead_element = [](Vector& vec)->void {
-		long double lead_el = 0;
+        abs_ex lead_el = copy(zero);
 		for (int i = 0; i < vec.size(); ++i)
 		{
-			if (lead_el == 0)
-				lead_el = vec[i];
-			if (lead_el != 0)
-				vec[i] /= lead_el;
+            if (*lead_el == *zero)
+                lead_el = copy(vec[i]);
+            if (*lead_el != *zero)
+                vec[i] = vec[i]/ lead_el;
 		}
 	};
 
 	for (int i = 0; i < extended_equation_matrix.lines(); ++i)
 		div_on_lead_element(extended_equation_matrix[i]);
 	int amount_of_variables = width - 1;
-	//первый индекс - индекс переменной которую выразили, второй - индекс вектора, вектор без переменных - последний
-	std::vector<std::vector<long double> > result(amount_of_variables);
+	//пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+	std::vector<std::vector<abs_ex> > result(amount_of_variables);
 	int current_params_index = width - 2;
 	for (int i = first_non_zero; i >= 0; --i)
 	{
-		while (extended_equation_matrix[i][current_params_index] != 1)
+        while (*extended_equation_matrix[i][current_params_index] != *one)
 			--current_params_index;
 		result[current_params_index].resize(amount_of_variables + 1);
 		for (int j = width - 1; j > current_params_index; --j)
 		{
-			result[current_params_index][j] = (j == width - 1 ? 1 : -1) * extended_equation_matrix[i][j];
+            result[current_params_index][j] = (j == width - 1 ? copy(one) : -one) * extended_equation_matrix[i][j];
 		}
 		for (int j = i - 1; j >= 0; --j)
 		{

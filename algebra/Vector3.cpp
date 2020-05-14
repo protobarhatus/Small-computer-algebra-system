@@ -21,20 +21,9 @@ Vector3d::Vector3d(const Vector3d & copy)
 	this->_z = copy._z;
 }
 
-Vector3d::Vector3d(const Vector& vec)
-{
-	if (vec.size() != 3)
-		throw "Conversion of vector with different size";
-	this->_x = vec.x();
-	this->_y = vec.y();
-	this->_z = vec.z();
-}
 
-Vector3d& Vector3d::operator=(const Vector& vec)
-{
-	*this = Vector3d(vec);
-	return *this;
-}
+
+
 
 long double Vector3d::x() const
 {

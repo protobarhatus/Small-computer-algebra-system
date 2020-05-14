@@ -7,8 +7,6 @@ public:
 	Vector3d();
 	~Vector3d();
 	Vector3d(const Vector3d &);
-	Vector3d(const Vector& vec);
-	Vector3d& operator=(const Vector& vec);
 	long double x() const;
 	long double y() const;
 	long double z() const;

@@ -7,8 +7,6 @@ public:
 	Vector2();
 	~Vector2();
 	Vector2(const Vector2 &);
-	Vector2(const Vector& vec);
-	Vector2& operator=(const Vector& vec);
 	long double x() const;
 	long double y() const;
 	long double length() const;
