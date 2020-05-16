@@ -20,6 +20,7 @@
 #include "differential.h"
 #include "arctangent.h"
 #include "arcsinus.h"
+
 std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, const AbstractExpression * argument)
 {
     assert(type == argument->getId() || (type > 0 && argument->getId() > 0));

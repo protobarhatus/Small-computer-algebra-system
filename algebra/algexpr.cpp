@@ -29,6 +29,12 @@ AlgExpr::AlgExpr(long long int num)
 {
     this->expression = std::unique_ptr<AbstractExpression>(new Number(num));
 }
+
+AlgExpr::AlgExpr(const std::unique_ptr<AbstractExpression> &expr)
+{
+    this->expression = copy(expr);
+}
+
 AlgExpr::AlgExpr(abs_ex && expr)
 {
     this->expression = std::move(expr);
@@ -57,30 +63,20 @@ AlgExpr& AlgExpr::operator=(long long int num)
     return *this;
 }
 
-AlgExpr AlgExpr::operator+(const AlgExpr &expr) const
+AlgExpr &AlgExpr::operator=(const std::unique_ptr<AbstractExpression> &expr)
 {
-    AlgExpr result;
-    result.expression = this->expression + expr.expression;
-    return result;
+    this->expression = copy(expr);
+    return *this;
 }
-AlgExpr AlgExpr::operator-(const AlgExpr &expr) const
+
+AlgExpr &AlgExpr::operator=(std::unique_ptr<AbstractExpression> &&expr)
 {
-    AlgExpr result;
-    result.expression = this->expression - expr.expression;
-    return result;
+    this->expression = std::move(expr);
+    return *this;
 }
-AlgExpr AlgExpr::operator*(const AlgExpr &expr) const
-{
-    AlgExpr result;
-    result.expression = this->expression * expr.expression;
-    return result;
-}
-AlgExpr AlgExpr::operator/(const AlgExpr &expr) const
-{
-    AlgExpr result;
-    result.expression = this->expression / expr.expression;
-    return result;
-}
+
+
+
 AlgExpr& AlgExpr::operator+=(const AlgExpr & expr)
 {
     this->expression = this->expression + expr.expression;
@@ -102,9 +98,107 @@ AlgExpr& AlgExpr::operator/=(const AlgExpr & expr)
     return *this;
 }
 
+AlgExpr operator+(const AlgExpr &left, const AlgExpr &right)
+{
+    return left.expression + right.expression;
+}
+
+AlgExpr operator+(const AlgExpr &left, AlgExpr &&right)
+{
+    return left.expression + std::move(right.expression);
+}
+
+AlgExpr operator+(AlgExpr &&left, const AlgExpr &right)
+{
+    return std::move(left.expression) + right.expression;
+}
+
+AlgExpr operator+(AlgExpr &&left, AlgExpr &&right)
+{
+    return std::move(left.expression) + std::move(right.expression);
+}
+
+
+
+AlgExpr operator-(const AlgExpr &left, const AlgExpr &right)
+{
+    return left.expression - right.expression;
+}
+
+AlgExpr operator-(const AlgExpr &left, AlgExpr &&right)
+{
+    return left.expression - std::move(right.expression);
+}
+
+AlgExpr operator-(AlgExpr &&left, const AlgExpr &right)
+{
+    return std::move(left.expression) - right.expression;
+}
+
+AlgExpr operator-(AlgExpr &&left, AlgExpr &&right)
+{
+    return std::move(left.expression) - std::move(right.expression);
+}
+
+
+
+AlgExpr operator*(const AlgExpr &left, const AlgExpr &right)
+{
+    return left.expression * right.expression;
+}
+
+AlgExpr operator*(const AlgExpr &left, AlgExpr &&right)
+{
+    return left.expression * std::move(right.expression);
+}
+
+AlgExpr operator*(AlgExpr &&left, const AlgExpr &right)
+{
+    return std::move(left.expression) * right.expression;
+}
+
+AlgExpr operator*(AlgExpr &&left, AlgExpr &&right)
+{
+    return std::move(left.expression) * std::move(right.expression);
+}
+
+
+
+AlgExpr operator/(const AlgExpr &left, const AlgExpr &right)
+{
+    return left.expression / right.expression;
+}
+
+AlgExpr operator/(const AlgExpr &left, AlgExpr &&right)
+{
+    return left.expression / std::move(right.expression);
+}
+
+AlgExpr operator/(AlgExpr &&left, const AlgExpr &right)
+{
+    return std::move(left.expression) / right.expression;
+}
+
+AlgExpr operator/(AlgExpr &&left, AlgExpr &&right)
+{
+    return std::move(left.expression) / std::move(right.expression);
+}
+
+
+
 AlgExpr AlgExpr::operator-() const
 {
     return -1 * *this;
+}
+
+std::unique_ptr<AbstractExpression> &AlgExpr::getExpr()
+{
+    return this->expression;
+}
+
+const std::unique_ptr<AbstractExpression> &AlgExpr::getExpr() const
+{
+    return this->expression;
 }
 bool AlgExpr::operator==(const AlgExpr &expr) const
 {
@@ -389,4 +483,24 @@ AlgExpr D(const AlgExpr &arg)
 AlgExpr D(AlgExpr &&arg)
 {
     return AlgExpr(abs_ex(new Differential(std::move(arg.expression))));
+}
+
+AlgExpr operator+(long long left, AlgExpr &&expr)
+{
+    return AlgExpr(left) + std::move(expr);
+}
+
+AlgExpr operator-(long long left, AlgExpr &&right)
+{
+    return AlgExpr(left) - std::move(right);
+}
+
+AlgExpr operator*(long long left, AlgExpr &&right)
+{
+    return AlgExpr(left) * std::move(right);
+}
+
+AlgExpr operator/(long long left, AlgExpr &&right)
+{
+    return AlgExpr(left)/std::move(right);
 }

@@ -103,6 +103,8 @@ protected:
     virtual int getPositionRelativelyZeroIfHasVariables() = 0;
 
 };
+
+
 QString getStringArgumentOfTrigonometricalFunction(abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);
 //std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);

@@ -16,16 +16,17 @@ public:
     AlgExpr(AlgExpr && expr);
     AlgExpr(Number num);
     AlgExpr(long long int num);
+    AlgExpr(const abs_ex & expr);
+    AlgExpr(abs_ex && expr);
 
 
     AlgExpr& operator=(const AlgExpr & expr);
     AlgExpr& operator=(AlgExpr && expr);
     AlgExpr& operator=(Number num);
     AlgExpr& operator=(long long int num);
-    AlgExpr operator+(const AlgExpr & expr) const;
-    AlgExpr operator-(const AlgExpr & expr) const;
-    AlgExpr operator*(const AlgExpr & expr) const;
-    AlgExpr operator/(const AlgExpr & expr) const;
+    AlgExpr& operator=(const abs_ex & expr);
+    AlgExpr& operator=(abs_ex&& expr);
+
     AlgExpr& operator+=(const AlgExpr & expr);
     AlgExpr& operator-=(const AlgExpr & expr);
     AlgExpr& operator*=(const AlgExpr & expr);
@@ -69,11 +70,49 @@ public:
     friend AlgExpr derivative(const AlgExpr & arg, AlgExpr arg_variable);
     friend AlgExpr D(const AlgExpr & arg);
     friend AlgExpr D(AlgExpr && arg);
+
+
+    friend AlgExpr operator+(const AlgExpr & left, const AlgExpr & right);
+    friend AlgExpr operator+(const AlgExpr & left, AlgExpr && right);
+    friend AlgExpr operator+(AlgExpr && left, const AlgExpr & right);
+    friend AlgExpr operator+(AlgExpr && left, AlgExpr && right);
+    friend AlgExpr operator-(const AlgExpr & left, const AlgExpr & right);
+    friend AlgExpr operator-(const AlgExpr & left, AlgExpr && right);
+    friend AlgExpr operator-(AlgExpr && left, const AlgExpr & right);
+    friend AlgExpr operator-(AlgExpr && left, AlgExpr && right);
+    friend AlgExpr operator*(const AlgExpr & left, const AlgExpr & right);
+    friend AlgExpr operator*(const AlgExpr & left, AlgExpr && right);
+    friend AlgExpr operator*(AlgExpr && left, const AlgExpr & right);
+    friend AlgExpr operator*(AlgExpr && left, AlgExpr && right);
+    friend AlgExpr operator/(const AlgExpr & left, const AlgExpr & right);
+    friend AlgExpr operator/(const AlgExpr & left, AlgExpr && right);
+    friend AlgExpr operator/(AlgExpr && left, const AlgExpr & right);
+    friend AlgExpr operator/(AlgExpr && left, AlgExpr && right);
+
+    abs_ex& getExpr();
+    const abs_ex& getExpr() const;
+
 private:
-    AlgExpr (abs_ex && expr);
     bool isEqualTo(const AlgExpr & sec) const;
     std::unique_ptr<AbstractExpression> expression;
 };
+
+AlgExpr operator+(const AlgExpr & left, const AlgExpr & right);
+AlgExpr operator+(const AlgExpr & left, AlgExpr && right);
+AlgExpr operator+(AlgExpr && left, const AlgExpr & right);
+AlgExpr operator+(AlgExpr && left, AlgExpr && right);
+AlgExpr operator-(const AlgExpr & left, const AlgExpr & right);
+AlgExpr operator-(const AlgExpr & left, AlgExpr && right);
+AlgExpr operator-(AlgExpr && left, const AlgExpr & right);
+AlgExpr operator-(AlgExpr && left, AlgExpr && right);
+AlgExpr operator*(const AlgExpr & left, const AlgExpr & right);
+AlgExpr operator*(const AlgExpr & left, AlgExpr && right);
+AlgExpr operator*(AlgExpr && left, const AlgExpr & right);
+AlgExpr operator*(AlgExpr && left, AlgExpr && right);
+AlgExpr operator/(const AlgExpr & left, const AlgExpr & right);
+AlgExpr operator/(const AlgExpr & left, AlgExpr && right);
+AlgExpr operator/(AlgExpr && left, const AlgExpr & right);
+AlgExpr operator/(AlgExpr && left, AlgExpr && right);
 //creates new variable with empty definition
 AlgExpr var();
 AlgExpr positiveVar();
@@ -83,6 +122,10 @@ AlgExpr operator+(long long int left, const AlgExpr & expr);
 AlgExpr operator-(long long int left, const AlgExpr & right);
 AlgExpr operator*(long long int left, const AlgExpr & right);
 AlgExpr operator/(long long int left, const AlgExpr & right);
+AlgExpr operator+(long long int left, AlgExpr && expr);
+AlgExpr operator-(long long int left, AlgExpr && right);
+AlgExpr operator*(long long int left, AlgExpr && right);
+AlgExpr operator/(long long int left, AlgExpr && right);
 bool operator==(long long int left, const AlgExpr & right);
 bool operator!=(long long int left, const AlgExpr & right);
 AlgExpr pow(const AlgExpr & arg, const AlgExpr & degree);

@@ -5,7 +5,7 @@
 #include "algebra\some_algebra_expression_conversions.h"
 #include "random"
 #include "QDataStream"
-#define IN_MOSCOW
+//#define IN_MOSCOW
 #ifdef IN_MOSCOW
 #include <G:\QTProjects\mo2\ExprMake\texpr_builder.h>
 #include <G:\QTProjects\mo2\testpaintwidget.h>

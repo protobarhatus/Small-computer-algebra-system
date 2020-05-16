@@ -16,13 +16,13 @@ Matrix::Matrix(std::vector<Vector>&& _matrix)
 }
 Matrix::Matrix(int m, int n)
 {
-	this->matrix = std::vector<Vector>(m, std::vector<abs_ex>(n, 0));
+    this->matrix = std::vector<Vector>(m, std::vector<AlgExpr>(n, AlgExpr(0)));
 	this->_lines = matrix.size();
 	this->_columns = matrix[0].size();
 }
 Matrix::Matrix(int m, int n, const std::function<abs_ex(int, int)>& formula)
 {
-	this->matrix = std::vector<Vector>(m, std::vector<abs_ex>(n, 0));
+    this->matrix = std::vector<Vector>(m, std::vector<AlgExpr>(n, AlgExpr(0)));
 	for (int i = 0; i < m; ++i)
 		for (int j = 0; j < n; ++j)
 			this->matrix[i][j] = formula(i, j);

@@ -20,10 +20,10 @@ Vector::Vector(const Vector& vec)
 {
     this->vector.resize(vec.vector.size());
     for (int i = 0; i < this->vector.size(); ++i)
-        this->vector[i] = copy(vec.vector[i]);
+        this->vector[i] = vec.vector[i];
 	this->_size = this->vector.size();
 }
-Vector::Vector(Vector&& vec) noexcept
+Vector::Vector(Vector&& vec)  noexcept
 {
 	this->vector = std::move(vec.vector);
 	this->_size = this->vector.size();
@@ -37,8 +37,22 @@ Vector::Vector(const std::vector<abs_ex>& vec)
 }
 Vector::Vector(std::vector<abs_ex>&& vec)
 {
-	this->vector = std::move(vec);
-	this->_size = this->vector.size();
+    this->vector.resize(vec.size());
+    for (int i = 0; i < vec.size(); ++i)
+        this->vector[i] = std::move(vec[i]);
+    this->_size = this->vector.size();
+}
+
+Vector::Vector(const std::vector<AlgExpr> &vec)
+{
+    this->vector = vec;
+    this->_size = vec.size();
+}
+
+Vector::Vector(std::vector<AlgExpr> &&vec)
+{
+    this->vector = std::move(vec);
+    this->_size = vec.size();
 }
 
 /*Vector::Vector(const Vector2& vec)
@@ -90,7 +104,9 @@ Vector& Vector::operator=(const std::vector<abs_ex>& vec)
 }
 Vector& Vector::operator=(std::vector<abs_ex>&& vec)
 {
-    this->vector = std::move(vec);
+    this->vector.resize(vec.size());
+    for (int i = 0; i < vec.size(); ++i)
+        this->vector[i] = std::move(vec[i]);
 	this->_size = this->vector.size();
 	return *this;
 }
@@ -105,29 +121,29 @@ abs_ex& Vector::operator[](int ind)
 {
 	if (ind > this->_size)
 		throw "Index out of borders";
-	return this->vector[ind];
+    return this->vector[ind].getExpr();
 }
 const abs_ex& Vector::operator[](int ind) const
 {
 	if (ind > this->_size)
 		throw "Index out of borders";
-	return this->vector[ind];
+    return this->vector[ind].getExpr();
 }
 const abs_ex& Vector::x() const
 {
-	return this->vector[0];
+    return this->vector[0].getExpr();
 }
 const abs_ex& Vector::y() const
 {
 	if (this->_size == 1)
 		throw "reference to nonexistent dimension";
-	return this->vector[1];
+    return this->vector[1].getExpr();
 }
 const abs_ex& Vector::z() const
 {
 	if (this->_size < 3)
 		throw "reference to nonexistent dimension";
-	return this->vector[2];
+    return this->vector[2].getExpr();
 }
 Vector Vector::operator+(const Vector& second) const
 {
