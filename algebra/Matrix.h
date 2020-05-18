@@ -41,6 +41,7 @@ public:
 	Matrix& operator*=(const abs_ex& num);
 	Matrix& operator/=(const abs_ex& num);
 	bool isSquare() const;
+    void out() const;
 };
 
 Matrix makeUnitMatrix(int size);

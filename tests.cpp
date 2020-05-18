@@ -6,6 +6,7 @@
 #include "QString"
 #include "random"
 #include "algebra\some_algebra_expression_conversions.h"
+#include "algebra/solving_equations.h"
 #define A(x) AlgExpr(x)
 bool testRootFunction()
 {
@@ -906,6 +907,20 @@ void testAlgMod()
             []()->bool {
             AlgExpr x = var();
             return derivative(ln(3+4*x) + ln(x), x) == (3 + 8*x)/x/(3+4*x);
+},
+            []()->bool {
+            AlgExpr x = var();
+            AlgExpr y = var();
+            AlgExpr z = var();
+            AlgExpr a = var();
+            std::vector<abs_ex> eqs(3);
+            eqs[0] = copy((a*x + 2*y + 3*z - 5).getExpr());
+            eqs[1] = copy((5*x + a*y - 7*z - 13).getExpr());
+            eqs[2] = copy((2*x -5*y  - 1*z - a).getExpr());
+            auto res = solveSystemOfEquations(eqs, {x.getExpr()->getId(), y.getExpr()->getId(), z.getExpr()->getId()});
+            return AlgExpr(res[0][0]) == (3*a*a+19*a+344)/(a*a+41*a+93) &&
+                    AlgExpr(res[1][0]) == (-7*a*a-2*a+123)/(a*a+41*a+93) &&
+                    AlgExpr(res[2][0]) == -(pow(a, 3) + 45*a - 73)/(a*a+41*a+93);
 }
 
 

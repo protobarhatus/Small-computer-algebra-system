@@ -173,6 +173,7 @@ HEADERS += \
     algebra/polynomial.h \
     algebra/primetest.h \
     algebra/sinus.h \
+    algebra/solving_equations.h \
     algebra/some_algebra_expression_conversions.h \
     algebra/tangent.h \
     algebra/trigonometrical_conversions.h \

@@ -735,20 +735,23 @@ void Fractal::reducePolynomials()
 
             if (it1->get()->getId() == POLYNOMIAL && it2->get()->getId() == POLYNOMIAL)
             {
-                auto gcf = gcd(static_cast<Polynomial*>(it1->get()), static_cast<Polynomial*>(it2->get()));
+                try {
+                    auto gcf = gcd(static_cast<Polynomial*>(it1->get()), static_cast<Polynomial*>(it2->get()));
                // if (gcf == nullptr)
                //     continue;
                 //qDebug() << gcf->makeStringOfExpression();
-                auto it1_pol = static_cast<Polynomial*>(it1->get())->divide(gcf.get()).first;
-                if (it1_pol == nullptr)
-                    continue;
-                auto it1_expr = makeAbstractExpression(POLYNOMIAL, it1_pol.get());
-                it1->swap(it1_expr);
-                *it1 = it1->get()->downcast();
-                auto it2_pol = static_cast<Polynomial*>(it2->get())->divide(gcf.get()).first;
-                auto it2_expr = makeAbstractExpression(POLYNOMIAL, it2_pol.get());
-                it2->swap(it2_expr);
-                *it2 = it2->get()->downcast();
+                    auto it1_pol = static_cast<Polynomial*>(it1->get())->divide(gcf.get()).first;
+                    if (it1_pol == nullptr)
+                        continue;
+                    auto it1_expr = makeAbstractExpression(POLYNOMIAL, it1_pol.get());
+                    it1->swap(it1_expr);
+                    *it1 = it1->get()->downcast();
+                    auto it2_pol = static_cast<Polynomial*>(it2->get())->divide(gcf.get()).first;
+                    auto it2_expr = makeAbstractExpression(POLYNOMIAL, it2_pol.get());
+                    it2->swap(it2_expr);
+                    *it2 = it2->get()->downcast();
+                }
+                catch(Exception) {}
             }
         }
     }

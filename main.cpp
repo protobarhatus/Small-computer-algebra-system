@@ -22,7 +22,7 @@ int rand(int min, int max)
 
      return dist(rt);
 }
-
+#include "algebra/solving_equations.h"
 
 int main(int argc, char *argv[])
 {
@@ -34,12 +34,30 @@ int main(int argc, char *argv[])
     AlgExpr y = var();
     AlgExpr z = var();
 
+    std::vector<abs_ex> eqs(3);
+
     AlgExpr a = var();
     AlgExpr b = var();
     AlgExpr c = var();
     AlgExpr d = var();
+    AlgExpr e = var();
+    AlgExpr f = var();
+    AlgExpr g = var();
+    AlgExpr h = var();
+    AlgExpr i = var();
+    AlgExpr j = var();
+    AlgExpr  k =var();
+    AlgExpr l = var();
 
     AlgExpr t = var();
+
+    eqs[0] = copy((a*x + 2*y + 3*z - 5).getExpr());
+    eqs[1] = copy((5*x + a*y - 7*z - 13).getExpr());
+    eqs[2] = copy((2*x -5*y  - 1*z - a).getExpr());
+    auto res = solveSystemOfEquations(eqs, {1, 2, 3});
+    qDebug() << res[0][0]->makeStringOfExpression();
+    qDebug() << res[1][0]->makeStringOfExpression();
+    qDebug() << res[2][0]->makeStringOfExpression();
 
     //c = (a + b) / 2;
    // TExpr_Builder builder;
@@ -52,9 +70,8 @@ int main(int argc, char *argv[])
     //возможности взять интегралы вида 1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
     //это надо исправить
 
-   c = ln(tan(x)) - (ln(sin(x)) - ln(cos(x)));
+   //c = (13*a-25)/(a*a-10) - (a*a*a+45*a-73)/(a*a+41*a+93)*(7*a+15)/(a*a-10);
 
-    //c = ;
    // c.out();
 
     qDebug();

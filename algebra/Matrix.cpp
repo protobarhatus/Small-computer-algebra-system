@@ -201,7 +201,19 @@ Matrix& Matrix::operator/=(const abs_ex& num)
 
 bool Matrix::isSquare() const
 {
-	return this->_lines == this->_columns;
+    return this->_lines == this->_columns;
+}
+
+void Matrix::out() const
+{
+    for (int i = 0; i < this->lines(); ++i)
+    {
+        QString to_out = "( ";
+        for (int j = 0; j < this->columns(); ++j)
+            to_out += this->matrix[i][j]->makeStringOfExpression() + " ; ";
+        to_out += " )";
+        qDebug() << to_out;
+    }
 }
 
 Matrix makeUnitMatrix(int size)
