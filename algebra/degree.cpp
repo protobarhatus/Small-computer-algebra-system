@@ -79,7 +79,8 @@ bool Degree::canDowncastTo(AlgebraExpression expr)
 {
     if (expr == FRACTAL && this->argument->getId() == FRACTAL)
         return true;
-
+    if (expr == FRACTAL && this->degree->getPositionRelativelyZero() < 0)
+        return true;
     if (expr == FRACTAL && this->argument->getId() == NUMBER && !static_cast<Number*>(this->argument.get())->isInteger())
         return true;
     if (expr == FRACTAL && this->argument->getId() == NUMBER && factorize(abs(static_cast<Number*>(this->argument.get())->getNumerator())).size() != 1)
@@ -164,7 +165,10 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo(AlgebraExpression expr)
         fr->simplify();
         return fr;
     }
-
+    if (expr == FRACTAL && this->degree->getPositionRelativelyZero() < 0)
+    {
+        return one/takeDegreeOf(std::move(argument), -degree);
+    }
     return makeAbstractExpression(expr, this->argument.get());
 }
 AbstractExpression * Degree::getArgumentOfDegree(AbstractExpression *expr)

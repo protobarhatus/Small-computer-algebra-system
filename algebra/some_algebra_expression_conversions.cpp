@@ -370,3 +370,18 @@ bool isPiMemberInTable(Number coe)
 {
     return (coe.getDenominator() <= 6) && coe.getDenominator() != 5;
 }
+
+std::pair<long long, std::pair<long long, long long> > xea(long long a, long long b)
+{
+    std::pair<long long int, long long int> a_pair = {a, b};
+    std::pair<long long int, long long int> x_pair = {1, 0};
+    std::pair<long long int, long long int> y_pair = {0, 1};
+    while (a_pair.second != 0)
+    {
+        long long int q = a_pair.first / a_pair.second;
+        a_pair = {a_pair.second, a_pair.first - a_pair.second * q};
+        x_pair = {x_pair.second, x_pair.first - x_pair.second * q};
+        y_pair = {y_pair.second, y_pair.first - y_pair.second * q};
+    }
+    return {a_pair.first, {x_pair.first, y_pair.first}};
+}

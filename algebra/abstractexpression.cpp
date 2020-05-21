@@ -372,8 +372,43 @@ std::array<std::unique_ptr<AbstractExpression>, 3> checkIfItsQuadraticFunction(c
     if (func->getId() == FRACTAL)
     {
         const Fractal * fr = static_cast<const Fractal*>(func);
-
-        auto mult = fr->getFractalWithoutVariable(var);
+        auto frac = fr->getFractal();
+        bool has_x_square = false;
+        bool has_other_x = false;
+        for (auto &it : *frac.first)
+        {
+            if (it->getId() == DEGREE && *Degree::getDegreeOfExpression(it.get()) == *two &&
+                    Degree::getArgumentOfDegree(it.get())->getId() == var)
+            {
+                has_x_square = true;
+            }
+            else
+            {
+                auto vars = it->getSetOfVariables();
+                if (vars.find(var) != vars.end())
+                {
+                    has_other_x = true;
+                    break;
+                }
+            }
+        }
+        for (auto &it : *frac.second)
+        {
+            auto vars = it->getSetOfVariables();
+            if (vars.find(var) != vars.end())
+            {
+                has_other_x = true;
+                break;
+            }
+        }
+        if (has_other_x)
+            return {nullptr, nullptr ,nullptr};
+        if (has_x_square)
+        {
+            auto mult = fr->getFractalWithoutVariable(var);
+            return {toAbsEx(std::move(mult)), copy(zero), copy(zero)};
+        }
+        /*auto mult = fr->getFractalWithoutVariable(var);
         auto var_fr = *fr / *mult;
         if (var_fr->getId() == FRACTAL)
         {
@@ -395,7 +430,7 @@ std::array<std::unique_ptr<AbstractExpression>, 3> checkIfItsQuadraticFunction(c
             }
             else
                 return {nullptr, nullptr, nullptr};
-        }
+        }*/
 
     }
     auto ln_f = checkIfItsLinearFunction(func, var);
@@ -445,4 +480,101 @@ std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(Abstrac
         assert(false);
 
     }
+}
+
+std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const AbstractExpression *func, int var)
+{
+    std::vector<abs_ex> res(1);
+    if (func->getId() == POLYNOMIAL)
+    {
+        auto pol = static_cast<const Polynomial*>(func)->getMonomialsPointers();
+        for (auto &it : pol)
+        {
+            auto monom = checkIfItsMonomOfSomeDegree(it, var);
+            if (monom.second == nullptr || !monom.first.isInteger())
+            {
+                res.resize(0);
+                return res;
+            }
+            int deg = monom.first.getNumerator();
+            if (deg > res.size())
+            {
+                res.resize(deg + 1);
+                res[deg] = std::move(monom.second);
+            }
+            else
+            {
+                res[deg] = std::move(res[deg]) + std::move(monom.second);
+            }
+        }
+
+    }
+    else
+    {
+        auto monom = checkIfItsMonomOfSomeDegree(func, var);
+        if (monom.second == nullptr || !monom.first.isInteger())
+        {
+            res.resize(0);
+            return res;
+        }
+        int deg = monom.first.getNumerator();
+        if (deg > res.size())
+        {
+            res.resize(deg + 1);
+            res[deg] = std::move(monom.second);
+        }
+        else
+        {
+            res[deg] = std::move(res[deg]) + std::move(monom.second);
+        }
+    }
+    return res;
+}
+//да-да, я использую кучу const_cast, что херня, но в данной ситуации мне проще так, рили
+std::pair<Number, std::unique_ptr<AbstractExpression> > checkIfItsMonomOfSomeDegree(const AbstractExpression *func, int var)
+{
+    if (func->getId() == var)
+        return {1, copy(one)};
+    if (func->getId() == DEGREE)
+    {
+        if (Degree::getArgumentOfDegree(const_cast<AbstractExpression*>(func))->getId() == var &&
+                Degree::getDegreeOfExpression(const_cast<AbstractExpression*>(func))->getId() == NUMBER)
+            return {*static_cast<Number*>(Degree::getDegreeOfExpression(const_cast<AbstractExpression*>(func)).get()), copy(one)};
+    }
+    if (func->getId() == FRACTAL)
+    {
+        auto frac = static_cast<const Fractal*>((func));
+        auto fr = frac->getFractal();
+        Number deg_of_x = 0;
+        for (auto &it : *fr.first)
+        {
+            if (Degree::getArgumentOfDegree(it.get())->getId() == var &&
+                    Degree::getDegreeOfExpression(it.get())->getId() == NUMBER)
+                deg_of_x = *static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get());
+            else
+            {
+                auto s = it->getSetOfVariables();
+                if (s.find(var) != s.end())
+                {
+                    return {Number::makeErrorNumber(), nullptr};
+                }
+            }
+        }
+        for (auto &it : *fr.second)
+        {
+            auto s = it->getSetOfVariables();
+            if (s.find(var) != s.end())
+            {
+                return {Number::makeErrorNumber(), nullptr};
+            }
+        }
+        return {deg_of_x, toAbsEx(frac->getFractalWithoutVariable(var))};
+    }
+
+    auto s = func->getSetOfVariables();
+    if (s.find(var) != s.end())
+    {
+        return {Number::makeErrorNumber(), nullptr};
+    }
+    return {0, copy(const_cast<AbstractExpression*>(func))};
 }

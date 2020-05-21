@@ -12,6 +12,8 @@ abs_ex copy(AbstractExpression * arg);
 abs_ex copy(const abs_ex & arg);
 long long int factorial(long long int N);
 long long int gcd(long long int a, long long int b);
+//extended euclidean algorithm; returns {d, {x, y}} that d = x*a+y*b and d = gcd(a, b)
+std::pair<long long int, std::pair<long long int, long long int>> xea(long long int a, long long int b);
 long long int lcm(long long int a, long long int b);
 long long int root(long long int a, long long int n, bool & succesfully);
 long long int power(long long int a, long long int n, bool & succesfully);

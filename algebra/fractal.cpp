@@ -713,14 +713,27 @@ std::unique_ptr<Fractal> Fractal::getFractalWithoutVariable(int id) const
         if (Degree::getArgumentOfDegree(it->get())->getId() == id)
             it = result->numerator.erase(it);
         else
-            ++it;
+        {
+            auto set = it->get()->getSetOfVariables();
+            if (set.find(id) == set.end())
+                ++it;
+            else
+                it = result->numerator.erase(it);
+        }
+
     }
     for (auto it = result->denominator.begin(); it != result->denominator.end();)
     {
         if (Degree::getArgumentOfDegree(it->get())->getId() == id)
             it = result->denominator.erase(it);
         else
-            ++it;
+        {
+            auto set = it->get()->getSetOfVariables();
+            if (set.find(id) == set.end())
+                ++it;
+            else
+                it = result->denominator.erase(it);
+        }
     }
     return result;
 }
@@ -728,6 +741,7 @@ std::unique_ptr<Fractal> Fractal::getFractalWithoutVariable(int id) const
 void Fractal::reducePolynomials()
 {
     NONCONST
+    bool did_something = false;
     for (auto it1 = this->numerator.begin(); it1 != this->numerator.end(); ++it1)
     {
         for (auto it2 = this->denominator.begin(); it2 != this->denominator.end(); ++it2)
@@ -750,12 +764,15 @@ void Fractal::reducePolynomials()
                     auto it2_expr = makeAbstractExpression(POLYNOMIAL, it2_pol.get());
                     it2->swap(it2_expr);
                     *it2 = it2->get()->downcast();
+                    did_something = true;
                 }
                 catch(Exception) {}
             }
         }
     }
-    this->reduceSameMembers();
+    if (did_something)
+        this->simplify();
+   // this->reduceSameMembers();
 }
 std::unique_ptr<Fractal> Fractal::operator*(const std::unique_ptr<Fractal> & right)
 {

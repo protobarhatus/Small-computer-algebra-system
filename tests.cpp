@@ -448,7 +448,6 @@ void testAlgMod()
             100*sqrt(A(5))*pow(x, 44) + 106*pow(x, 45) + 40*sqrt(A(5))*pow(x, 45) + 65*pow(x, 46) +
             10*sqrt(A(5))*pow(x, 46) + 35*pow(x, 47) + 15*pow(x, 48) + 5*pow(x, 49) + pow(x, 50);
             qDebug() << t.toString();
-            return true;
             return root(t, 5) == x+x*x+pow(x, 3) + pow(x, 4) + pow(x, 5) + 2*sqrt(A(5))*pow(x, 6) +pow(x, 7) + pow(x, 8) + pow(x, 9) + pow(x, 10) + 3;
 },
             []()->bool {

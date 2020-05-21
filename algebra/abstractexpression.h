@@ -128,6 +128,13 @@ std::pair<abs_ex, abs_ex> checkIfItsLinearFunction(const abs_ex & func, int var)
 std::pair<abs_ex, abs_ex> checkIfItsLinearFunction(const AbstractExpression * func, int var);
 std::array<abs_ex, 3> checkIfItsQuadraticFunction(const AbstractExpression * func, int var);
 std::array<abs_ex, 3> checkIfItsQuadraticFunction(const abs_ex & func, int var);
+//моном здесь - выражение вида x^a*b, где a - рациональное число, b - выражение, не содержащее x, x - переменная с id = var
+//возвращает {a, b} или {Number::makeErrorNumber(), nullptr} если выражение не подходит под тип (если нет переменной x, то возвращает {0, func}
+std::pair<Number, abs_ex> checkIfItsMonomOfSomeDegree(const AbstractExpression * func, int var);
+//в данном случае, полином может иметь любые коэффициенты, однако целые степени var-переменной
+//если это не полином относительно этой переменной, то возвращает пустой вектор
+std::vector<abs_ex> checkIfItsPolynom(const AbstractExpression * func, int var);
+
 bool isZero(const abs_ex & expr);
 abs_ex numToAbs(int num);
 //тригонометрические и логарифмическая функции

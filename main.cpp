@@ -5,7 +5,7 @@
 #include "algebra\some_algebra_expression_conversions.h"
 #include "random"
 #include "QDataStream"
-//#define IN_MOSCOW
+#define IN_MOSCOW
 #ifdef IN_MOSCOW
 #include <G:\QTProjects\mo2\ExprMake\texpr_builder.h>
 #include <G:\QTProjects\mo2\testpaintwidget.h>
@@ -23,14 +23,18 @@ int rand(int min, int max)
      return dist(rt);
 }
 #include "algebra/solving_equations.h"
-
+#include "algebra/abstractexpression.h"
+#include "algebra/some_algebra_expression_conversions.h"
+#include "algebra/polynom.h"
 int main(int argc, char *argv[])
 {
-   // testAlgMod();
+  //  testAlgMod();
     qDebug() << "#########";
 
-    AlgExpr x = var();
+    auto xres = xea(210, 58);
+    qDebug() << xres.first << " " << xres.second.first << " " <<xres.second.second;
 
+    AlgExpr x = var();
     AlgExpr y = var();
     AlgExpr z = var();
 
@@ -51,13 +55,21 @@ int main(int argc, char *argv[])
 
     AlgExpr t = var();
 
-    eqs[0] = copy((a*x + 2*y + 3*z - 5).getExpr());
+    /*eqs[0] = copy((a*x + 2*y + 3*z - 5).getExpr());
     eqs[1] = copy((5*x + a*y - 7*z - 13).getExpr());
     eqs[2] = copy((2*x -5*y  - 1*z - a).getExpr());
     auto res = solveSystemOfEquations(eqs, {1, 2, 3});
     qDebug() << res[0][0]->makeStringOfExpression();
     qDebug() << res[1][0]->makeStringOfExpression();
-    qDebug() << res[2][0]->makeStringOfExpression();
+    qDebug() << res[2][0]->makeStringOfExpression();*/
+    GaluaField::initialize(1000);
+    Polynom dividend(std::vector<int>{1, 13, 30, -66, 37, -20}), divider(std::vector<int>{1, 5, -6});
+    auto res = divide(dividend, divider);
+    for (int i = 0; i < res.first.size(); ++i)
+       qDebug() << res.first[i].toInt();
+    qDebug() << "-------";
+    for (int i = 0; i < res.second.size(); ++i)
+       qDebug() << res.second[i].toInt();
 
     //c = (a + b) / 2;
    // TExpr_Builder builder;
@@ -74,6 +86,14 @@ int main(int argc, char *argv[])
 
    // c.out();
 
+
+// + 5*pow(x, 4) - pow(cos(x), 3)
+  //  c = (3*sin(x)*((-1*
+    //                pow(sin(x), 2)) + (1))) + ((4*((-1*sin(2*x)*sin(3)) + (cos(2*x)*
+     //                cos(3)))*((cos(2*x)*sin(3)) + (cos(3)*sin(2*x)))));
+
+    c = derivative(ln(3+4*x), x);
+    c = sqrt(1-x*x);
     qDebug();
     qDebug() << "######################################################";
     qDebug() << c.toString();

@@ -81,9 +81,11 @@ SOURCES += \
     algebra/exception.cpp \
     algebra/factorization.cpp \
     algebra/fractal.cpp \
+    algebra/galuafield.cpp \
     algebra/logarithm.cpp \
     algebra/mathsets.cpp \
     algebra/number.cpp \
+    algebra/polynom.cpp \
     algebra/polynomial.cpp \
     algebra/primetest.cpp \
     algebra/sinus.cpp \
@@ -167,9 +169,11 @@ HEADERS += \
     algebra/exception.h \
     algebra/factorization.h \
     algebra/fractal.h \
+    algebra/galuafield.h \
     algebra/logarithm.h \
     algebra/mathsets.h \
     algebra/number.h \
+    algebra/polynom.h \
     algebra/polynomial.h \
     algebra/primetest.h \
     algebra/sinus.h \

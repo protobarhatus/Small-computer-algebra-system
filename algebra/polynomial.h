@@ -42,7 +42,7 @@ public:
     virtual std::set<int> getSetOfVariables() const override;
     virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
-    std::list<Fractal*> getMonomialsPointers();
+    std::list<Fractal*> getMonomialsPointers() const;
     Polynomial getCoefficientOfMaxDegreeOfVariable(int id);
     virtual void _qDebugOut() override;
 

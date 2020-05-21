@@ -191,7 +191,7 @@ bool Polynomial::isZero()
 }
 bool Polynomial::canDowncastTo(AlgebraExpression expr)
 {
-    if ((expr == NUMBER || expr == FRACTAL) && this->isZero())
+    if (expr == NUMBER && this->isZero())
         return true;
     return this->monomials.size() == 1 && ((expr == FRACTAL) || this->monomials.begin()->get()->canDowncastTo(expr));
 }
@@ -324,6 +324,8 @@ Polynomial::Polynomial(AbstractExpression * fsum, AbstractExpression * secsum)
     this->pushBack(std::make_unique<Fractal>((secsum)));
     this->simplify();
 }
+
+
 void Polynomial::addMonomial(Fractal* fractal)
 {
     NONCONST
@@ -547,8 +549,8 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
 
         auto set_max = coe_of_max_degree.getSetOfPolyVariables();
         auto set_div = coefficient_of_max_degree_in_dividend.getSetOfPolyVariables();
-        if (set_max.size() < set_div.size())
-            return {nullptr, nullptr};
+       // if (set_max.size() < set_div.size())
+         //   return {nullptr, nullptr};
         for (auto it = set_max.begin(), it1 = set_div.begin(); it != set_max.end() && it1 != set_div.end();)
         {
             if (*it == *it1)
@@ -604,9 +606,9 @@ Polynomial::Polynomial(std::list<std::unique_ptr<Fractal>> && list)
 {
     this->monomials = std::move(list);
 }
-std::list<Fractal*> Polynomial::getMonomialsPointers()
+std::list<Fractal*> Polynomial::getMonomialsPointers() const
 {
-    NONCONST
+  //  NONCONST
     std::list<Fractal*> monoms;
     for (auto &it : this->monomials)
     {
@@ -1223,6 +1225,63 @@ void sortGroup(std::list<std::unique_ptr<Fractal>> & group)
 }
 std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfVariablesPolynomial(long long root)
 {
+    auto s = this->getSetOfVariables();
+    auto deriv = this->derivative(*s.begin());
+    if (deriv->getId() == NUMBER)
+        return nullptr;
+    auto fr = copy(this)/std::move(deriv);
+    if (fr->getId() != FRACTAL)
+    {
+        //может и не nullptr но пока лень думать
+        return nullptr;
+    }
+    auto numerator = abs_ex(new Fractal(static_cast<Fractal*>(fr.get())->getFractal().first));
+    Polynomial* num_polinom = new Polynomial(numerator.get());
+    auto polynom_without_deg = abs_ex(gcd(this, num_polinom).release());
+
+    auto degree_of_start_polynom = one / (fr * polynom_without_deg->derivative(*s.begin()) / polynom_without_deg);
+    if (degree_of_start_polynom->getId() != NUMBER || !static_cast<Number*>(degree_of_start_polynom.get())->isInteger())
+        return nullptr;
+    int deg = static_cast<Number*>(degree_of_start_polynom.get())->getNumerator();
+    if (deg == 1)
+        return nullptr;
+    if (*(takeDegreeOf(polynom_without_deg, deg) + zero) == *this)
+        return takeDegreeOf(polynom_without_deg, Number(deg)/root);
+    return nullptr;
+
+
+    /*int var = *this->getSetOfVariables().begin();
+    abs_ex deriv = this->derivative(var);
+    if (deriv->getSetOfPolyVariables().empty())
+        return nullptr;
+    if (deriv->getId() == FRACTAL)
+    {
+        deriv = abs_ex(new Fractal(static_cast<Fractal*>(deriv.get())->getFractal().first));
+    }
+    abs_ex polynom_without_degree;
+    if (deriv->getId() == POLYNOMIAL)
+    {
+       // qDebug() << deriv->makeStringOfExpression();
+        static_cast<Polynomial*>(deriv.get())->reduce();
+        polynom_without_degree = abs_ex(gcd(this, static_cast<Polynomial*>(deriv.get())).release());
+    }
+    else
+    {
+        Polynomial * pol_der = new Polynomial(deriv.get());
+        pol_der->reduce();
+        polynom_without_degree = abs_ex(gcd(this, pol_der));
+        delete pol_der;
+    }
+    Number this_var_deg = this->getMaxDegreeOfVariable(var);
+    Number polynom_without_degree_var_deg = polynom_without_degree->getMaxDegreeOfVariable(var);
+    if (!polynom_without_degree_var_deg.isCorrect() || polynom_without_degree_var_deg == 0)
+        return nullptr;
+    Number this_deg = this_var_deg / polynom_without_degree_var_deg;
+    if (*(takeDegreeOf(polynom_without_degree, this_deg) + zero) == *this)
+        return takeDegreeOf(polynom_without_degree, this_deg/root);
+    return nullptr;*/
+
+
     //отсортировать слагаемые по группам множителей-переменных, среди них - по паттерну степеней (паттерн - их отношение друг к другу), среди них - по возрастанию суммы степеней
     auto monoms = groupPolynom(getMonomialsSorted(this->getMonomialsPointers()));
     //теперь вынести за скобки одинаковые группы переменных (чтобы в скобках их не было)
@@ -1269,6 +1328,12 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfVariablesPolynomi
         if (it->get()->getSetOfPolyVariables().empty())
             monoms_without_vars.push_back(std::unique_ptr<Fractal>(new Fractal(it->get())));
     }
+    //часть полинома без переменных. Если мы ищем корень четной степени, то она не может быть отрицательной
+    abs_ex addictive_without_wars (new Polynomial(std::move(monoms_without_vars)));
+    addictive_without_wars = addictive_without_wars->downcast();
+    if (root % 2 == 0 && *addictive_without_wars != *zero && addictive_without_wars->getPositionRelativelyZero() < 0)
+        return nullptr;
+
     //теперь нужно проверить, нет ли совпадений среди мин. вхождений переменных. если они есть - удалить лишние
     for (min_mults_type::iterator it1 = min_mults_of_vars.begin(); it1 != min_mults_of_vars.end(); ++it1)
     {
@@ -1305,7 +1370,7 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfVariablesPolynomi
     }
     auto addictives = getAddictivesInPolynom(groups, monoms, root);
     std::unique_ptr<AbstractExpression> result_polynom = std::unique_ptr<AbstractExpression>(new Polynomial(std::move(addictives)))
-            + takeDegreeOf(std::unique_ptr<AbstractExpression>(new Polynomial(std::move(monoms_without_vars))), Number(1) / root);
+            + takeDegreeOf(std::move(addictive_without_wars), Number(1) / root);
     std::unique_ptr<AbstractExpression> zero(new Number(0));
     if (*this == *(takeDegreeOf(result_polynom, root) + zero))
         return result_polynom;
