@@ -62,15 +62,19 @@ int main(int argc, char *argv[])
     qDebug() << res[0][0]->makeStringOfExpression();
     qDebug() << res[1][0]->makeStringOfExpression();
     qDebug() << res[2][0]->makeStringOfExpression();*/
-    GaluaField::initialize(1000);
-    Polynom dividend(std::vector<int>{1, 13, 30, -66, 37, -20}), divider(std::vector<int>{1, 5, -6});
+    GaluaField::initialize(13);
+    Polynom dividend(std::vector<int>{1, 0, 4, 12, 11, 6}), divider(std::vector<int>{1, 5, 7});
     auto res = divide(dividend, divider);
     for (int i = 0; i < res.first.size(); ++i)
        qDebug() << res.first[i].toInt();
     qDebug() << "-------";
     for (int i = 0; i < res.second.size(); ++i)
        qDebug() << res.second[i].toInt();
-
+    Polynom mult_res = res.first * divider + res.second;
+    if (mult_res == dividend)
+        qDebug() << "Right";
+    else
+        qDebug() << "Hui";
     //c = (a + b) / 2;
    // TExpr_Builder builder;
    // auto expr = builder.BuildExpr("x^2+x+1");

@@ -39,8 +39,8 @@ public:
     GfNumber& operator*=(const GfNumber & right);
     GfNumber& operator/=(const GfNumber & right);
 
-    bool operator==(const GfNumber & right);
-    bool operator!=(const GfNumber & right);
+    bool operator==(const GfNumber & right) const;
+    bool operator!=(const GfNumber & right) const;
 
     friend GfNumber operator+(const GfNumber & left, const GfNumber & right);
     friend GfNumber operator-(const GfNumber & left, const GfNumber & right);

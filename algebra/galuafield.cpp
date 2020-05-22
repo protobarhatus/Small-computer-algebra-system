@@ -40,12 +40,16 @@ GaluaField::GaluaField()
 GfNumber::GfNumber(long long int val)
 {
     this->value = val % GaluaField::p();
+    if (this->value < 0)
+        this->value += GaluaField::p();
 }
 
 GfNumber::GfNumber(const GfNumber &cop)
 {
 
     this->value = cop.value;
+    if (this->value < 0)
+        this->value += GaluaField::p();
 }
 
 GfNumber &GfNumber::operator=(long long val)
@@ -89,12 +93,12 @@ GfNumber &GfNumber::operator/=(const GfNumber &right)
     return *this;
 }
 
-bool GfNumber::operator==(const GfNumber &right)
+bool GfNumber::operator==(const GfNumber &right) const
 {
     return this->value == right.value;
 }
 
-bool GfNumber::operator!=(const GfNumber &right)
+bool GfNumber::operator!=(const GfNumber &right) const
 {
     return !(*this == right);
 }

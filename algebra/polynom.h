@@ -26,6 +26,7 @@ public:
     Polynom& operator*=(const Polynom& right);
     Polynom& operator/=(GfNumber num);
 
+
     void cutZeroDegrees();
 };
 
@@ -35,5 +36,7 @@ Polynom operator*(int num, const Polynom &mult);
 Polynom operator*(const Polynom& mult, int num);
 Polynom operator*(const Polynom& left, const Polynom &right);
 Polynom operator/(const Polynom& left, GfNumber num);
+bool operator==(const Polynom& left, const Polynom& right);
+bool operator!=(const Polynom& left, const Polynom& right);
 std::pair<Polynom, Polynom> divide(Polynom left, const Polynom& right);
 #endif // POLYNOM_H

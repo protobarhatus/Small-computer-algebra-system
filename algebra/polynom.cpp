@@ -170,3 +170,18 @@ std::pair<Polynom, Polynom> divide(Polynom left, const Polynom &right)
     left.cutZeroDegrees();
     return {result, left};
 }
+
+bool operator==(const Polynom &left, const Polynom &right)
+{
+    if (left.deg() != right.deg())
+        return false;
+    for (int i = 0; i < left.size(); ++i)
+        if (left[i] != right[i])
+            return false;
+    return true;
+}
+
+bool operator!=(const Polynom &left, const Polynom &right)
+{
+    return !(left == right);
+}
