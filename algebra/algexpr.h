@@ -35,13 +35,13 @@ public:
     bool operator==(const AlgExpr & expr) const;
     bool operator==(Number num) const;
     bool operator==(long long int num) const;
-    bool operator==(char letter) const;
+    //bool operator==(char letter) const;
     bool operator==(QString var_name) const;
     bool operator==(int num) const;
     bool operator!=(const AlgExpr & expr) const;
     bool operator!=(Number num) const;
     bool operator!=(long long int num) const;
-    bool operator!=(char letter) const;
+    //bool operator!=(char letter) const;
     bool operator!=(QString var_name) const;
     friend AlgExpr pow(const AlgExpr & arg, const AlgExpr & degree);
     friend AlgExpr sqrt(const AlgExpr & arg);

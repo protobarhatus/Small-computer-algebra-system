@@ -5,7 +5,7 @@
 #include "algebra\some_algebra_expression_conversions.h"
 #include "random"
 #include "QDataStream"
-#define IN_MOSCOW
+//#define IN_MOSCOW
 #ifdef IN_MOSCOW
 #include <G:\QTProjects\mo2\ExprMake\texpr_builder.h>
 #include <G:\QTProjects\mo2\testpaintwidget.h>
@@ -26,13 +26,28 @@ int rand(int min, int max)
 #include "algebra/abstractexpression.h"
 #include "algebra/some_algebra_expression_conversions.h"
 #include "algebra/polynom.h"
+#include "algebra/polynomials_factorization.h"
+void out(const Polynom & p)
+{
+    auto debug = qDebug();
+    for (int i = p.deg();i >= 0; --i)
+    {
+        if (i != 0)
+            debug << " + " << p[i].toInt() << "x^" << i;
+        else
+            debug << " + " << p[i].toInt();
+    }
+}
 int main(int argc, char *argv[])
 {
   //  testAlgMod();
     qDebug() << "#########";
-
-    auto xres = xea(210, 58);
-    qDebug() << xres.first << " " << xres.second.first << " " <<xres.second.second;
+   // GaluaField::initialize(11);
+  //  Polynom p1({7, 0, 4, 0, 2, 1});
+  //  Polynom p2({5, 0, 0, 2});
+  //  auto xres = xea(p1, p2);
+  //  out(xres.second.first);
+  //  out(xres.second.second);
 
     AlgExpr x = var();
     AlgExpr y = var();
@@ -54,7 +69,11 @@ int main(int argc, char *argv[])
     AlgExpr l = var();
 
     AlgExpr t = var();
-
+    //GaluaField::initialize(997);
+    Polynom pol({112, 58, -31, 107, -66});
+    auto res = factorize(pol);
+    for (auto &it : res)
+        out(it);
     /*eqs[0] = copy((a*x + 2*y + 3*z - 5).getExpr());
     eqs[1] = copy((5*x + a*y - 7*z - 13).getExpr());
     eqs[2] = copy((2*x -5*y  - 1*z - a).getExpr());
@@ -62,8 +81,13 @@ int main(int argc, char *argv[])
     qDebug() << res[0][0]->makeStringOfExpression();
     qDebug() << res[1][0]->makeStringOfExpression();
     qDebug() << res[2][0]->makeStringOfExpression();*/
-    GaluaField::initialize(13);
-    Polynom dividend(std::vector<int>{1, 0, 4, 12, 11, 6}), divider(std::vector<int>{1, 5, 7});
+
+
+    /*GaluaField::initialize(13);
+    for (int i = 0; i < 13; ++i)
+        qDebug() << GaluaField::reverse(i);
+    qDebug() << "EINF";
+    Polynom dividend({1, 0, 4, 12, 11, 6}), divider({1, 5, 7});
     auto res = divide(dividend, divider);
     for (int i = 0; i < res.first.size(); ++i)
        qDebug() << res.first[i].toInt();
@@ -74,10 +98,16 @@ int main(int argc, char *argv[])
     if (mult_res == dividend)
         qDebug() << "Right";
     else
-        qDebug() << "Hui";
+        qDebug() << "Hui";*/
+
+
+
     //c = (a + b) / 2;
    // TExpr_Builder builder;
    // auto expr = builder.BuildExpr("x^2+x+1");
+
+
+
 
 //TODO: разобраться с ситуациями по типу
     //log(tan(x)) - (log(sin(x)) - log(cos(x)))

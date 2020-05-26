@@ -2,6 +2,11 @@
 #include <algorithm>
 #include "assert.h"
 
+Polynom::Polynom()
+{
+
+}
+
 Polynom::Polynom(const std::vector<long long int> &coefs)
 {
     this->polynom.resize(coefs.size());
@@ -31,10 +36,51 @@ Polynom::Polynom(std::vector<GfNumber> &&coefs)
     this->degree = this->polynom.size() - 1;
 }
 
+Polynom::Polynom(const std::initializer_list<int> &list)
+{
+    //лист задается в формате {1, 2, 3, 4}, что для пользователя интуитивно означает
+    //x^3 + 2x^2+3x+4. Однако, так как в векторе позиция равна степени, конструктор через вектор
+    //задаст 4x^3 + 3x^2 + 2x + 1. поэтому этот конструктор разворачивает initializer_list
+    this->polynom.resize(list.size());
+    int ind = this->polynom.size() - 1;
+    for (auto &it : list)
+    {
+        this->polynom[ind] = it;
+        --ind;
+    }
+    this->degree = this->polynom.size() - 1;
+}
+
 Polynom::Polynom(int deg)
 {
     this->polynom = std::vector<GfNumber>(deg + 1);
     this->degree = this->polynom.size() - 1;
+}
+
+Polynom::Polynom(const Polynom &second)
+{
+    this->polynom = second.polynom;
+    this->degree = second.degree;
+}
+
+Polynom::Polynom(Polynom &&second)
+{
+    this->polynom = std::move(second.polynom);
+    this->degree = second.degree;
+}
+
+Polynom &Polynom::operator=(const Polynom &second)
+{
+    this->polynom = second.polynom;
+    this->degree = second.degree;
+    return *this;
+}
+
+Polynom &Polynom::operator=(Polynom &&second)
+{
+    this->polynom = std::move(second.polynom);
+    this->degree = second.degree;
+    return *this;
 }
 
 int Polynom::deg() const
@@ -49,6 +95,7 @@ int Polynom::size() const
 
 GfNumber &Polynom::operator[](int i)
 {
+
     return this->polynom[i];
 }
 
@@ -87,6 +134,11 @@ Polynom &Polynom::operator/=(GfNumber num)
     return *this;
 }
 
+Vector<GfNumber> Polynom::getVectorOfCoefficients()
+{
+    return Vector<GfNumber>(this->polynom);
+}
+
 void Polynom::cutZeroDegrees()
 {
     int first_non_zero_degree = 0;
@@ -98,6 +150,27 @@ void Polynom::cutZeroDegrees()
         }
     this->polynom.resize(first_non_zero_degree + 1);
     this->degree = first_non_zero_degree;
+}
+
+void Polynom::extendToDegree(int deg)
+{
+    this->polynom.resize(deg + 1);
+}
+
+void Polynom::normalize()
+{
+    GfNumber first = this->polynom[degree];
+    for (auto &it : this->polynom)
+        it /= first;
+
+}
+
+bool Polynom::isNull()
+{
+    for (auto &it : this->polynom)
+        if (it != 0)
+            return false;
+    return true;
 }
 
 Polynom operator+(const Polynom &left, const Polynom &right)
@@ -120,11 +193,11 @@ Polynom operator-(const Polynom &left, const Polynom &right)
     for (int i = 0; i < min.size(); ++i)
         res[i] = left[i] - right[i];
     for (int i = min.size(); i < max.size(); ++i)
-        res[i] = max[i];
+        res[i] = (left.size() > right.size() ? 1 : -1)*max[i];
     return res;
 }
 
-Polynom operator*(int num, const Polynom &mult)
+Polynom operator*(long long int num, const Polynom &mult)
 {
     Polynom res(mult.deg());
     for (int i = 0; i < mult.size(); ++i)
@@ -132,7 +205,7 @@ Polynom operator*(int num, const Polynom &mult)
     return res;
 }
 
-Polynom operator*(const Polynom &mult, int num)
+Polynom operator*(const Polynom &mult, long long int num)
 {
     return num*mult;
 }
@@ -143,7 +216,7 @@ Polynom operator*(const Polynom &left, const Polynom &right)
     for (int i = 0; i <= left.deg(); ++i)
     {
         for (int j = 0; j <= right.deg(); ++j)
-            res[i + j] = left[i] * right[j];
+            res[i + j] += left[i] * right[j];
     }
     return res;
 }
@@ -151,20 +224,28 @@ Polynom operator*(const Polynom &left, const Polynom &right)
 Polynom operator/(const Polynom &left, GfNumber num)
 {
     Polynom res(left.deg());
-    for (int i = 0; i <= left.size(); ++i)
+    for (int i = 0; i <= left.deg(); ++i)
         res[i] = left[i] / num;
     return res;
 }
 
 std::pair<Polynom, Polynom> divide(Polynom left, const Polynom &right)
 {
-    assert(left.deg() >= right.deg());
+    if (left.deg() < right.deg())
+    {
+        Polynom zero(0);
+        zero[0] = 0;
+        return {zero, left};
+    }
     Polynom result(left.deg() - right.deg());
     for (int i = left.deg(); i >= right.deg(); --i)
     {
+        if (GaluaField::isOverIntegers() &&  left[i].toInt() % right[right.deg()].toInt() != 0)
+            return {numberPolynom(0), numberPolynom(1)};
         result[i - right.deg()] = left[i] / right[right.deg()];
         Polynom multiplier(i - right.deg());
         multiplier[i - right.deg()] = result[i - right.deg()];
+        Polynom substr = right * multiplier;
         left -= right * multiplier;
     }
     left.cutZeroDegrees();
@@ -185,3 +266,106 @@ bool operator!=(const Polynom &left, const Polynom &right)
 {
     return !(left == right);
 }
+
+Polynom gcd(Polynom left, Polynom right)
+{
+    if (right.deg() > left.deg())
+        std::swap(left, right);
+    auto remainder = left % right;
+    while (!remainder.isNull())
+    {
+        left = std::move(right);
+        right = std::move(remainder);
+        remainder = left % right;
+    }
+    return right;
+}
+
+Polynom pow(const Polynom &polynom, int degree)
+{
+    if (degree == 1)
+        return polynom;
+    if (degree == 2)
+        return polynom * polynom;
+    return pow(polynom, degree / 2) * pow(polynom, degree - degree/2);
+}
+
+Polynom operator/(const Polynom &left, const Polynom &right)
+{
+    return divide(left, right).first;
+}
+
+Polynom operator%(const Polynom &left, const Polynom &right)
+{
+    return divide(left, right).second;
+}
+
+std::pair<Polynom, std::pair<Polynom, Polynom> > xea(const Polynom &p1, const Polynom &p2)
+{
+    std::pair<Polynom, Polynom> p = {p1, p2};
+    std::pair<Polynom, Polynom> g = {numberPolynom(1), numberPolynom(0)};
+    std::pair<Polynom, Polynom> f = {numberPolynom(0), numberPolynom(1)};
+    while (p.second != numberPolynom(0))
+    {
+        Polynom q = p.first / p.second;
+        p = {p.second, p.first - p.second * q};
+        p.first.cutZeroDegrees();
+        p.second.cutZeroDegrees();
+        g = {g.second, g.first - g.second * q};
+        g.first.cutZeroDegrees();
+        g.second.cutZeroDegrees();
+        f = {f.second, f.first - f.second * q};
+        f.first.cutZeroDegrees();
+        f.second.cutZeroDegrees();
+    }
+    p.first.cutZeroDegrees();
+    g.first.cutZeroDegrees();
+    f.first.cutZeroDegrees();
+    return {p.first, {g.first, f.first}};
+
+}
+
+Polynom numberPolynom(GfNumber num)
+{
+    Polynom res(0);
+    res[0] = num;
+    return res;
+}
+//для полиномов таких что g*a + h*b = 1 в Zp^j и их старшие коэффициенты обратимы в Zp^j
+//вычисляет полиномы a' и b' такие, что g*a' + h*b' = c над Zp^j и deg(a') < deg(h)
+std::pair<Polynom, Polynom> solveSomePolynomialEquation(const Polynom &a, const Polynom &b, const Polynom &c, const Polynom &g, const Polynom &h)
+{
+    //Polynom check1 = g*a + h*b;
+
+    auto div_res = divide(a*c, h);
+    Polynom q = std::move(div_res.first);
+    Polynom r = std::move(div_res.second);
+
+    Polynom res = b*c + g*q;
+    res.cutZeroDegrees();
+
+    //Polynom check2 = g*r + h*res - c;
+    return {r, res};
+}
+
+Polynom operator/(const Polynom &left, long long num)
+{
+    return left / GfNumber(num);
+}
+
+long long int lc(const Polynom &p)
+{
+    long long int max = std::numeric_limits<long long int>::min();
+    for (int i = 0; i < p.size(); ++i)
+        max = std::max(max, p[i].toInt());
+    return max;
+}
+
+Polynom derivative(const Polynom &polynom)
+{
+    Polynom res(polynom.deg() - 1);
+    for (int i = polynom.deg() - 1; i >= 0; --i)
+        res[i] = (i + 1)*polynom[i + 1];
+    return res;
+}
+

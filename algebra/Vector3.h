@@ -1,5 +1,5 @@
 #pragma once
-class Vector;
+
 class Vector3d
 {
 public:

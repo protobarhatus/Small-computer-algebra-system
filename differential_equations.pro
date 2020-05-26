@@ -64,8 +64,8 @@ SOURCES += \
     ../../mo2/exprguidewidget.cpp \
     ../../mo2/testexprmakewidget.cpp \
     ../../mo2/testpaintwidget.cpp \
-    algebra/Matrix.cpp \
-    algebra/Vector.cpp \
+    algebra/Matrix.inl \
+    algebra/Vector.inl \
     algebra/Vector2.cpp \
     algebra/Vector3.cpp \
     algebra/absolutevalue.cpp \
@@ -87,6 +87,7 @@ SOURCES += \
     algebra/number.cpp \
     algebra/polynom.cpp \
     algebra/polynomial.cpp \
+    algebra/polynomials_factorization.cpp \
     algebra/primetest.cpp \
     algebra/sinus.cpp \
     algebra/solving_equations.cpp \
@@ -175,6 +176,7 @@ HEADERS += \
     algebra/number.h \
     algebra/polynom.h \
     algebra/polynomial.h \
+    algebra/polynomials_factorization.h \
     algebra/primetest.h \
     algebra/sinus.h \
     algebra/solving_equations.h \

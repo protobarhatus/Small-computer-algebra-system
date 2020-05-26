@@ -219,11 +219,11 @@ bool AlgExpr::operator==(long long int num) const
 {
     return this->expression->getId() == NUMBER && (static_cast<Number*>(this->expression.get())->compareWith(num) == 0);
 }
-bool AlgExpr::operator==(char letter) const
+/*bool AlgExpr::operator==(char letter) const
 {
     return this->expression->getId() > 0 && static_cast<Variable*>(this->expression.get())->getName().size() == 1 &&
             static_cast<Variable*>(this->expression.get())->getName()[0] == letter;
-}
+}*/
 bool AlgExpr::operator==(QString var_name) const
 {
     return this->expression->getId() > 0 && static_cast<Variable*>(this->expression.get())->getName() == var_name;
@@ -245,10 +245,10 @@ bool AlgExpr::operator!=(long long int num) const
 {
     return !(*this == num);
 }
-bool AlgExpr::operator!=(char letter) const
+/*bool AlgExpr::operator!=(char letter) const
 {
     return !(*this == letter);
-}
+}*/
 bool AlgExpr::operator!=(QString var_name) const
 {
     return !(*this == var_name);
