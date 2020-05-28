@@ -5,10 +5,11 @@
 #include "algebra\some_algebra_expression_conversions.h"
 #include "random"
 #include "QDataStream"
-//#define IN_MOSCOW
+#define IN_MOSCOW
 #ifdef IN_MOSCOW
 #include <G:\QTProjects\mo2\ExprMake\texpr_builder.h>
 #include <G:\QTProjects\mo2\testpaintwidget.h>
+
 #endif
 #define A(x) AlgExpr(x)
 #define x2 pow(x, 2)
@@ -40,7 +41,7 @@ void out(const Polynom & p)
 }
 int main(int argc, char *argv[])
 {
-  //  testAlgMod();
+   // testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -53,6 +54,10 @@ int main(int argc, char *argv[])
     AlgExpr y = var();
     AlgExpr z = var();
 
+    AlgExpr p1 = pow(x, 3)-2*pow(x, 2)-15*x+36;
+    AlgExpr p2 = pow(x,2)*3 - 4*x-15;
+  //  auto gcf = gcd(static_cast<Polynomial*>(p1.getExpr().get()), static_cast<Polynomial*>(p2.getExpr().get()));
+  //  qDebug() << gcf->makeStringOfExpression();
     std::vector<abs_ex> eqs(3);
 
     AlgExpr a = var();
@@ -70,10 +75,28 @@ int main(int argc, char *argv[])
 
     AlgExpr t = var();
     //GaluaField::initialize(997);
-    Polynom pol({112, 58, -31, 107, -66});
-    auto res = factorize(pol);
+    //Polynom pol({112, 58, -31, 107, -66});
+   // Polynom pol({1, 12, -22, -163, 309, -119});
+   // Polynom pol({1, -7, 10, 26, -60});
+
+
+    Polynom pol({1, -3, -7, 12, -69, 502, -727, 1615, -4683, 2754, -5535, 8100});
+    //Polynom pol({1, -2, -15, 36});
+    /*Polynom pol(256);
+    pol[256] = 1;
+    pol[1] = -1;
+    pol[0] = 1;*/
+    //Polynom pol({1, 0, 0, 0, -1, -15});
+   /* auto res = factorize(pol);
     for (auto &it : res)
         out(it);
+
+    AlgExpr p = 112*pow(x, 4) + 58 * pow(x, 3) - 31*x*x + 107 * x - 66;
+    c = (x-3)*(x+2)/p;
+    static_cast<Fractal*>(c.getExpr().get())->bringRationalFunctionIntoFormToDecay();
+    auto sres = static_cast<Fractal*>(c.getExpr().get())->splitIntoSumOfElementaryFractals();
+    for (auto &it : sres)
+        qDebug() << it->makeStringOfExpression();*/
     /*eqs[0] = copy((a*x + 2*y + 3*z - 5).getExpr());
     eqs[1] = copy((5*x + a*y - 7*z - 13).getExpr());
     eqs[2] = copy((2*x -5*y  - 1*z - a).getExpr());
@@ -126,8 +149,8 @@ int main(int argc, char *argv[])
     //                pow(sin(x), 2)) + (1))) + ((4*((-1*sin(2*x)*sin(3)) + (cos(2*x)*
      //                cos(3)))*((cos(2*x)*sin(3)) + (cos(3)*sin(2*x)))));
 
-    c = derivative(ln(3+4*x), x);
-    c = sqrt(1-x*x);
+   // c = derivative(ln(3+4*x), x);
+   // c = sqrt(1-x*x);
     qDebug();
     qDebug() << "######################################################";
     qDebug() << c.toString();

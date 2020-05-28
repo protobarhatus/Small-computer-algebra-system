@@ -8,6 +8,8 @@
 #include "Matrix.h"
 #include "solving_equations.h"
 #include "algexpr.h"
+#include "polynom.h"
+#include "polynomials_factorization.h"
 std::vector<abs_ex> solveEquation(const abs_ex & equation, int var)
 {
     //is linear equation
@@ -146,3 +148,24 @@ std::vector<std::vector<abs_ex>> solveSystemOfEquations(const std::vector<abs_ex
     return res;
 }
 
+
+std::list<std::unique_ptr<AbstractExpression> > factorizePolynom(const std::unique_ptr<AbstractExpression> &polynom, int var)
+{
+    auto pol = checkIfItsIntegerPolynom(polynom, var);
+    assert(!pol.empty());
+    Polynom polynom_to_factor(pol.size() - 1);
+    for (int i = 0; i < pol.size(); ++i)
+        polynom_to_factor[i] = static_cast<Number*>(pol[i].get())->getNumerator();
+    auto res = factorize(polynom_to_factor);
+
+    std::list<abs_ex> result;
+    abs_ex x(new Variable(getVariable(var)));
+    for (auto &it : res)
+    {
+        abs_ex expr = copy(zero);
+        for (int i = 0; i < it.size(); ++i)
+            expr = expr + abs_ex(new Number(it[i].toInt())) * pow(x, i);
+        result.push_back(std::move(expr));
+    }
+    return result;
+}

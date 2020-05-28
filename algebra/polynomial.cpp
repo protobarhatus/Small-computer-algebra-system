@@ -151,7 +151,7 @@ void Polynomial::openParentheses()
     {
         if (it->get()->canTurnIntoPolynomWithOpeningParentheses(this->is_fractional_coefficients_allowed))
         {
-            this->mergeWithoutSimplifiyng(it->get()->turnIntoPolynomWithOpeningParentheses());
+            this->mergeWithoutSimplifiyng(it->get()->turnIntoPolynomWithOpeningParentheses(this->is_fractional_coefficients_allowed));
             it = this->monomials.erase(it);
             has_opened_parentheses = true;
         }

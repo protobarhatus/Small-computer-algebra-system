@@ -385,3 +385,52 @@ std::pair<long long, std::pair<long long, long long> > xea(long long a, long lon
     }
     return {a_pair.first, {x_pair.first, y_pair.first}};
 }
+
+std::multiset<int> findSubsetWithSum(const std::multiset<int> &set, int n)
+{
+    int size = 0;
+    for (auto it = set.begin(); it != set.end(); ++it, ++size)
+    {
+        if (*it > n)
+            break;
+    }
+    std::vector<std::vector<std::set<const int*>>> subsets_with_some_sum(size + 1, std::vector<std::set<const int*>>(n + 1));
+    for (auto it = set.begin(); it != set.end() && *it <= n; ++it)
+    {
+        if (*it == n)
+        {
+            std::multiset<int> res;
+            res.insert(*it);
+            return res;
+        }
+        subsets_with_some_sum[1][*it].insert(&(*it));
+    }
+    for (int i = *set.begin() + 1; i <= n; ++i)
+    {
+        for (int j = 2; j <= size; ++j)
+        {
+            for (auto it = set.begin(); it != set.end() && *it  <= n; ++it)
+            {
+                if (i - *it <= 0)
+                    continue;
+                if (subsets_with_some_sum[j - 1][i - *it].empty())
+                    continue;
+                if (subsets_with_some_sum[j - 1][i - *it].find(&(*it)) != subsets_with_some_sum[j - 1][i - *it].end())
+                    continue;
+                subsets_with_some_sum[j][i] = subsets_with_some_sum[j - 1][i - *it];
+                subsets_with_some_sum[j][i].insert(&(*it));
+            }
+        }
+    }
+    for (int i = 1; i <= size; ++i)
+    {
+        if (!subsets_with_some_sum[i][n].empty())
+        {
+            std::multiset<int> res;
+            for (auto &it : subsets_with_some_sum[i][n])
+                res.insert(*it);
+            return res;
+        }
+    }
+    return std::multiset<int>();
+}

@@ -85,6 +85,7 @@ SOURCES += \
     algebra/logarithm.cpp \
     algebra/mathsets.cpp \
     algebra/number.cpp \
+    algebra/numberpolynom.cpp \
     algebra/polynom.cpp \
     algebra/polynomial.cpp \
     algebra/polynomials_factorization.cpp \
@@ -174,6 +175,7 @@ HEADERS += \
     algebra/logarithm.h \
     algebra/mathsets.h \
     algebra/number.h \
+    algebra/numberpolynom.h \
     algebra/polynom.h \
     algebra/polynomial.h \
     algebra/polynomials_factorization.h \

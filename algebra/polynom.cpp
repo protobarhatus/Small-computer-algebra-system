@@ -1,7 +1,7 @@
 #include "polynom.h"
 #include <algorithm>
 #include "assert.h"
-
+#include "numberpolynom.h"
 Polynom::Polynom()
 {
 
@@ -266,19 +266,46 @@ bool operator!=(const Polynom &left, const Polynom &right)
 {
     return !(left == right);
 }
-
-Polynom gcd(Polynom left, Polynom right)
+long long int gcdOfCoefficients(const Polynom & polynom)
 {
-    if (right.deg() > left.deg())
-        std::swap(left, right);
-    auto remainder = left % right;
+    long long int gcf = polynom[0].toInt();
+    for (int i = 1; i < polynom.size(); ++i)
+        gcf = gcd(gcf, polynom[i].toInt());
+    return gcf;
+}
+Polynom gcd(Polynom pleft, Polynom pright)
+{
+    if (pright.deg() > pleft.deg())
+        std::swap(pleft, pright);
+    if (GaluaField::isOverIntegers())
+    {
+        try {
+            NumberPolynom left(pleft), right(pright);
+            auto remainder = left % right;
+            while (!remainder.isNull())
+            {
+                left = std::move(right);
+                right = std::move(remainder);
+                remainder = left % right;
+            }
+            Polynom prob_gcd = right.toPolynom();
+            prob_gcd /= gcdOfCoefficients(prob_gcd);
+            if ((pleft % prob_gcd).isNull() && ((pright % prob_gcd).isNull()))
+                return prob_gcd;
+            return numberPolynom(1);
+        } catch (...) {
+            return numberPolynom(1);
+        }
+
+    }
+    auto remainder = pleft % pright;
     while (!remainder.isNull())
     {
-        left = std::move(right);
-        right = std::move(remainder);
-        remainder = left % right;
+        pleft = std::move(pright);
+        pright = std::move(remainder);
+        remainder = pleft % pright;
     }
-    return right;
+    return pright;
 }
 
 Polynom pow(const Polynom &polynom, int degree)
@@ -366,6 +393,15 @@ Polynom derivative(const Polynom &polynom)
     Polynom res(polynom.deg() - 1);
     for (int i = polynom.deg() - 1; i >= 0; --i)
         res[i] = (i + 1)*polynom[i + 1];
+    res.cutZeroDegrees();
     return res;
 }
 
+
+double norma2(const Polynom &p)
+{
+    long long int sum = 0;
+    for (int i = 0; i < p.size(); ++i)
+        sum += abs(p[i].toInt());
+    return sqrt(sum);
+}

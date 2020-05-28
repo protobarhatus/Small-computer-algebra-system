@@ -485,6 +485,7 @@ std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(Abstrac
 std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const AbstractExpression *func, int var)
 {
     std::vector<abs_ex> res(1);
+    res[0]=copy(zero);
     if (func->getId() == POLYNOMIAL)
     {
         auto pol = static_cast<const Polynomial*>(func)->getMonomialsPointers();
@@ -497,13 +498,15 @@ std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const Abstra
                 return res;
             }
             int deg = monom.first.getNumerator();
-            if (deg > res.size())
+            if (deg >= res.size())
             {
                 res.resize(deg + 1);
-                res[deg] = std::move(monom.second);
+                res[deg] = std::move(monom.second->downcast());
             }
             else
             {
+                if (res[deg] == nullptr)
+                    res[deg] = copy(zero);
                 res[deg] = std::move(res[deg]) + std::move(monom.second);
             }
         }
@@ -577,4 +580,25 @@ std::pair<Number, std::unique_ptr<AbstractExpression> > checkIfItsMonomOfSomeDeg
         return {Number::makeErrorNumber(), nullptr};
     }
     return {0, copy(const_cast<AbstractExpression*>(func))};
+}
+
+std::vector<std::unique_ptr<AbstractExpression> > checkIfItsIntegerPolynom(const AbstractExpression *func, int var)
+{
+    if (func->getSetOfVariables().size() > 1)
+        return std::vector<abs_ex>();
+    auto pol_res = checkIfItsPolynom(func, var);
+    for (auto &it : pol_res)
+        if (it->getId() != NUMBER || !static_cast<Number*>(it.get())->isInteger())
+            return std::vector<abs_ex>();
+    return std::move(pol_res);
+}
+
+std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const std::unique_ptr<AbstractExpression> &func, int var)
+{
+    return checkIfItsPolynom(func.get(), var);
+}
+
+std::vector<std::unique_ptr<AbstractExpression> > checkIfItsIntegerPolynom(const std::unique_ptr<AbstractExpression> &func, int var)
+{
+    return checkIfItsIntegerPolynom(func.get(), var);
 }

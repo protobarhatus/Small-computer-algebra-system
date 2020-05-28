@@ -134,7 +134,9 @@ std::pair<Number, abs_ex> checkIfItsMonomOfSomeDegree(const AbstractExpression *
 //в данном случае, полином может иметь любые коэффициенты, однако целые степени var-переменной
 //если это не полином относительно этой переменной, то возвращает пустой вектор
 std::vector<abs_ex> checkIfItsPolynom(const AbstractExpression * func, int var);
-
+std::vector<abs_ex> checkIfItsIntegerPolynom(const AbstractExpression * func, int var);
+std::vector<abs_ex> checkIfItsPolynom(const abs_ex & func, int var);
+std::vector<abs_ex> checkIfItsIntegerPolynom(const abs_ex & func, int var);
 bool isZero(const abs_ex & expr);
 abs_ex numToAbs(int num);
 //тригонометрические и логарифмическая функции

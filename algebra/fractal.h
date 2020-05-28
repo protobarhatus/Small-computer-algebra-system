@@ -60,7 +60,7 @@ public:
     //can do if has polynom in numerator and empty denominator and coefficient with denominator = 1. transform expr like c(a+b)(d+e) into cad+cbd+cae+cbe
     bool canTurnIntoPolynomWithOpeningParentheses();
     bool canTurnIntoPolynomWithOpeningParentheses(bool is_fractional_coefficient_allowed);
-    std::unique_ptr<Polynomial> turnIntoPolynomWithOpeningParentheses();
+    std::unique_ptr<Polynomial> turnIntoPolynomWithOpeningParentheses(bool fractional_coefficients);
 
     static bool lessFrac(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
     virtual void _qDebugOut() override;
@@ -88,7 +88,12 @@ public:
 
     std::pair<abs_ex, abs_ex> checkIfItIsLinearFunction(int var) const;
     bool isOne() const;
-
+    //параметры могут быть в числетеле, но не в знаменателе
+    bool checkIfItsRationalFunction(int var) const;
+    void expandNumerator();
+    void factorizeDenominator();
+    void bringRationalFunctionIntoFormToDecay();
+    std::list<abs_ex> splitIntoSumOfElementaryFractals();
 private:
     bool casted_trigonometry;
     void castTrigonometry();
@@ -120,6 +125,7 @@ private:
 
     Number coefficient;
 };
+abs_ex integrate(const abs_ex & frac);
 abs_ex toAbsEx(const std::unique_ptr<Fractal> & expr);
 abs_ex toAbsEx(std::unique_ptr<Fractal> && expr);
 std::unique_ptr<Fractal> toFrac(abs_ex & expr);

@@ -160,4 +160,6 @@ AlgExpr derivative(const AlgExpr & arg, AlgExpr arg_variable);
 //да, с большой буквы, но так надо. не буду же я называть ее dif или differential
 AlgExpr D(const AlgExpr & arg);
 AlgExpr D(AlgExpr && arg);
+AlgExpr integral(const AlgExpr & arg);
+AlgExpr integral(const AlgExpr & arg, AlgExpr var);
 #endif // ALGEXPR_H

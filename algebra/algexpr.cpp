@@ -504,3 +504,14 @@ AlgExpr operator/(long long left, AlgExpr &&right)
 {
     return AlgExpr(left)/std::move(right);
 }
+
+AlgExpr integral(const AlgExpr &arg)
+{
+    return AlgExpr(integrate(arg.getExpr()));
+}
+
+AlgExpr integral(const AlgExpr &arg, AlgExpr var)
+{
+    assert(var.getExpr()->getId() > 0);
+    return integral(arg * D(var.getExpr()));
+}

@@ -7,6 +7,8 @@
 #include "random"
 #include "algebra\some_algebra_expression_conversions.h"
 #include "algebra/solving_equations.h"
+
+
 #define A(x) AlgExpr(x)
 bool testRootFunction()
 {

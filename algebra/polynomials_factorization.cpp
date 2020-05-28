@@ -164,13 +164,7 @@ void substractBigCoefficients(const Polynom & pol, Polynom & res)
 
 
 }
-long long int gcdOfCoefficients(const Polynom & polynom)
-{
-    long long int gcf = polynom[0].toInt();
-    for (int i = 1; i < polynom.size(); ++i)
-        gcf = gcd(gcf, polynom[i].toInt());
-    return gcf;
-}
+
 std::pair<Polynom, Polynom> henselLinearLiftingAlgorithm(int k, Polynom& p, Polynom g, Polynom h)
 {
     GaluaField::setLockChangingReverseElements(true);
@@ -244,7 +238,37 @@ std::pair<Polynom, Polynom> henselLinearLiftingAlgorithm(int k, Polynom& p, Poly
     GaluaField::initialize(0);
     return {g_dash, h_dash};*/
 }
-
+long long int chooseModBasis(const Polynom & polynom)
+{
+    std::vector<int>& primes = MathSets::getPrimesVector();
+    for (auto &it : primes)
+    {
+        if (it > 1000)
+            return -1;
+        if (it == 2 || it == 3)
+            continue;
+        if (polynom[polynom.deg()].toInt() % it == 0)
+            continue;
+        GaluaField::initialize(it);
+        auto gcd_with_deriv = gcd(polynom, derivative(polynom));
+        if (gcd_with_deriv.deg() == 0)
+            return it;
+    }
+    return -1;
+}
+std::vector<Polynom> move(std::list<Polynom> & list)
+{
+    std::vector<Polynom> vec(list.size());
+    auto itl = list.begin();
+    auto itv = vec.begin();
+    while (itl != list.end())
+    {
+        *itv = std::move(*itl);
+        ++itv;
+        ++itl;
+    }
+    return vec;
+}
 std::list<Polynom> factorize(Polynom polynom)
 {
     GaluaField::initialize(0);
@@ -264,7 +288,15 @@ std::list<Polynom> factorize(Polynom polynom)
         res.splice(res.end(), factorize(gcd_with_der));
     }
 
-    int p = 13;
+    long long int p = chooseModBasis(polynom);
+    //long long int p = 13;
+    //long long int p = 17;
+    if (p == -1)
+    {
+        GaluaField::initialize(0);
+        res.push_back(polynom);
+        return res;
+    }
     GaluaField::initialize(p);
     Polynom polynom_in_gf = polynom;
     auto facts = factorizeNormalizedPolynomInGaluaField(polynom_in_gf);
@@ -275,11 +307,101 @@ std::list<Polynom> factorize(Polynom polynom)
         res.push_back(polynom);
         return res;
     }
-    int k = ceil(log(2*abs(lc(polynom) * polynom[polynom.deg()].toInt()) * amountOfCombination(polynom.deg() / 2, polynom.deg() / 4)) / log(p));
-    while (facts.size() != 1)
-    {
+    int k = ceil(log(2*abs( polynom[polynom.deg()].toInt() * lc(polynom)) * amountOfCombination(polynom.deg() / 2, polynom.deg() / 4)*norma2(polynom)) / log(p));
 
-        std::list<Polynom>::iterator first_mult = facts.begin();
+
+    std::vector<Polynom> facts_vector = move(facts);
+    if (facts_vector.size() > 30)
+    {
+        GaluaField::initialize(0);
+        res.push_back(polynom);
+        return res;
+    }
+    bool s;
+    int amount_of_variants = power(2, facts_vector.size(), s);
+    int variants = 1;
+    while (variants < amount_of_variants)
+    {
+        GaluaField::initialize(p);
+        int deg = 0;
+        for (int i = 0; i < facts_vector.size(); ++i)
+            if (variants & (1 << i))
+                deg += facts_vector[i].deg();
+        if (deg > polynom.deg()/2)
+        {
+            ++variants;
+            continue;
+        }
+        Polynom first_mult = numberPolynom(1);
+        for (int i = 0; i < facts_vector.size(); ++i)
+            if (variants & (1 << i))
+                first_mult *= facts_vector[i];
+        Polynom second_mult = polynom_in_gf / first_mult;
+        auto hensel_res = henselLinearLiftingAlgorithm(k, polynom, first_mult, second_mult);
+        if (hensel_res.first * hensel_res.second == polynom)
+        {
+            res.splice(res.end(), factorize(hensel_res.first));
+            res.splice(res.end(), factorize(hensel_res.second));
+            return res;
+        }
+        ++variants;
+    }
+    GaluaField::initialize(0);
+    res.push_back(polynom);
+    return res;
+
+    /*std::multimap<int, Polynom> facts_map;
+    for (auto &it : facts)
+        facts_map.insert({it.deg(), it});
+
+
+        std::multiset<int> degrees;
+        for (auto &it : facts_map)
+            degrees.insert(it.first);
+        bool found_factors = false;
+        for (int i = 1; i <= polynom.deg()/2;++i)
+        {
+            auto deg_distribution = findSubsetWithSum(degrees, i);
+            if (deg_distribution.empty())
+                continue;
+            GaluaField::initialize(p);
+            Polynom first_mult = numberPolynom(1);
+
+            std::multimap<int, Polynom>::iterator iter = facts_map.find(*deg_distribution.begin());
+            first_mult *= iter->second;
+            auto set_iter = ++deg_distribution.begin();
+            while (set_iter != deg_distribution.end())
+            {
+                if (*set_iter == *std::prev(set_iter))
+                {
+                    ++iter;
+                }
+                else
+                    iter = facts_map.find(*set_iter);
+                first_mult *= iter->second;
+                ++set_iter;
+            }
+            Polynom second_mult = polynom;
+            second_mult = polynom / first_mult;
+            auto hensel_res = henselLinearLiftingAlgorithm(k, polynom, first_mult, second_mult);
+            //GaluaField::isOverIntegers() сейчас true
+            if (hensel_res.first * hensel_res.second == polynom)
+            {
+                res.splice(res.end(), factorize(hensel_res.first));
+                res.splice(res.end(), factorize(hensel_res.second));
+                found_factors = true;
+            }
+
+        }
+        if (!found_factors)
+            res.push_back(polynom);
+        return res;*/
+
+
+        /*
+         *  while (facts_map.size() != 1)
+        {
+std::list<Polynom>::iterator first_mult = facts.begin();
         std::pair<Polynom, Polynom> hensel_res;
         while (first_mult != facts.end())
         {
@@ -304,7 +426,8 @@ std::list<Polynom> factorize(Polynom polynom)
         res.push_back(hensel_res.first);
         facts.erase(first_mult);
         polynom = polynom / res.back();
-    }
+}
+
     res.push_back(polynom);
-    return res;
+    return res;*/
 }

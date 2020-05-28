@@ -2,6 +2,7 @@
 #include "some_algebra_expression_conversions.h"
 #include "number.h"
 #include <cmath>
+#include "variablesdistributor.h"
 Differential::Differential(const std::unique_ptr<AbstractExpression> &arg)
 {
     this->argument = copy(arg);
@@ -52,7 +53,9 @@ bool Differential::canDowncastTo(AlgebraExpression expr)
 {
     if (this->argument->getId() == NUMBER)
         return true;
-    //пока не раскрываем дифференциал, т. к. непонятно по какой переменной в общем случае, но потом - будем
+    if (this->argument->getId() <= 0)
+        return true;
+
     return false;
 }
 
@@ -60,6 +63,7 @@ std::unique_ptr<AbstractExpression> Differential::downcastTo(AlgebraExpression e
 {
     if (this->argument->getId() == NUMBER)
         return copy(zero);
+    return fullDifferential(this->argument);
     assert(false);
     return nullptr;
 }
@@ -168,4 +172,20 @@ bool Differential::operator<(const AbstractExpression &expr) const
 {
     assert(expr.getId() == DIFFERENTIAL);
     return AbstractExpression::less(this->argument.get(), static_cast<Differential*>(const_cast<AbstractExpression*>(&expr))->argument.get());
+}
+
+std::unique_ptr<AbstractExpression> fullDifferential(const std::unique_ptr<AbstractExpression> &expr)
+{
+    auto set = expr->getSetOfVariables();
+    abs_ex res = copy(zero);
+    for (auto &it : set)
+    {
+        res = res + expr->derivative(it) * D(abs_ex(new Variable(getVariable(it))));
+    }
+    return res;
+}
+
+std::unique_ptr<AbstractExpression> D(const std::unique_ptr<AbstractExpression> &arg)
+{
+    return abs_ex(new Differential(arg));
 }

@@ -39,7 +39,7 @@ public:
     void normalize();
     bool isNull();
 };
-
+long long int gcdOfCoefficients(const Polynom & polynom);
 Polynom operator+(const Polynom& left, const Polynom & right);
 Polynom operator-(const Polynom& left, const Polynom & right);
 Polynom operator*(long long int num, const Polynom &mult);
@@ -49,7 +49,7 @@ Polynom operator/(const Polynom& left, GfNumber num);
 Polynom operator/(const Polynom& left, long long int num);
 Polynom operator/(const Polynom& left, const Polynom& right);
 Polynom operator%(const Polynom& left, const Polynom& right);
-
+double norma2(const Polynom & p);
 Polynom gcd(Polynom left, Polynom right);
 bool operator==(const Polynom& left, const Polynom& right);
 bool operator!=(const Polynom& left, const Polynom& right);

@@ -54,7 +54,7 @@ void Tangent::simplify()
     {
         Fractal * fr = static_cast<Fractal*>(this->argument.get());
         if (fr->canTurnIntoPolynomWithOpeningParentheses())
-            this->argument = abs_ex(fr->turnIntoPolynomWithOpeningParentheses().release());
+            this->argument = abs_ex(fr->turnIntoPolynomWithOpeningParentheses(false).release());
         else
             fr->intoAcceptedSignForm();
         if (fr->getCoefficient().compareWith(0) < 0)
