@@ -5,7 +5,7 @@
 #include "algebra\some_algebra_expression_conversions.h"
 #include "random"
 #include "QDataStream"
-#define IN_MOSCOW
+//#define IN_MOSCOW
 #ifdef IN_MOSCOW
 #include <G:\QTProjects\mo2\ExprMake\texpr_builder.h>
 #include <G:\QTProjects\mo2\testpaintwidget.h>
@@ -41,7 +41,7 @@ void out(const Polynom & p)
 }
 int main(int argc, char *argv[])
 {
-   // testAlgMod();
+    testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -54,8 +54,8 @@ int main(int argc, char *argv[])
     AlgExpr y = var();
     AlgExpr z = var();
 
-    AlgExpr p1 = pow(x, 3)-2*pow(x, 2)-15*x+36;
-    AlgExpr p2 = pow(x,2)*3 - 4*x-15;
+    //AlgExpr p1 = pow(x, 3)-2*pow(x, 2)-15*x+36;
+    //AlgExpr p2 = pow(x,2)*3 - 4*x-15;
   //  auto gcf = gcd(static_cast<Polynomial*>(p1.getExpr().get()), static_cast<Polynomial*>(p2.getExpr().get()));
   //  qDebug() << gcf->makeStringOfExpression();
     std::vector<abs_ex> eqs(3);
@@ -80,17 +80,18 @@ int main(int argc, char *argv[])
    // Polynom pol({1, -7, 10, 26, -60});
 
 
-    Polynom pol({1, -3, -7, 12, -69, 502, -727, 1615, -4683, 2754, -5535, 8100});
+   // Polynom pol({1, -3, -7, 12, -69, 502, -727, 1615, -4683, 2754, -5535, 8100});
     //Polynom pol({1, -2, -15, 36});
-    /*Polynom pol(256);
+   /* Polynom pol(256);
     pol[256] = 1;
     pol[1] = -1;
     pol[0] = 1;*/
-    //Polynom pol({1, 0, 0, 0, -1, -15});
-   /* auto res = factorize(pol);
-    for (auto &it : res)
-        out(it);
 
+    //Polynom pol({1, 0, 0, 0, -1, -15});
+  /*  auto res = factorize(pol);
+    for (auto &it : res)
+        out(it);*/
+/*
     AlgExpr p = 112*pow(x, 4) + 58 * pow(x, 3) - 31*x*x + 107 * x - 66;
     c = (x-3)*(x+2)/p;
     static_cast<Fractal*>(c.getExpr().get())->bringRationalFunctionIntoFormToDecay();
@@ -106,24 +107,6 @@ int main(int argc, char *argv[])
     qDebug() << res[2][0]->makeStringOfExpression();*/
 
 
-    /*GaluaField::initialize(13);
-    for (int i = 0; i < 13; ++i)
-        qDebug() << GaluaField::reverse(i);
-    qDebug() << "EINF";
-    Polynom dividend({1, 0, 4, 12, 11, 6}), divider({1, 5, 7});
-    auto res = divide(dividend, divider);
-    for (int i = 0; i < res.first.size(); ++i)
-       qDebug() << res.first[i].toInt();
-    qDebug() << "-------";
-    for (int i = 0; i < res.second.size(); ++i)
-       qDebug() << res.second[i].toInt();
-    Polynom mult_res = res.first * divider + res.second;
-    if (mult_res == dividend)
-        qDebug() << "Right";
-    else
-        qDebug() << "Hui";*/
-
-
 
     //c = (a + b) / 2;
    // TExpr_Builder builder;
@@ -136,21 +119,21 @@ int main(int argc, char *argv[])
     //log(tan(x)) - (log(sin(x)) - log(cos(x)))
     //2log(cos(x)) - log(1-sin(x)^2)
     //ТАКЖЕ, если  синусы и косинусы раскрываются по сумме всегда сразу, то мы лишаемся
-    //возможности взять интегралы вида 1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
+    //возможности взять интегралы вида 1/sin(ax+b),  1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
     //это надо исправить
 
    //c = (13*a-25)/(a*a-10) - (a*a*a+45*a-73)/(a*a+41*a+93)*(7*a+15)/(a*a-10);
 
    // c.out();
 
+   // c = integral(pow(sin(a*x + b), 2), x);
 
-// + 5*pow(x, 4) - pow(cos(x), 3)
-  //  c = (3*sin(x)*((-1*
-    //                pow(sin(x), 2)) + (1))) + ((4*((-1*sin(2*x)*sin(3)) + (cos(2*x)*
-     //                cos(3)))*((cos(2*x)*sin(3)) + (cos(3)*sin(2*x)))));
+    //c = integral(sin(x)/pow(cos(x), 2), x);
 
-   // c = derivative(ln(3+4*x), x);
-   // c = sqrt(1-x*x);
+    //c = integral(1/cos(a*x)/sin(a*x)/sin(a*x), x);
+
+    c = abs(x)/sqrt(x);
+   // c = integral(1/(b*b*x*x - a*a), x) - integral(1/(b*x-a)/(b*x + a), x);
     qDebug();
     qDebug() << "######################################################";
     qDebug() << c.toString();

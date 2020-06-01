@@ -213,10 +213,12 @@ std::unique_ptr<AbstractExpression> Logarithm::derivative(int var) const
 {
     return this->argument->derivative(var) / this->argument;
 }
-
+#include "variablesdistributor.h"
 std::unique_ptr<AbstractExpression> Logarithm::antiderivative(int var) const
 {
-    auto ln_f = checkIfItsLinearFunction(this, var);
+    if (!has(this->getSetOfVariables(), var))
+        return abs_ex(new Variable(getVariable(var))) * copy(this);
+    auto ln_f = checkIfItsLinearFunction(this->argument, var);
     if (ln_f.first == nullptr)
         return nullptr;
     return one / ln_f.first * this->argument * (ln(this->argument) - one);
@@ -229,8 +231,9 @@ const std::unique_ptr<AbstractExpression> &Logarithm::getArgument() const
 
 bool Logarithm::operator<(const AbstractExpression &right) const
 {
-    assert(right.getId() == SINUS);
-    return AbstractExpression::less(this->argument.get(), (static_cast<Logarithm*>(const_cast<AbstractExpression*>(&right))->argument.get()));
+    assert(right.getId() == LOGARITHM);
+    //return AbstractExpression::less(this->argument.get(), (static_cast<Logarithm*>(const_cast<AbstractExpression*>(&right))->argument.get()));
+    return less(this->argument.get(), static_cast<const Logarithm*>(&right)->argument.get());
 }
 
 std::unique_ptr<AbstractExpression> ln(const std::unique_ptr<AbstractExpression>& arg)

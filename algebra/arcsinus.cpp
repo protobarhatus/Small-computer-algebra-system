@@ -203,6 +203,8 @@ std::unique_ptr<AbstractExpression> ArcSinus::derivative(int var) const
 
 std::unique_ptr<AbstractExpression> ArcSinus::antiderivative(int var) const
 {
+    if (!has(this->getSetOfVariables(), var))
+        return abs_ex(new Variable(getVariable(var))) * copy(this);
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
     if (ln_f.first == nullptr)
         return nullptr;

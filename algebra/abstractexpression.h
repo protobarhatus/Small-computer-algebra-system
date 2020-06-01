@@ -117,6 +117,7 @@ void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<in
 void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
 void replaceSystemVariablesToExpressions(abs_ex &expr, std::map<int, abs_ex> & funcs);
 //void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex> & functions);
+//работает на все функции, не только тригонометрические
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr);
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex & expr);
 abs_ex getArgumentOfTrigonometricalFunction(AbstractExpression * expr);

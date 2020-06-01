@@ -247,6 +247,10 @@ void Polynomial::leadLikeMembers()
 bool Polynomial::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == POLYNOMIAL);
+    //qDebug() << "COMPARING: ";
+    //qDebug() << this->makeStringOfExpression();
+   // qDebug() << right.makeStringOfExpression();
+    //qDebug();
     Polynomial * pol = static_cast<Polynomial*>(const_cast<AbstractExpression*>(&right));
     if (this->monomials.size() != pol->monomials.size())
         return this->monomials.size() < pol->monomials.size();
@@ -257,7 +261,7 @@ bool Polynomial::operator<(const AbstractExpression &right) const
             return true;
         if (less(it1->get(), it.get()))
             return false;
-
+        ++it1;
     }
     return false;
 }
@@ -2043,9 +2047,17 @@ std::unique_ptr<AbstractExpression> Polynomial::derivative(int var) const
 
 std::unique_ptr<AbstractExpression> Polynomial::antiderivative(int var) const
 {
-    //сумма раскладывается при раскрытии интеграла, сюда программа заходить не должна
-    assert(false);
-    return nullptr;
+    if (!has(this->getSetOfVariables(), var))
+        return abs_ex(new Variable(getVariable(var))) * copy(this);
+    abs_ex result = copy(zero);
+    for (auto &it : this->monomials)
+    {
+        abs_ex integr_res = it->downcast()->antiderivative(var);
+        if (integr_res == nullptr)
+            return nullptr;
+        result = std::move(result) + std::move(integr_res);
+    }
+    return result;
 }
 
 std::array<std::unique_ptr<AbstractExpression>, 3> Polynomial::checkQuadraticFunction(int var_id) const
@@ -2059,6 +2071,8 @@ std::array<std::unique_ptr<AbstractExpression>, 3> Polynomial::checkQuadraticFun
         //может возникнуть подозрение, что узнавать так о степени переменной некоректно, ведь это запрос на максимальную степень. Однако в дроби может быть только одно вхождение
         //переменной
         Number degr = it->getMaxDegreeOfVariable(var_id);
+        if (!degr.isCorrect())
+            return {nullptr, nullptr, nullptr};
         if (degr.compareWith(2) == 0)
             a = a + it->getFractalWithoutVariable(var_id);
         else if (degr.isOne())

@@ -466,7 +466,8 @@ std::unique_ptr<AbstractExpression> operator-(std::unique_ptr<AbstractExpression
 std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(AbstractExpression *expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr);
-    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT);
+    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT
+           ||arg->getId() == LOGARITHM);
     switch (arg->getId()) {
     case SINUS:
         return static_cast<Sinus*>(arg)->getArgumentsCopy();
@@ -476,6 +477,8 @@ std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(Abstrac
         return static_cast<Tangent*>(arg)->getArgumentsCopy();
     case COTANGENT:
         return static_cast<Cotangent*>(arg)->getArgumentsCopy();
+    case LOGARITHM:
+        return static_cast<Logarithm*>(arg)->getArgumentsCopy();
     default:
         assert(false);
 
@@ -521,7 +524,7 @@ std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const Abstra
             return res;
         }
         int deg = monom.first.getNumerator();
-        if (deg > res.size())
+        if (deg >= res.size())
         {
             res.resize(deg + 1);
             res[deg] = std::move(monom.second);

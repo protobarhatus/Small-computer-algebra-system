@@ -61,7 +61,7 @@ std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression typ
 
     }
 }
-abs_ex copy(AbstractExpression * arg)
+abs_ex copy(const AbstractExpression * arg)
 {
     return makeAbstractExpression(arg->getId(), arg);
 }
@@ -433,4 +433,9 @@ std::multiset<int> findSubsetWithSum(const std::multiset<int> &set, int n)
         }
     }
     return std::multiset<int>();
+}
+
+bool has(const std::set<int> &set, int el)
+{
+    return set.find(el) != set.end();
 }

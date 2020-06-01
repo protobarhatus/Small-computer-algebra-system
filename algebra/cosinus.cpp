@@ -272,8 +272,10 @@ std::unique_ptr<AbstractExpression> Cosinus::derivative(int var) const
 
 std::unique_ptr<AbstractExpression> Cosinus::antiderivative(int var) const
 {
+    if (!has(this->getSetOfVariables(), var))
+        return abs_ex(new Variable(getVariable(var))) * copy(this);
    //да, оно тут раскрывается по сумме и линейного
-    auto lin_f = checkIfItsLinearFunction(this, var);
+    auto lin_f = checkIfItsLinearFunction(this->argument, var);
     if (lin_f.first == nullptr)
         return nullptr;
     return one/lin_f.first * sin(this->argument);

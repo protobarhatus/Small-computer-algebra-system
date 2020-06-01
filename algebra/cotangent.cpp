@@ -12,6 +12,7 @@
 #include "exception.h"
 #include "absolutevalue.h"
 #include "logarithm.h"
+#include "variablesdistributor.h"
 Cotangent::Cotangent(const abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
@@ -266,6 +267,8 @@ std::unique_ptr<AbstractExpression> Cotangent::derivative(int var) const
 
 std::unique_ptr<AbstractExpression> Cotangent::antiderivative(int var) const
 {
+    if (!has(this->getSetOfVariables(), var))
+        return abs_ex(new Variable(getVariable(var))) * copy(this);
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
     if (ln_f.first == nullptr)
         return nullptr;

@@ -14,6 +14,7 @@
 #include "cosinus.h"
 #include "logarithm.h"
 #include "absolutevalue.h"
+#include "variablesdistributor.h"
 Tangent::Tangent(const abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
@@ -281,10 +282,12 @@ std::unique_ptr<AbstractExpression> Tangent::derivative(int var) const
 
 std::unique_ptr<AbstractExpression> Tangent::antiderivative(int var) const
 {
+    if (!has(this->getSetOfVariables(), var))
+        return abs_ex(new Variable(getVariable(var))) * copy(this);
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
     if (ln_f.first == nullptr)
         return nullptr;
-    return minus_one / ln_f.first * ln(abs(this->argument));
+    return minus_one / ln_f.first * ln(abs(cos(this->argument)));
 }
 
 const std::unique_ptr<AbstractExpression> &Tangent::getArgument() const

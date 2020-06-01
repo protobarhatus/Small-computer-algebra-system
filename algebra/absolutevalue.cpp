@@ -72,6 +72,8 @@ bool AbsoluteValue::canDowncastTo(AlgebraExpression expr)
         return true;
     if (this->expression->getId() == FRACTAL && expr == FRACTAL)
         return true;
+    if (this->expression->getId() == DEGREE && expr == DEGREE)
+        return true;
     return false;
 }
 std::unique_ptr<AbstractExpression> AbsoluteValue::downcastTo(AlgebraExpression expr)
@@ -96,6 +98,11 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::downcastTo(AlgebraExpression 
         auto copy = makeAbstractExpression(this->expression->getId(), this->expression.get());
         static_cast<Polynomial*>(copy.get())->changeSign();
         return std::move(copy);
+    }
+    if (this->expression->getId() == DEGREE && expr == DEGREE)
+    {
+        auto arg = Degree::getArgumentOfDegree(this->expression.get());
+        return pow(abs(copy(arg)), Degree::getDegreeOfExpression(this->expression.get()));
     }
     std::unique_ptr<AbstractExpression> minus(new Number(-1));
     return this->expression * minus;
@@ -188,12 +195,17 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::antiderivative(int var) const
     return nullptr;
 }
 
+AbstractExpression *AbsoluteValue::getExpression()
+{
+    return this->expression.get();
+}
+
 std::unique_ptr<AbstractExpression> abs(const std::unique_ptr<AbstractExpression> &expr)
 {
-    return abs_ex(new AbsoluteValue(expr));
+    return abs_ex(new AbsoluteValue(expr))->downcast();
 }
 
 std::unique_ptr<AbstractExpression> abs(std::unique_ptr<AbstractExpression> &&expr)
 {
-    return abs_ex(new AbsoluteValue(std::move(expr)));
+    return abs_ex(new AbsoluteValue(std::move(expr)))->downcast();
 }

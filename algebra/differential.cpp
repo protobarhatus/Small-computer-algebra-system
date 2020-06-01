@@ -46,7 +46,7 @@ bool Differential::operator==(AbstractExpression &right)
 {
     if (right.getId() != DIFFERENTIAL)
         return false;
-    return *this->argument == *static_cast<Differential*>(&right);
+    return *this->argument == *static_cast<Differential*>(&right)->argument;
 }
 
 bool Differential::canDowncastTo(AlgebraExpression expr)
@@ -162,6 +162,8 @@ AbstractExpression *Differential::getArgument()
 
 std::unique_ptr<AbstractExpression> Differential::antiderivative(int var) const
 {
+    if (!has(this->getSetOfVariables(), var))
+        return abs_ex(new Variable(getVariable(var))) * copy(this);
     if (this->argument->getId() == var)
         return copy(this->argument);
     assert(false);

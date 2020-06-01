@@ -618,6 +618,8 @@ std::unique_ptr<AbstractExpression> Degree::derivative(int var) const
 
 std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
 {
+    if (!has(this->getSetOfVariables(), var))
+        return abs_ex(new Variable(getVariable(var))) * copy(this);
     /*if (this->argument->getId() == var && !this->degree->hasVariable(var))
         return takeDegreeOf(copy(this->argument), this->degree + one) / (this->degree + one);
     if (!this->argument->hasVariable(var) && this->degree->getId() == var)
@@ -636,35 +638,40 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * (this->argument / two - one/four * sin(two * this->argument));
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        return one / ln_f.first * (arg / two - one/four * sin(two * arg));
     }
     if (this->argument->getId() == COSINUS && *this->degree == *two)
     {
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * (this->argument / two + one/four*sin(two * this->argument));
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        return one / ln_f.first * (arg / two + one/four*sin(two * arg));
     }
     if (this->argument->getId() == TANGENT && *this->degree == *two)
     {
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * (tan(this->argument) - this->argument);
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        return one / ln_f.first * (this->argument - arg);
     }
     if (this->argument->getId() == COTANGENT && *this->degree == *two)
     {
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * (minus_one * this->argument - cot(this->argument));
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        return one / ln_f.first * (minus_one * arg - this->argument);
     }
     if (this->argument->getId() == LOGARITHM && *this->degree == *two)
     {
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * (this->argument * (ln(argument)*ln(argument) - two*ln(argument) + two));
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        return one / ln_f.first * (arg * (pow(this->argument, 2) - two*this->argument + two));
     }
 
     if (this->argument->getId() == SINUS && *this->degree == *three)
@@ -672,35 +679,42 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * one / numToAbs(12) * (cos(three*argument) - numToAbs(9)*cos(argument));
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+
+        return one / ln_f.first / numToAbs(12) * (cos(three*arg) - numToAbs(9)*cos(arg));
     }
     if (this->argument->getId() == COSINUS && *this->degree == *three)
     {
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * one / numToAbs(12) * (sin(three*argument) + numToAbs(9)*sin(argument));
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        return one / ln_f.first / numToAbs(12) * (sin(three*arg) + numToAbs(9)*sin(arg));
     }
     if (this->argument->getId() == TANGENT && *this->degree == *three)
     {
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * (one / (two * takeDegreeOf(cos(argument), 2)) + ln(cos(argument)));
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        return one / ln_f.first * (one / (two * takeDegreeOf(cos(arg), 2)) + ln(abs(cos(arg))));
     }
     if (this->argument->getId() == COTANGENT && *this->degree == *three)
     {
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * (minus_one / (two *takeDegreeOf(sin(argument), 2)) - ln(sin(argument)));
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        return one / ln_f.first * (minus_one / (two *takeDegreeOf(sin(arg), 2)) - ln(abs(sin(arg))));
     }
     if (this->argument->getId() == LOGARITHM && *this->degree == *three)
     {
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        return one / ln_f.first * (this->argument * (takeDegreeOf(ln(argument), 3) - three*takeDegreeOf(ln(argument), 2) + numToAbs(6)*ln(argument) - numToAbs(6)));
+        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        return one / ln_f.first * (arg * (takeDegreeOf(this->argument, 3) - three*takeDegreeOf(this->argument, 2)
+                                          + numToAbs(6)*this->argument - numToAbs(6)));
     }
     //должен быть больше нуля, иначе оно бы распалось в downcast-е
     if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isInteger())
@@ -749,6 +763,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
     }
     if (*this->degree == *half)
     {
+
         auto qc_f = checkIfItsQuadraticFunction(argument, var);
         auto x = abs_ex(new Variable(getVariable(var)));
 

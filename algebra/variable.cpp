@@ -156,6 +156,7 @@ std::unique_ptr<AbstractExpression> Variable::derivative(int var) const
 
 std::unique_ptr<AbstractExpression> Variable::antiderivative(int var) const
 {
-    assert(this->id == var);
+    if (this->getId() != var)
+        return abs_ex(new Variable(getVariable(var))) * copy(this);
     return takeDegreeOf(abs_ex(new Variable(getVariable(var))), 2) / two;
 }
