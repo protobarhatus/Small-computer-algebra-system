@@ -38,12 +38,12 @@ bool Constant::operator==(AbstractExpression &right)
     return eq(this->value, static_cast<Constant*>(&right)->value);
 }
 
-bool Constant::canDowncastTo(AlgebraExpression expr)
+bool Constant::canDowncastTo()
 {
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Constant::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Constant::downcastTo()
 {
     return abs_ex(nullptr);
 }
@@ -112,6 +112,11 @@ std::unique_ptr<AbstractExpression> Constant::derivative(int var) const
 std::unique_ptr<AbstractExpression> Constant::antiderivative(int var) const
 {
     return abs_ex(new Constant(this->value, this->name)) * abs_ex(new Variable(getVariable(var)));
+}
+
+void Constant::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
 }
 bool Constant::operator<(const AbstractExpression &right) const
 {

@@ -105,9 +105,9 @@ bool Tangent::operator==(AbstractExpression &right)
     return *this->argument == *(static_cast<Tangent*>(&right)->argument);
 }
 
-bool Tangent::canDowncastTo(AlgebraExpression expr)
+bool Tangent::canDowncastTo()
 {
-    if (expr == FRACTAL && this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
+    if (this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
         return true;
     if (pi_member == nullptr)
         return false;
@@ -118,26 +118,26 @@ bool Tangent::canDowncastTo(AlgebraExpression expr)
             return true;
         return false;
     }*/
-    if (expr == FRACTAL && this->is_pi_member_only)
+    if ( this->is_pi_member_only)
     {
         if (pi_member->getCoefficient().getDenominator() <= 6 && pi_member->getCoefficient().getDenominator() != 5)
             return true;
         return false;
     }
-    if (expr == FRACTAL && this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
+    if ( this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
         return true;
-    if (expr == FRACTAL && this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
+    if ( this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
         return true;
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Tangent::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Tangent::downcastTo()
 {
-    if (expr == FRACTAL && this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
+    if (this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
     {
         return abs_ex(new Number(-1)) * abs_ex(new Tangent(abs_ex(new Number(-1)) * this->argument));
     }
-    if (this->is_pi_member_only && expr == FRACTAL)
+    if (this->is_pi_member_only)
     {
         Number coe = this->pi_member->getCoefficient();
         if (coe == 0)
@@ -156,16 +156,16 @@ std::unique_ptr<AbstractExpression> Tangent::downcastTo(AlgebraExpression expr)
             return takeDegreeOf(Number(3), Number(1, 2)) * abs_ex(new Number(-1));
     }
 
-    if (expr == FRACTAL && this->pi_member != nullptr && abs(this->pi_member->getCoefficient()) == Number(1, 2))
+    if (this->pi_member != nullptr && abs(this->pi_member->getCoefficient()) == Number(1, 2))
     {
         return minus_one * cot(this->argument - toAbsEx(this->pi_member));
     }
-    if (expr == FRACTAL && this->pi_member != nullptr && isPiMemberInTable(pi_member->getCoefficient()))
+    if ( this->pi_member != nullptr && isPiMemberInTable(pi_member->getCoefficient()))
     {
         auto left = this->argument - abs_ex(new Fractal(this->pi_member.get()));
         return (tan(left) + tan(toAbsEx(this->pi_member)))/(one - tan(left)*tan(toAbsEx(this->pi_member)));
     }
-    if (expr == FRACTAL && this->argument->getId() == POLYNOMIAL)
+    if ( this->argument->getId() == POLYNOMIAL)
     {
         auto monoms = static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers();
         auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
@@ -293,6 +293,12 @@ std::unique_ptr<AbstractExpression> Tangent::antiderivative(int var) const
 const std::unique_ptr<AbstractExpression> &Tangent::getArgument() const
 {
     return this->argument;
+}
+
+void Tangent::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
+    this->argument->setSimplified(simpl);
 }
 
 bool Tangent::operator<(const AbstractExpression &right) const

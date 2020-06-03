@@ -64,24 +64,22 @@ bool AbsoluteValue::operator==(AbstractExpression &expr)
     AbsoluteValue * expr_ptr = static_cast<AbsoluteValue*>(&expr);
     return *this->expression == *expr_ptr->expression;
 }
-bool AbsoluteValue::canDowncastTo(AlgebraExpression expr)
+bool AbsoluteValue::canDowncastTo()
 {
-    if ((this->expression->getId() == expr && (this->expr_position > 0 || (this->expr_position < 0 && (expr == POLYNOMIAL || expr == NUMBER || expr == FRACTAL)))))
+    if (this->expr_position > 0 || this->expr_position < 0)
         return true;
-    if (this->expr_position < 0 && expr == FRACTAL)
+    if (this->expression->getId() == FRACTAL)
         return true;
-    if (this->expression->getId() == FRACTAL && expr == FRACTAL)
-        return true;
-    if (this->expression->getId() == DEGREE && expr == DEGREE)
+    if (this->expression->getId() == DEGREE)
         return true;
     return false;
 }
-std::unique_ptr<AbstractExpression> AbsoluteValue::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> AbsoluteValue::downcastTo()
 {
-    assert(canDowncastTo(expr));
+    assert(canDowncastTo());
     if (this->expr_position > 0)
         return makeAbstractExpression(this->expression->getId(), this->expression.get());
-    if (this->expr_position == 0 && expr == FRACTAL)
+    if (this->expr_position == 0 && this->expression->getId() == FRACTAL)
     {
         Fractal * argument = static_cast<Fractal*>(this->expression.get());
         fractal_argument num, denum;
@@ -93,13 +91,13 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::downcastTo(AlgebraExpression 
             denum.push_back(abs_ex(new AbsoluteValue(makeAbstractExpression(it->getId(), it.get()))));
         return std::unique_ptr<AbstractExpression>(new Fractal(std::move(num), std::move(denum)));
     }
-    if (expr == POLYNOMIAL)
+    if (this->expr_position < 0 && this->expression->getId() == POLYNOMIAL)
     {
         auto copy = makeAbstractExpression(this->expression->getId(), this->expression.get());
         static_cast<Polynomial*>(copy.get())->changeSign();
         return std::move(copy);
     }
-    if (this->expression->getId() == DEGREE && expr == DEGREE)
+    if (this->expression->getId() == DEGREE)
     {
         auto arg = Degree::getArgumentOfDegree(this->expression.get());
         return pow(abs(copy(arg)), Degree::getDegreeOfExpression(this->expression.get()));
@@ -198,6 +196,12 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::antiderivative(int var) const
 AbstractExpression *AbsoluteValue::getExpression()
 {
     return this->expression.get();
+}
+
+void AbsoluteValue::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
+    this->expression->setSimplified(simpl);
 }
 
 std::unique_ptr<AbstractExpression> abs(const std::unique_ptr<AbstractExpression> &expr)

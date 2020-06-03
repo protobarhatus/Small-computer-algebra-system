@@ -5,6 +5,12 @@ VariablesDefinition::VariablesDefinition()
     this->max = std::nan("0");
     this->min = std::nan("0");
 }
+
+VariablesDefinition::VariablesDefinition(const VariablesDefinition &cop) :min(cop.min), max(cop.max),
+    has_min_border(cop.has_min_border), has_max_border(cop.has_max_border)
+{
+
+}
 void VariablesDefinition::setMinValue(definition_area_type imin)
 {
     this->min = imin;

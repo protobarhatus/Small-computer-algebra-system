@@ -1136,8 +1136,65 @@ void testAlgMod()
 },
 []()->bool { //240
     AlgExpr x = var(0, 100);
-    qDebug() << (abs(x)/sqrt(x)).toString();
     return abs(x)/sqrt(x) == sqrt(x);
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(), b = var();
+    return integral(1/(b*b*x*x - a*a), x) == (-1*((-1*ln(abs(((-1*abs(a))+(x*abs(b))))))+(ln(abs(((abs(a))+(x*abs(b)))))))/abs(a)/abs(b))/2;
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(), b = var(), c = var(), d = var();
+    return integral(1/(a*x + b)/(c*x + d), x) == (((-1*ln(abs(((d)+(x*c)))))+(ln(abs(((b)+(x*a))))))/((-1*b*c)+(a*d)));
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(), b = var();
+    return integral(x/(b*b*x*x - a*a), x) ==
+            (1*((-2*ln(abs(b)))+(ln(abs(((-1*abs(a))+(x*abs(b))))))+(ln(abs(((abs(a))+(x*abs(b)))))))/b/b)/2;
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(), b = var(), c = var(), d = var(), e = var(), f = var();
+    return integral((a*x + b)/(c*x + d)/(e*x + f), x) ==
+            (((-1*a*d*e*ln(abs(((d)+(x*c)))))+(-1*b*c*e*ln(abs(((f)+(x*e)))))+(a*c*f*ln(abs(((f)+(x*e)))))+(b*c*e*ln(abs(((d)+(x*c))))))/c/e/((-1*d*e)+(c*f)));
+},
+[]()->bool { //245
+    AlgExpr x = var(), a = var();
+    return integral(1/(x*x+a*a), x) == (atan((x/abs(a)))/abs(a));
+},
+[]()->bool {
+    AlgExpr x = var(), a = var();
+    return integral(x/(x*x+a*a), x) == ln(x*x + a*a)/2;
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(),b = var(), c = var();
+    return integral(1/(a*x*x + b*x + c), x) ==  (2*atan((((b)+(2*x*a))/sqrt((-1*((-4*a*c)+(b*b))))))/sqrt((-1*((-4*a*c)+(b*b)))));
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(0, 100), c = var(-100, 0), b = var();
+    return integral(1/(a*x*x + b*x + c), x) ==
+            (-1*((-1*ln(abs(((-1*sqrt(((-4*a*c)+(b*b))))+(b)+(2*x*a)))))+(ln(abs(((b)+(sqrt(((-4*a*c)+(b*b))))+(2*x*a))))))/sqrt(((-4*a*c)+(b*b))));
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(), b = var(), c = var();
+    return integral(x/(a*x*x + b*x + c), x) ==
+            (1*((-2*b*atan((((b)+(2*x*a))/sqrt((-1*((-4*a*c)+(b*b)))))))+(ln(abs(((c)+(x*b)+(a*x*x))))*sqrt((-1*((-4*a*c)+(b*b))))))/a/sqrt((-1*((-4*a*c)+(b*b)))))/2;
+},
+[]()->bool { //250
+    AlgExpr x = var(), a =var(), b = var();
+    return integral(x*x/(a*x + b), x) ==
+            (1*((-2*x*a*b)+(x*x*a*a)+(2*ln(abs(((b)+(x*a))))*b*b))/a/a/a)/2;
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(), b = var();
+    return integral(1/(x*x*(a*x + b)), x) == (((-1*b)+(-1*x*a*ln(abs(x)))+(x*a*ln(abs(((b)+(x*a))))))/x/b/b);
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(), b = var();
+    return integral(x/pow(a*x + b, 2), x) == (((-1*b*ln(abs(a)))+(-1*x*a*ln(abs(a)))+(b)+(b*ln(abs(((b)+(x*a)))))+(x*a*ln(abs(((b)+(x*a))))))/((b)+(x*a))/a/a);
+},
+[]()->bool {
+    AlgExpr x = var(), a = var(), b = var();
+    return integral(x*x/pow(a*x + b, 2), x) ==
+            (((-2*ln(abs(((b)+(x*a))))*b*b)+(-2*x*a*b*ln(abs(((b)+(x*a)))))+(-1*b*b)+(x*x*a*a)+(x*a*b)+(2*ln(abs(a))*b*b)+(2*x*a*b*ln(abs(a))))/a/a/a/((b)+(x*a)));
 }
     };
 

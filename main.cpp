@@ -132,8 +132,11 @@ int main(int argc, char *argv[])
 
     //c = integral(1/cos(a*x)/sin(a*x)/sin(a*x), x);
 
-    c = abs(x)/sqrt(x);
-   // c = integral(1/(b*b*x*x - a*a), x) - integral(1/(b*x-a)/(b*x + a), x);
+
+    //c = pow(x*x + x + y, 3) + 0;
+    c = pow(sqrt(x) + 1, 2) + 0;
+    c = static_cast<Polynomial*>(c.getExpr().get())->tryToDistinguishFullDegree();
+
     qDebug();
     qDebug() << "######################################################";
     qDebug() << c.toString();

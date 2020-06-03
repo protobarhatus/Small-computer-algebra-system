@@ -103,9 +103,9 @@ bool Cotangent::operator==(AbstractExpression &right)
     return *this->argument == *(static_cast<Cotangent*>(&right)->argument);
 }
 
-bool Cotangent::canDowncastTo(AlgebraExpression expr)
+bool Cotangent::canDowncastTo()
 {
-    if (expr == FRACTAL && this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
+    if (this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
         return true;
     if (pi_member == nullptr)
         return false;
@@ -116,7 +116,7 @@ bool Cotangent::canDowncastTo(AlgebraExpression expr)
             return true;
         return false;
     }*/
-    if (expr == FRACTAL && this->is_pi_member_only)
+    if (this->is_pi_member_only)
     {
         if (pi_member->getCoefficient().getDenominator() <= 6 && pi_member->getCoefficient().getDenominator() != 5)
             return true;
@@ -125,13 +125,13 @@ bool Cotangent::canDowncastTo(AlgebraExpression expr)
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Cotangent::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Cotangent::downcastTo()
 {
-    if (expr == FRACTAL && this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
+    if (this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
     {
         return abs_ex(new Number(-1)) * abs_ex(new Cotangent(abs_ex(new Number(-1)) * this->argument));
     }
-    if (this->is_pi_member_only && expr == FRACTAL)
+    if (this->is_pi_member_only)
     {
         Number coe = this->pi_member->getCoefficient();
         if (coe == Number(1, 2))
@@ -278,6 +278,12 @@ std::unique_ptr<AbstractExpression> Cotangent::antiderivative(int var) const
 const std::unique_ptr<AbstractExpression> &Cotangent::getArgument() const
 {
     return this->argument;
+}
+
+void Cotangent::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
+    this->argument->setSimplified(simpl);
 }
 
 bool Cotangent::operator<(const AbstractExpression &right) const

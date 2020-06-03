@@ -26,7 +26,7 @@ Variable::Variable(int id, QString iname)
     this->name = iname;
     if (id >= VariablesDistributor::firstSystemNum())
     {
-        this->definition = VariablesDistributor::get().system_var_def;
+        this->definition = VariablesDistributor::getVariablesDefinition(id);
     }
     //VariablesNameDistributor::addVariable(id, name);
     //if (this->id >= Variable::id_counter)
@@ -87,11 +87,11 @@ Number Variable::getMaxDegreeOfVariable(int _id)
         return 1;
     return 0;
 }
-bool Variable::canDowncastTo(AlgebraExpression expr)
+bool Variable::canDowncastTo()
 {
     return false;
 }
-std::unique_ptr<AbstractExpression> Variable::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Variable::downcastTo()
 {
     assert(false);
     return std::unique_ptr<AbstractExpression>(nullptr);
@@ -113,14 +113,15 @@ Variable::Variable(int id)
 {
    // assert(id <= Variable::id_counter);
     this->id = id;
+    this->definition = VariablesDistributor::getVariablesDefinition(id);
     if (id <= Variable::id_counter)
     {
-        this->definition = VariablesDistributor::getVariablesDefinition(id);
+
         this->name = VariablesNameDistributor::getName(id);
     }
     else
     {
-        this->definition = VariablesDistributor::get().system_var_def;
+       // this->definition = VariablesDistributor::get().system_var_def;
         this->name = makeVariablesName(id);
     }
 }
@@ -159,4 +160,9 @@ std::unique_ptr<AbstractExpression> Variable::antiderivative(int var) const
     if (this->getId() != var)
         return abs_ex(new Variable(getVariable(var))) * copy(this);
     return takeDegreeOf(abs_ex(new Variable(getVariable(var))), 2) / two;
+}
+
+void Variable::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
 }

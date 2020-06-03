@@ -18,6 +18,8 @@ private:
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
     const int first_system_num = 1000000000;
     const int first_integrate_constant = 1500000000;
+    friend Variable systemVar(int min, int max);
+    friend Variable systemVar();
     VariablesDistributor();
     VariablesDistributor(const VariablesDistributor &) = delete;
     VariablesDistributor& operator=(const VariablesDistributor &) = delete;
@@ -25,13 +27,14 @@ private:
     //изменяются, а так как переменные хранят указатели на область определения, то, если бы тут были объекты, то
     //после перевыделения указатели стали бы невалидными
     std::vector<VariablesDefinition*> variables;
-
+    std::vector<VariablesDefinition*> system_variables;
 };
 
 void deleteVariables();
 Variable getVariable(int id);
 Variable systemVar(int num);
 Variable systemVar();
+Variable systemVar(int min, int max);
 Variable integratingConstant();
 QString makeVariablesName(int id);
 #endif // VARIABLESDISTRIBUTOR_H

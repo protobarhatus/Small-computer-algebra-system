@@ -29,11 +29,12 @@ public:
     Fractal(fractal_argument * num, Number coe = 1);
     Fractal(const fractal_argument & num, Number coe = 1);
     Fractal(std::unique_ptr<AbstractExpression> && num, Number coe = 1);
+    Fractal& operator=(Fractal && frac);
     virtual void simplify() override;
     virtual AlgebraExpression getId() const override;
 
-    virtual bool canDowncastTo(AlgebraExpression expr) override;
-    virtual std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr) override;
+    virtual bool canDowncastTo() override;
+    virtual std::unique_ptr<AbstractExpression> downcastTo() override;
     Number getCoefficient();
     void setCoefficinet(Number num);
     virtual bool operator==(AbstractExpression & right) override;
@@ -48,7 +49,9 @@ public:
     bool isZero() const;
     static std::unique_ptr<Fractal> makeZeroFractal();
     bool isPolynomial();
+
     virtual std::set<int> getSetOfPolyVariables() const override;
+
     virtual std::set<int> getSetOfVariables() const override;
     virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
@@ -94,6 +97,9 @@ public:
     void factorizeDenominator();
     void bringRationalFunctionIntoFormToDecay();
     std::list<abs_ex> splitIntoSumOfElementaryFractals();
+    std::unique_ptr<Polynomial> toPolynomWithFractionalCoefficients();
+    long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const;
+    void setSimplified(bool simpl);
 private:
     bool casted_trigonometry;
     void castTrigonometry();

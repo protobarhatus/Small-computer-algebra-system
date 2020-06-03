@@ -15,8 +15,8 @@ public:
     long long int getNumerator() const;
     long long int getDenominator() const;
     virtual void simplify() override;
-    virtual bool canDowncastTo(AlgebraExpression expr) override;
-    virtual std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr) override;
+    virtual bool canDowncastTo() override;
+    virtual std::unique_ptr<AbstractExpression> downcastTo() override;
     Number & operator=(long long int value);
     //the most important values
     bool isOne() const;
@@ -53,6 +53,7 @@ public:
     bool less(const Number & b) const;
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
+    virtual void setSimplified(bool simpl) override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     long long int numerator;

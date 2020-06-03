@@ -15,8 +15,8 @@ public:
     virtual void simplify() override;
     virtual bool operator==(AbstractExpression & right) override;
     //переход к другим триг. функциям происходит в другом интерфейсе
-    virtual bool canDowncastTo(AlgebraExpression expr) override;
-    virtual abs_ex downcastTo(AlgebraExpression expr) override;
+    virtual bool canDowncastTo() override;
+    virtual abs_ex downcastTo() override;
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
     virtual std::set<QString> getSetOfFunctions() const override;
@@ -36,6 +36,7 @@ public:
     virtual abs_ex antiderivative(int var) const override;
 
     const abs_ex& getArgument() const;
+    virtual void setSimplified(bool simpl) override;
 private:
     abs_ex argument;
     //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может

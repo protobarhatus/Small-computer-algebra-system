@@ -8,6 +8,8 @@
 #include "cotangent.h"
 #include "logarithm.h"
 #include "differential.h"
+#include "arctangent.h"
+#include "arcsinus.h"
 AlgExpr::AlgExpr()
 {
 
@@ -514,4 +516,21 @@ AlgExpr integral(const AlgExpr &arg, AlgExpr var)
 {
     assert(var.getExpr()->getId() > 0);
     return integral(arg * D(var.getExpr()));
+}
+
+AlgExpr atan(const AlgExpr &arg)
+{
+    return AlgExpr(abs_ex(new ArcTangent(arg.expression)));
+}
+AlgExpr atan(AlgExpr &&arg)
+{
+    return AlgExpr(abs_ex(new ArcTangent(std::move(arg.expression))));
+}
+AlgExpr asin(const AlgExpr &arg)
+{
+    return AlgExpr(abs_ex(new ArcSinus(arg.expression)));
+}
+AlgExpr asin(AlgExpr && arg)
+{
+    return AlgExpr(abs_ex(new ArcSinus(std::move(arg.expression))));
 }

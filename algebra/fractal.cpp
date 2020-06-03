@@ -216,21 +216,22 @@ Number Fractal::getCoefficient()
 {
     return this->coefficient;
 }
-bool Fractal::canDowncastTo(AlgebraExpression expr)
+bool Fractal::canDowncastTo()
 {
-    return (this->denominator.empty() && this->coefficient.getDenominator() == 1 && this->coefficient.getNumerator() == 1 && this->numerator.size() == 1 &&
-            (this->numerator.begin()->get()->getId() == expr || (this->numerator.begin()->get()->getId() > 0 && expr > 0))) ||
-            (expr == NUMBER && this->numerator.empty() && this->denominator.empty()) ||
-            (expr == NUMBER && this->coefficient.getNumerator() == 0);
+    return (this->denominator.empty() && this->coefficient.getDenominator() == 1 && this->coefficient.getNumerator() == 1 && this->numerator.size() == 1) ||
+            (this->numerator.empty() && this->denominator.empty()) ||
+            (this->coefficient.getNumerator() == 0);
 }
-std::unique_ptr<AbstractExpression> Fractal::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Fractal::downcastTo()
 {
-    assert(this->canDowncastTo(expr));
-    if (expr == NUMBER)
+    assert(this->canDowncastTo());
+    if (this->numerator.empty() && this->denominator.empty())
     {
         return makeAbstractExpression(NUMBER, &this->coefficient);
     }
-    return makeAbstractExpression(expr, this->numerator.begin()->get());
+    if (this->coefficient.isZero())
+        return copy(zero);
+    return copy( this->numerator.begin()->get());
 }
 bool Fractal::isZero() const
 {
@@ -538,7 +539,7 @@ void Fractal::reduceMembersWithDowngradingDegree()
 }
 void Fractal::reduceComparibleDegrees()
 {
-    NONCONST
+    /*NONCONST
     for (auto it = this->numerator.begin(); it != this->numerator.end(); )
     {
         if (it->get()->getId() == DEGREE && static_cast<Degree*>(it->get())->canDowncastTo(NUMBER))
@@ -569,7 +570,7 @@ void Fractal::reduceComparibleDegrees()
         }
         else
             ++it;
-    }
+    }*/
 }
 void Fractal::turnDegreesIntoList()
 {
@@ -676,9 +677,16 @@ std::set<int> Fractal::getSetOfPolyVariables() const
     }
     for (auto &it : this->denominator)
     {
+        auto s = it->getSetOfVariables();
+        for (auto &it1 : s)
+            if (has(set, it1))
+                set.erase(it1);
+    }
+    /*for (auto &it : this->denominator)
+    {
         std::set<int> s = it->getSetOfPolyVariables();
         set.insert(s.begin(), s.end());
-    }
+    }*/
 
     return set;
 }
@@ -1019,6 +1027,16 @@ Fractal::Fractal(std::unique_ptr<AbstractExpression> && num, Number coe) : coeff
 {
     this->pushBackToNumerator(std::move(num));
     this->simplify();
+}
+
+Fractal &Fractal::operator=(Fractal &&frac)
+{
+    this->numerator = std::move(frac.numerator);
+    this->denominator = std::move(frac.denominator);
+    this->coefficient = frac.coefficient;
+    this->simplified = frac.simplified;
+    this->simplify();
+    return *this;
 }
 QString Fractal::makeStringOfExpression() const
 {
@@ -1844,7 +1862,8 @@ std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
             abs_ex w = (-b + sqrt(D1))/two/a;
             abs_ex u = (-b - sqrt(D1))/two/a;
             abs_ex t = -f/two/e;
-            return qc_f1[0] * qc_f2[0] * ((t - u)*(t - w) / (t - x) - (-two * t + u + w)*ln(abs(t - x)) + x);
+
+            return a / e * ((t - u)*(t - w) / (t - x) - (-two * t + u + w)*ln(abs(t - x)) + x);
         }
         if ((*D1 == *zero || D1->getPositionRelativelyZero() > 0) && (D2->getPositionRelativelyZero() > 0))
         {
@@ -1853,7 +1872,7 @@ std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
             abs_ex u = (-b - sqrt(D1))/two/a;
             abs_ex t = (-f + sqrt(D2))/two/a;
             abs_ex z = (-f - sqrt(D2))/two/a;
-            return qc_f1[0] / qc_f2[0] * ((t - u)*(t - w) * ln(abs(x - t)) + x*(t - z) + (u - z)*(z - w)*ln(abs(x - z))) / (t - z);
+            return a / e * ((t - u)*(t - w) * ln(abs(x - t)) + x*(t - z) + (u - z)*(z - w)*ln(abs(x - z))) / (t - z);
         }
         return (two*a*e*x + (two*(two*c*sqr(e) -b*e*f + a*(sqr(f) - two*e*g))*atan((f + two*e*x) / sqrt(-D2)))/sqrt(-D2) + (b*e - a*f)*ln(abs(g + x*(f + e*x))))/two/sqr(e);
     };
@@ -1922,7 +1941,7 @@ std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
             auto qc_f = checkIfItsQuadraticFunction(num, var);
             if (qc_f[0] != nullptr)
             {
-                return quadraticDivideLinearFormula(qc_f, ln_f);
+                return quadraticDivideLinearFormula(qc_f, ln_f2);
             }
             if (num->getId() == DEGREE)
             {
@@ -2103,12 +2122,19 @@ std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
                 abs_ex& a = ln_f1.first;
                 abs_ex& b = ln_f1.second;
                 abs_ex &c = qc_f[0];
-                abs_ex &d = qc_f[1];
-                abs_ex &e = qc_f[2];
+                abs_ex &e = qc_f[1];
+                abs_ex &f = qc_f[2];
+                //abs_ex &c = qc_f[0];
+               // abs_ex &d = qc_f[1];
+               // abs_ex &e = qc_f[2];
                // (a x (-2 b c + 2 a d + a c x) +
                 // 2 (b^2 c - a b d + a^2 e) Log[b + a x])/(2 a^3)
-                return (a* x *(-two* b* c + two* a* d + a* c* x) +
-                                 two* (sqr(b)* c - a* b* d + sqr(a)*e) *ln(abs(*den_beg)))/(two*pow(a, 3));
+                //return (a* x *(-two* b* c + two* a* d + a* c* x) +
+                //                 two* (sqr(b)* c - a* b* d + sqr(a)*e) *ln(abs(*den_beg)))/(two*pow(a, 3));
+
+                return (a*a)/(a*a*f + b*b*c - e*a*b) * (one/(a*x + b))->antiderivative(var) -
+                        one / (a*a*f + b*b*c - e*a*b) * ((a*c*x - b*c +e*a)/(c*x*x +e*x +f))->antiderivative(var);
+
             }
             if (den_next->get()->getId() == DEGREE && *Degree::getDegreeOfExpression(den_next->get()) == *half)
             {
@@ -2552,6 +2578,61 @@ std::list<std::unique_ptr<AbstractExpression> > Fractal::splitIntoSumOfElementar
         }
     }
     return result;
+}
+
+std::unique_ptr<Polynomial> Fractal::toPolynomWithFractionalCoefficients()
+{
+    std::unique_ptr<Polynomial> result(new Polynomial);
+    result->setFractionalCoefficientsAllowed(true);
+    std::unique_ptr<Fractal> num (new Fractal(&this->numerator, this->coefficient.getNumerator()));
+    std::unique_ptr<Fractal> denom(new Fractal(&this->denominator, this->coefficient.getDenominator()));
+    if (num->canTurnIntoPolynomWithOpeningParentheses())
+        result = num->turnIntoPolynomWithOpeningParentheses(true);
+    else
+        result->addMonomial(std::move(num));
+    auto res_monoms = result->getMonomialsPointers();
+    for (auto &it : res_monoms)
+        *it = std::move(*(*it / *denom));
+
+    return result;
+}
+
+long long int Fractal::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    long long int res = 1;
+    for (auto &it : this->numerator)
+    {
+        if (Degree::getArgumentOfDegree(it.get())->getId() == var)
+        {
+            auto deg = Degree::getDegreeOfExpression(it.get());
+            if (deg->getId() == NUMBER)
+                res = lcm(res, static_cast<Number*>(deg.get())->getDenominator());
+            else
+                return 0;
+        }
+    }
+    for (auto &it : this->denominator)
+    {
+        if (Degree::getArgumentOfDegree(it.get())->getId() == var)
+        {
+            auto deg = Degree::getDegreeOfExpression(it.get());
+            if (deg->getId() == NUMBER)
+                res = lcm(res, static_cast<Number*>(deg.get())->getDenominator());
+            else
+                return 0;
+        }
+    }
+    return res;
+}
+
+void Fractal::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
+    this->coefficient.setSimplified(simpl);
+    for (auto &it : this->numerator)
+        it->setSimplified(simpl);
+    for (auto &it : this->denominator)
+        it->setSimplified(simpl);
 }
 
 

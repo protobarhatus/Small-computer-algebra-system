@@ -42,7 +42,7 @@ bool Number::operator==(AbstractExpression & right)
     Number * num = static_cast<Number*>(&right);
     return this->numerator == num->numerator && this->denominator == num->denominator;
 }
-std::unique_ptr<AbstractExpression> Number::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Number::downcastTo()
 {
     assert(false);
     return std::unique_ptr<AbstractExpression>(nullptr);
@@ -70,7 +70,7 @@ Number::Number(long long int num, long long int denum)
     this->numerator = num;
     this->denominator = denum;
 }
-bool Number::canDowncastTo(AlgebraExpression expr)
+bool Number::canDowncastTo()
 {
     return false;
 }
@@ -342,6 +342,11 @@ std::unique_ptr<AbstractExpression> Number::derivative(int var) const
 std::unique_ptr<AbstractExpression> Number::antiderivative(int var) const
 {
     return abs_ex(new Number(*this)) * abs_ex(new Variable(getVariable(var)));
+}
+
+void Number::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
 }
 
 Number abs(Number num)

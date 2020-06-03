@@ -84,9 +84,9 @@ bool Cosinus::operator==(AbstractExpression &right)
         return false;
     return *this->argument == *(static_cast<Cosinus*>(&right)->argument);
 }
-bool Cosinus::canDowncastTo(AlgebraExpression expr)
+bool Cosinus::canDowncastTo()
 {
-    if (expr == FRACTAL && this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
+    if (this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
         return true;
    // if (pi_member == nullptr)
      //   return false;
@@ -97,25 +97,25 @@ bool Cosinus::canDowncastTo(AlgebraExpression expr)
             return true;
         return false;
     }*/
-    if (expr == FRACTAL && this->is_pi_member_only)
+    if (this->is_pi_member_only)
     {
         if (pi_member->getCoefficient().getDenominator() <= 6 && pi_member->getCoefficient().getDenominator() != 5)
             return true;
         return false;
     }
-    if (expr == POLYNOMIAL && this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
+    if (this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
         return true;
-    if (expr == POLYNOMIAL && this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
+    if (this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
         return true;
     return false;
 }
-abs_ex Cosinus::downcastTo(AlgebraExpression expr)
+abs_ex Cosinus::downcastTo()
 {
-    if (expr == FRACTAL && this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
+    if (this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
     {
         return abs_ex(new Number(-1)) * abs_ex(new Cosinus(abs_ex(new Number(-1)) * this->argument));
     }
-    if (this->is_pi_member_only && expr == FRACTAL)
+    if (this->is_pi_member_only)
     {
         Number coe = this->pi_member->getCoefficient();
         if (coe == Number(1, 2) || coe == Number(3, 2))
@@ -137,12 +137,12 @@ abs_ex Cosinus::downcastTo(AlgebraExpression expr)
         if (coe == Number(5, 6) || coe == Number(7, 6))
             return takeDegreeOf(Number(3), Number(1, 2)) * abs_ex(new Number(-1, 2));
     }
-    if (expr == POLYNOMIAL && this->pi_member != nullptr && isPiMemberInTable(pi_member->getCoefficient()))
+    if (this->pi_member != nullptr && isPiMemberInTable(pi_member->getCoefficient()))
     {
         auto left = this->argument - abs_ex(new Fractal(this->pi_member.get()));
         return cos(left)*cos(toAbsEx(this->pi_member)) - sin(toAbsEx(this->pi_member))*sin(left);
     }
-    if (expr == POLYNOMIAL && this->argument->getId() == POLYNOMIAL)
+    if (this->argument->getId() == POLYNOMIAL)
     {
         auto monoms = static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers();
         auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
@@ -284,6 +284,12 @@ std::unique_ptr<AbstractExpression> Cosinus::antiderivative(int var) const
 const std::unique_ptr<AbstractExpression> &Cosinus::getArgument() const
 {
     return this->argument;
+}
+
+void Cosinus::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
+    this->argument->setSimplified(simpl);
 }
 
 std::unique_ptr<AbstractExpression> cos(const std::unique_ptr<AbstractExpression> &expr)

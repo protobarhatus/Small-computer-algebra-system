@@ -12,8 +12,8 @@ public:
     virtual void simplify() override;
     virtual bool operator==(AbstractExpression & right) override;
 
-    virtual bool canDowncastTo(AlgebraExpression expr) override;
-    virtual abs_ex downcastTo(AlgebraExpression expr) override;
+    virtual bool canDowncastTo() override;
+    virtual abs_ex downcastTo() override;
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
     virtual std::set<QString> getSetOfFunctions() const override;
@@ -27,6 +27,7 @@ public:
     virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
+    virtual void setSimplified(bool simpl) override;
 private:
     virtual bool operator<(const AbstractExpression & right) const override;
     double value;

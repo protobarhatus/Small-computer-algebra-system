@@ -70,8 +70,10 @@ VariablesDefinition * VariablesDistributor::getVariablesDefinition(int id)
 {
 
     VariablesDistributor & ref = VariablesDistributor::get();
-    if (id > ref.variables.size())
-        return ref.system_var_def;
+    //if (id > ref.variables.size())
+      //  return ref.system_var_def;
+    if (id >= ref.first_system_num)
+        return ref.system_variables[id - ref.first_system_num];
     assert(id <= ref.variables.size());
     return ref.variables[id - 1];
 }
@@ -98,6 +100,8 @@ Variable systemVar(int num)
 Variable systemVar()
 {
     ++Variable::system_id_counter;
+
+    VariablesDistributor::get().system_variables.push_back(new VariablesDefinition(*VariablesDistributor::get().system_var_def));
     return Variable(Variable::system_id_counter - 1, makeVariablesName(Variable::system_id_counter - 1));
 }
 
@@ -105,4 +109,16 @@ Variable integratingConstant()
 {
     ++Variable::integrating_constant_id_counter;
     return Variable(Variable::integrating_constant_id_counter - 1, "C");
+}
+
+Variable systemVar(int min, int max)
+{
+    ++Variable::system_id_counter;
+    VariablesDefinition * new_def = new VariablesDefinition;
+    new_def->setMaxValue(max);
+    new_def->setMinValue(min);
+    VariablesDistributor::get().system_variables.push_back(new_def);
+
+    Variable new_var = Variable(Variable::system_id_counter - 1, makeVariablesName(Variable::system_id_counter - 1));
+    return new_var;
 }

@@ -25,8 +25,8 @@ public:
     virtual AlgebraExpression getId() const override;
     virtual bool operator==(AbstractExpression & right) override;
     bool isMonomial();
-    virtual bool canDowncastTo(AlgebraExpression expr) override;
-    virtual std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr) override;
+    virtual bool canDowncastTo() override;
+    virtual std::unique_ptr<AbstractExpression> downcastTo() override;
     //assert if cannot
     //i don't remember why do i need this function, maybe should delete?
     std::unique_ptr<AbstractExpression> turnIntoMonomial();
@@ -82,6 +82,9 @@ public:
     virtual abs_ex antiderivative(int var) const override;
     //проверяет, является ли полином квадратичной функцией и возвращает коэффициенты a, b, c в выражении вида ax^2+bx+c
     std::array<abs_ex, 3> checkQuadraticFunction(int var) const;
+    abs_ex tryToDistinguishFullDegree() const;
+    long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const;
+    virtual void setSimplified(bool simpl) override;
 private:
     bool casted_trigonometry;
     void castTrigonometry();

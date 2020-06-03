@@ -49,7 +49,7 @@ bool Differential::operator==(AbstractExpression &right)
     return *this->argument == *static_cast<Differential*>(&right)->argument;
 }
 
-bool Differential::canDowncastTo(AlgebraExpression expr)
+bool Differential::canDowncastTo()
 {
     if (this->argument->getId() == NUMBER)
         return true;
@@ -59,7 +59,7 @@ bool Differential::canDowncastTo(AlgebraExpression expr)
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Differential::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Differential::downcastTo()
 {
     if (this->argument->getId() == NUMBER)
         return copy(zero);
@@ -168,6 +168,11 @@ std::unique_ptr<AbstractExpression> Differential::antiderivative(int var) const
         return copy(this->argument);
     assert(false);
     return nullptr;
+}
+
+void Differential::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
 }
 
 bool Differential::operator<(const AbstractExpression &expr) const

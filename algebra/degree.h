@@ -18,8 +18,8 @@ public:
     virtual bool operator==(AbstractExpression & right) override;
     virtual void simplify() override;
 
-    virtual bool canDowncastTo(AlgebraExpression expr) override;
-    std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr) override;
+    virtual bool canDowncastTo() override;
+    std::unique_ptr<AbstractExpression> downcastTo() override;
     static AbstractExpression * getArgumentOfDegree(AbstractExpression * expr);
     static std::unique_ptr<AbstractExpression> getDegreeOfExpression(AbstractExpression * expr);
     bool isZeroDegree();
@@ -48,6 +48,7 @@ public:
     virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
+    virtual void setSimplified(bool simpl) override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     void reducePolynomialArgument();

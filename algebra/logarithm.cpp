@@ -73,22 +73,22 @@ bool Logarithm::operator==(AbstractExpression &right)
     return *this->argument == *(static_cast<Logarithm*>(&right)->argument);
 }
 
-bool Logarithm::canDowncastTo(AlgebraExpression expr)
+bool Logarithm::canDowncastTo()
 {
-    if (*this->argument == *one && expr == NUMBER)
+    if (*this->argument == *one)
         return true;
-    if (*this->argument == *getEuler() && expr == NUMBER)
+    if (*this->argument == *getEuler())
         return true;
-    if (this->argument->getId() == DEGREE && *Degree::getArgumentOfDegree(this->argument.get()) == *getEuler() && expr == Degree::getDegreeOfExpression(this->argument.get())->getId())
+    if (this->argument->getId() == DEGREE && *Degree::getArgumentOfDegree(this->argument.get()) == *getEuler())
         return true;
-    if (expr == FRACTAL && this->argument->getId() == DEGREE)
+    if (this->argument->getId() == DEGREE)
         return true;
-    if (expr == POLYNOMIAL && this->argument->getId() == FRACTAL)
+    if (this->argument->getId() == FRACTAL)
         return true;
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Logarithm::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Logarithm::downcastTo()
 {
     if (*this->argument == *getEuler())
         return copy(one);
@@ -227,6 +227,12 @@ std::unique_ptr<AbstractExpression> Logarithm::antiderivative(int var) const
 const std::unique_ptr<AbstractExpression> &Logarithm::getArgument() const
 {
     return this->argument;
+}
+
+void Logarithm::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
+    this->setSimplified(simpl);
 }
 
 bool Logarithm::operator<(const AbstractExpression &right) const

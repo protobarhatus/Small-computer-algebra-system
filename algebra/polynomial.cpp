@@ -189,23 +189,18 @@ bool Polynomial::isZero()
 {
     return this->monomials.empty();
 }
-bool Polynomial::canDowncastTo(AlgebraExpression expr)
+bool Polynomial::canDowncastTo()
 {
-    if (expr == NUMBER && this->isZero())
+    if (this->isZero())
         return true;
-    return this->monomials.size() == 1 && ((expr == FRACTAL) || this->monomials.begin()->get()->canDowncastTo(expr));
+    return this->monomials.size() == 1;
 }
-std::unique_ptr<AbstractExpression> Polynomial::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Polynomial::downcastTo()
 {
-    assert(canDowncastTo(expr));
-    if (expr == NUMBER && this->isZero())
+    assert(canDowncastTo());
+    if ( this->isZero())
         return std::unique_ptr<AbstractExpression>(new Number(0));
-    if (expr == FRACTAL && this->isZero())
-        return Fractal::makeZeroFractal();
-    if (expr == FRACTAL)
-        return makeAbstractExpression(FRACTAL, this->monomials.begin()->get());
-    else
-        return this->monomials.begin()->get()->downcastTo(expr);
+    return this->monomials.begin()->get()->downcast();
 }
 AlgebraExpression Polynomial::getId() const
 {
@@ -548,6 +543,8 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
     Number last_deg_of_max = deg_of_max;
     while (deg_of_max.isCorrect() && deg_of_max.compareWith(deg_of_div) >= 0)
     {
+        if (result_list.size() > 100)
+            return {nullptr, nullptr};
         Polynomial coefficient_of_max_degree_in_dividend = dividends_monomials->getCoefficientOfMaxDegreeOfVariable(argument_variables_id);
         Polynomial coe_of_max_degree = divinders_monomials->getCoefficientOfMaxDegreeOfVariable(argument_variables_id);
 
@@ -2093,6 +2090,105 @@ std::array<std::unique_ptr<AbstractExpression>, 3> Polynomial::checkQuadraticFun
     if (c == nullptr)
         c = std::unique_ptr<AbstractExpression>(new Number(0));
     return {std::move(a), std::move(b), std::move(c)};
+}
+
+abs_ex Polynomial::tryToDistinguishFullDegree() const
+{
+    auto set = this->getSetOfVariables();
+    if (set != this->getSetOfPolyVariables())
+        return nullptr;
+    auto polynom = copy(this);
+    std::map<int, abs_ex> replaced_variables;
+    for (auto &it : set)
+    {
+        int lcm_of_dens = this->getLcmOfDenominatorsOfDegreesOfVariable(it);
+        if (lcm_of_dens == 0)
+            return nullptr;
+        if (lcm_of_dens != 1)
+        {
+            abs_ex new_var (new Variable(systemVar(0, std::numeric_limits<int>::max())));
+
+            replaced_variables.insert({it, pow(new_var, lcm_of_dens)});
+        }
+    }
+    replaceSystemVariablesToExpressions(polynom, replaced_variables);
+    auto polynom_ptr = static_cast<Polynomial*>(polynom.get());
+    for (auto &it : polynom_ptr->monomials)
+    {
+        it->setSimplified(false);
+        it->simplify();
+    }
+    qDebug() << polynom->makeStringOfExpression();
+
+    assert(polynom_ptr->reduce().isOne());
+    int var = *polynom->getSetOfPolyVariables().begin();
+    Number var_deg = polynom->getMaxDegreeOfVariable(var);
+    if (!var_deg.isCorrect())
+        return nullptr;
+    auto deriv = polynom->derivative(var);
+    if (deriv->getId() != POLYNOMIAL)
+    {
+        std::unique_ptr<Fractal> der_fr(new Fractal(deriv.get()));
+        deriv.reset(der_fr->toPolynomWithFractionalCoefficients().release());
+    }
+    if (!has(deriv->getSetOfPolyVariables(), var))
+    {
+        return nullptr;
+    }
+    static_cast<Polynomial*>(deriv.get())->reduce();
+    auto gcf = gcd(polynom_ptr, static_cast<Polynomial*>(deriv.get()));
+    if (!has(gcf->getSetOfPolyVariables(), var))
+        return nullptr;
+    gcf->reduce();
+    auto lowest_deg = polynom_ptr->divide(gcf.get());
+    if (!lowest_deg.second->isZero())
+        return nullptr;
+    Number low_var_deg = lowest_deg.first->getMaxDegreeOfVariable(var);
+
+    if (!(var_deg / low_var_deg).isInteger())
+        return nullptr;
+    int deg = (var_deg / low_var_deg).getNumerator();
+
+    auto pow_res = pow(copy(lowest_deg.first.get()), deg);
+    /*if (pow_res->getId() != POLYNOMIAL)
+    {
+        std::unique_ptr<Fractal> pow_res_fr(new Fractal(pow_res.get()));
+        pow_res.reset(pow_res_fr->toPolynomWithFractionalCoefficients().release());
+    }*/
+    auto addictive_multiplier = polynom / pow_res;
+    abs_ex res(lowest_deg.first.release());
+    res = pow(pow(addictive_multiplier, Number(1)/deg)*res, deg);
+    std::map<int, abs_ex> replaced_back_system_vars;
+    for (auto &it : replaced_variables)
+    {
+        replaced_back_system_vars.insert({Degree::getArgumentOfDegree(it.second.get())->getId(),
+                                         pow(abs_ex(new Variable(it.first)), Number(1) /
+                                          *static_cast<Number*>(Degree::getDegreeOfExpression(it.second.get()).get()))});
+    }
+    replaceSystemVariablesToExpressions(res, replaced_back_system_vars);
+    res->setSimplified(false);
+    res->simplify();
+    return res;
+}
+
+long long int Polynomial::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    long long int res = 1;
+    for (auto &it : monomials)
+    {
+        int mon_res = it->getLcmOfDenominatorsOfDegreesOfVariable(var);
+        if (mon_res == 0)
+            return 0;
+        res = lcm(res, mon_res);
+    }
+    return res;
+}
+
+void Polynomial::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
+    for (auto &it : this->monomials)
+        it->setSimplified(simpl);
 }
 
 

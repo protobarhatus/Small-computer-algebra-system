@@ -104,24 +104,15 @@ std::unique_ptr<AbstractExpression> AbstractExpression::operator-(AbstractExpres
 }
 bool AbstractExpression::canDowncast()
 {
-    for (AlgebraExpression expr = AlgebraExpression(-20); expr <= 1; expr = AlgebraExpression((int(expr) + 1)))
-        if (canDowncastTo(expr))
-            return true;
-    return false;
+    return this->canDowncastTo();
 }
 std::unique_ptr<AbstractExpression> AbstractExpression::downcast()
 {
     if (!this->canDowncast())
         return makeAbstractExpression(this->getId(), this);
-    std::unique_ptr<AbstractExpression> expr;
-    for (AlgebraExpression exp = AlgebraExpression(-20); exp <= 1; exp = AlgebraExpression((int(exp) + 1)))
-        if (canDowncastTo(exp))
-        {
-            expr = this->downcastTo(exp);
-          //  break;
-        }
+    abs_ex expr = copy(this);
     while (expr->canDowncast())
-        expr = expr->downcast();
+        expr = expr->downcastTo();
     return expr;
 }
 std::unique_ptr<AbstractExpression> operator*(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right)
@@ -366,7 +357,7 @@ std::array<std::unique_ptr<AbstractExpression>, 3> checkIfItsQuadraticFunction(c
         return {copy(one), copy(zero), copy(zero)};
         if (func->getId() == DEGREE && *Degree::getDegreeOfExpression(const_cast<AbstractExpression*>(func)) == *two)
         {
-            auto ln_f = checkIfItsLinearFunction(func, var);
+            auto ln_f = checkIfItsLinearFunction(Degree::getArgumentOfDegree(const_cast<AbstractExpression*>(func)), var);
             return {pow(ln_f.first, 2), two*ln_f.first * ln_f.second, pow(ln_f.second, 2)};
         }
     if (func->getId() == FRACTAL)

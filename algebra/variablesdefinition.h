@@ -8,7 +8,7 @@ class VariablesDefinition
 {
 public:
     VariablesDefinition();
-
+    VariablesDefinition(const VariablesDefinition & cop);
     void setMinValue(definition_area_type min);
     void setMaxValue(definition_area_type max);
     definition_area_type getMinValue();

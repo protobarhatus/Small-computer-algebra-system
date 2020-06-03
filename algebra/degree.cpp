@@ -75,40 +75,54 @@ bool Degree::operator<(const AbstractExpression &right) const
         return false;
     return AbstractExpression::less(this->argument.get(), deg->argument.get());
 }
-bool Degree::canDowncastTo(AlgebraExpression expr)
+bool Degree::canDowncastTo()
 {
-    if (expr == FRACTAL && this->argument->getId() == FRACTAL)
+    if (this->argument->getId() == FRACTAL)
+    {
+        Fractal * frac = static_cast<Fractal*>(this->argument.get());
+        auto fr = frac->getFractal();
+        //это на случай подобно sqrt(-a), чтобы не пытался разложить на sqrt(-1)*sqrt(a)
+        if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->getDenominator() % 2 == 0 &&
+                ((fr.first->size() == 1 && fr.second->empty()) || (fr.first->empty() && fr.second->size() == 1)) &&
+                frac->getCoefficient().getNumerator() < 0)
+            return false;
         return true;
-    if (expr == FRACTAL && this->degree->getPositionRelativelyZero() < 0)
+    }
+    if (this->degree->getPositionRelativelyZero() < 0)
         return true;
-    if (expr == FRACTAL && this->argument->getId() == NUMBER && !static_cast<Number*>(this->argument.get())->isInteger())
+    if (this->argument->getId() == NUMBER && !static_cast<Number*>(this->argument.get())->isInteger())
         return true;
-    if (expr == FRACTAL && this->argument->getId() == NUMBER && factorize(abs(static_cast<Number*>(this->argument.get())->getNumerator())).size() != 1)
+    if (this->argument->getId() == NUMBER && factorize(abs(static_cast<Number*>(this->argument.get())->getNumerator())).size() != 1)
         return true;
     //there must be check on limit but i'll do it later
     //giving a set of expressions in parenthesses (like (a+b)^2 = (a+b)(a+b)) is in another function. operations with Numbers as argument must be realized in simplify()
-    if (expr == NUMBER && this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isZero())
+    if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isZero())
         return true;
-    if (expr == NUMBER && this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isOne())
+    if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isOne())
         return true;
-    if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isOne() && (expr == this->argument->getId() || (expr > 0 && this->argument->getId() > 0)))
+    if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isOne())
         return true;
-    if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM && ((expr > 0 && static_cast<Logarithm*>(this->degree.get())->getArgument()->getId() > 0) ||
-                                                                                 expr == static_cast<Logarithm*>(this->degree.get())->getArgument()->getId()))
+    if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM)
+        return true;
+    if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isZero())
         return true;
     return false;
 }
-std::unique_ptr<AbstractExpression> Degree::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> Degree::downcastTo()
 {
 
-    assert(canDowncastTo(expr));
-    if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM && ((expr > 0 && static_cast<Logarithm*>(this->degree.get())->getArgument()->getId() > 0) ||
-                                                                                 expr == static_cast<Logarithm*>(this->degree.get())->getArgument()->getId()))
+    assert(canDowncastTo());
+    if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM)
         return static_cast<Logarithm*>(this->degree.get())->getArgumentMoved();
     if ((this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isOne()) || static_cast<Number*>(this->degree.get())->isZero())
         return std::unique_ptr<AbstractExpression>(new Number(1));
-
-    if (expr == FRACTAL && this->argument->getId() == NUMBER && !static_cast<Number*>(this->argument.get())->isInteger())
+    if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isZero())
+        return numToAbs(0);
+    if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isOne())
+        return std::move(argument);
+    if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isZero())
+        return numToAbs(1);
+    if (this->argument->getId() == NUMBER && !static_cast<Number*>(this->argument.get())->isInteger())
     {
         fractal_argument num, denum;
         if (static_cast<Number*>(this->argument.get())->getNumerator() != 1)
@@ -122,7 +136,7 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo(AlgebraExpression expr)
         denum.begin()->get()->simplify();
         return std::unique_ptr<AbstractExpression>(new Fractal(&num, &denum));
     }    
-    else if (expr == FRACTAL && this->argument->getId() == NUMBER)
+    else if (this->argument->getId() == NUMBER)
     {
         bool is_negative = static_cast<Number*>(this->argument.get())->getNumerator() < 0;
         auto multiples = factorize(abs(static_cast<Number*>(this->argument.get())->getNumerator()));
@@ -140,7 +154,7 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo(AlgebraExpression expr)
             return std::unique_ptr<AbstractExpression>(new Fractal(std::move(num), std::move(den), is_negative ? -1 : 1));
         }
     }
-    else if (expr == FRACTAL && this->argument->getId() == FRACTAL)
+    else if (this->argument->getId() == FRACTAL)
     {
         auto fract = static_cast<Fractal*>(this->argument.get())->getFractal();
 
@@ -149,6 +163,43 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo(AlgebraExpression expr)
         fractal_argument num, denum;
         Number num_coe = static_cast<Fractal*>(this->argument.get())->getCoefficient().getNumerator();
         Number denom_coe = Number( static_cast<Fractal*>(this->argument.get())->getCoefficient().getDenominator());
+        if (num_coe.getNumerator() < 0 && this->degree->getId() == NUMBER &&
+                static_cast<Number*>(this->degree.get())->getDenominator() % 2 == 0)
+        {
+            if (!(num_coe * -1).isOne())
+                num.push_back(numToAbs(-num_coe.getNumerator()));
+            if (!denom_coe.isOne())
+                denum.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            if(fract.first->empty())
+            {
+
+                auto it = fract.second->begin();
+                denum.push_back(pow(-(*it), copy(degree)));
+                ++it;
+                while (it != fract.second->end())
+                {
+                    denum.push_back(pow(copy(*it), copy(degree)));
+                    ++it;
+                }
+
+            }
+            else
+            {
+                auto it1 = fract.first->begin();
+                num.push_back(pow(-(*it1), copy(degree)));
+                ++it1;
+                while (it1 != fract.first->end())
+                {
+                    num.push_back(pow(*it1, degree));
+                    ++it1;
+                }
+                for (auto &it2 : *fract.second)
+                    denum.push_back(pow(it2, degree));
+            }
+            auto fr =  std::unique_ptr<AbstractExpression>(new Fractal(&num, &denum));
+            fr->simplify();
+            return fr;
+        }
         if (!num_coe.isOne())
             num.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(NUMBER, &num_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
         for (auto &it : *fract.first)
@@ -165,16 +216,16 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo(AlgebraExpression expr)
         fr->simplify();
         return fr;
     }
-    if (expr == FRACTAL && this->degree->getPositionRelativelyZero() < 0)
+    if (this->degree->getPositionRelativelyZero() < 0)
     {
         return one/takeDegreeOf(std::move(argument), -degree);
     }
-    return makeAbstractExpression(expr, this->argument.get());
+    return copy( this->argument.get());
 }
 AbstractExpression * Degree::getArgumentOfDegree(AbstractExpression *expr)
 {
     if (expr->getId() == DEGREE)
-        return static_cast<Degree*>(expr)->argument.get();
+        return static_cast<const Degree*>(expr)->argument.get();
     else
         return expr;
 
@@ -324,6 +375,27 @@ void Degree::reducePolynomialArgument()
 void Degree::transformPolynomialDegree(bool has_vars)
 {
     //in simplified()
+    this->reducePolynomialArgument();
+    if (this->argument->getId() != POLYNOMIAL)
+        return;
+    if (this->argument->getId() == POLYNOMIAL && !this->argument->getSetOfVariables().empty())
+    {
+        auto res = static_cast<Polynomial*>(this->argument.get())->tryToDistinguishFullDegree();
+        if (res != nullptr)
+        {
+            this->argument = std::move(res);
+            this->simplify();
+        }
+        return;
+    }
+    //return;
+
+
+
+
+
+
+
     if (this->degree->getId() == NUMBER || this->degree->getId() == FRACTAL)
     {
         long long int denum = (this->degree->getId() == NUMBER ? static_cast<Number*>(this->degree.get())->getDenominator() : static_cast<Fractal*>(this->degree.get())->getCoefficient().getDenominator());
@@ -795,6 +867,13 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         }
     }
     return nullptr;
+}
+
+void Degree::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
+    this->argument->setSimplified(simpl);
+    this->degree->setSimplified(simpl);
 }
 
 std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> &&argument, const std::unique_ptr<AbstractExpression> &degree)

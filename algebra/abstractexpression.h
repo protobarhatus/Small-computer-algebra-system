@@ -60,12 +60,12 @@ public:
     //returns simplified and downcasted polynomial
     std::unique_ptr<AbstractExpression> operator+(AbstractExpression & expr);
     std::unique_ptr<AbstractExpression> operator-(AbstractExpression & expr);
-    virtual bool canDowncastTo(AlgebraExpression expr) = 0;
+    virtual bool canDowncastTo() = 0;
     //need an addition when new types of expression added
     bool canDowncast();
 
     //ВНИМАНИЕ!: сейчас downcastTo занимается копированием, однако, мне, наверно стоит изменить это на перемещение
-    virtual std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr) = 0;
+    virtual std::unique_ptr<AbstractExpression> downcastTo() = 0;
 
     //does downcasting till can for unlimitted amount of levels
     std::unique_ptr<AbstractExpression> downcast();
@@ -95,6 +95,7 @@ public:
     //если первообразную найти не удается, возвращает nullptr
     //поиск первообразной не добавляет константу интегрирования, это делает интеграл
     virtual abs_ex antiderivative(int var) const = 0;
+    virtual void setSimplified(bool simpl) = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;

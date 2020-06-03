@@ -13,8 +13,8 @@ public:
     virtual void simplify() override;
     virtual AlgebraExpression getId() const override;
     virtual bool operator==(AbstractExpression &expr) override;
-    virtual bool canDowncastTo(AlgebraExpression expr) override;
-    virtual std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr) override;
+    virtual bool canDowncastTo() override;
+    virtual std::unique_ptr<AbstractExpression> downcastTo() override;
 
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
@@ -33,6 +33,7 @@ public:
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
     AbstractExpression* getExpression();
+    virtual void setSimplified(bool simpl) override;
 private:
     void checkIfNeedToCheckSignToLeadToTheAcceptedForm();
     virtual int getPositionRelativelyZeroIfHasVariables() override;

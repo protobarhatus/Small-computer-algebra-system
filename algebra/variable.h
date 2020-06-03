@@ -21,8 +21,8 @@ public:
     virtual std::set<int> getSetOfVariables() const override;
     virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
-    virtual bool canDowncastTo(AlgebraExpression expr) override;
-    virtual std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr) override;
+    virtual bool canDowncastTo() override;
+    virtual std::unique_ptr<AbstractExpression> downcastTo() override;
     QString getName() const;
     virtual void _qDebugOut() override;
     virtual QString makeStringOfExpression() const override;
@@ -32,9 +32,11 @@ public:
     virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
+    virtual void setSimplified(bool simpl) override;
 private:
     friend Variable getVariable(int id);
     friend Variable integratingConstant();
+    friend Variable systemVar(int min, int max);
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     friend void deleteVariables();
     Variable(int id, VariablesDefinition * def);

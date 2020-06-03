@@ -88,7 +88,10 @@ public:
     friend AlgExpr operator/(const AlgExpr & left, AlgExpr && right);
     friend AlgExpr operator/(AlgExpr && left, const AlgExpr & right);
     friend AlgExpr operator/(AlgExpr && left, AlgExpr && right);
-
+    friend AlgExpr atan(const AlgExpr & arg);
+    friend AlgExpr atan(AlgExpr && arg);
+    friend AlgExpr asin(const AlgExpr & arg);
+    friend AlgExpr asin(AlgExpr && arg);
     abs_ex& getExpr();
     const abs_ex& getExpr() const;
 
@@ -162,4 +165,8 @@ AlgExpr D(const AlgExpr & arg);
 AlgExpr D(AlgExpr && arg);
 AlgExpr integral(const AlgExpr & arg);
 AlgExpr integral(const AlgExpr & arg, AlgExpr var);
+AlgExpr atan(const AlgExpr & arg);
+AlgExpr atan(AlgExpr && arg);
+AlgExpr asin(const AlgExpr & arg);
+AlgExpr asin(AlgExpr && arg);
 #endif // ALGEXPR_H

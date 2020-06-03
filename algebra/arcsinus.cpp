@@ -57,11 +57,12 @@ void ArcSinus::simplify()
 
 bool ArcSinus::operator==(AbstractExpression &right)
 {
-    assert(this->getId() == right.getId());
+    if (right.getId() != this->getId())
+        return false;
     return *this->argument == *static_cast<ArcSinus*>(&right)->argument;
 }
 
-bool ArcSinus::canDowncastTo(AlgebraExpression expr)
+bool ArcSinus::canDowncastTo()
 {
     if (this->argument->getId() == SINUS)
     {
@@ -81,7 +82,7 @@ bool ArcSinus::canDowncastTo(AlgebraExpression expr)
     return false;
 }
 
-std::unique_ptr<AbstractExpression> ArcSinus::downcastTo(AlgebraExpression expr)
+std::unique_ptr<AbstractExpression> ArcSinus::downcastTo()
 {
     if (this->argument->getId() == SINUS)
         return getArgumentOfTrigonometricalFunction(std::move(this->argument));
@@ -215,6 +216,12 @@ std::unique_ptr<AbstractExpression> ArcSinus::antiderivative(int var) const
 const std::unique_ptr<AbstractExpression> &ArcSinus::getArgument() const
 {
     return this->argument;
+}
+
+void ArcSinus::setSimplified(bool simpl)
+{
+    this->simplified = simpl;
+    this->argument->setSimplified(simpl);
 }
 
 bool ArcSinus::operator<(const AbstractExpression &right) const
