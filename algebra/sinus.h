@@ -37,6 +37,7 @@ public:
 
     const abs_ex& getArgument() const;
     virtual void setSimplified(bool simpl) override;
+    virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
 private:
     abs_ex argument;
     //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может

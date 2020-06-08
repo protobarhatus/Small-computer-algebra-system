@@ -175,6 +175,11 @@ void Differential::setSimplified(bool simpl)
     this->simplified = simpl;
 }
 
+std::set<std::unique_ptr<AbstractExpression> > Differential::getTrigonometricalFunctions() const
+{
+    return this->argument->getTrigonometricalFunctions();
+}
+
 bool Differential::operator<(const AbstractExpression &expr) const
 {
     assert(expr.getId() == DIFFERENTIAL);

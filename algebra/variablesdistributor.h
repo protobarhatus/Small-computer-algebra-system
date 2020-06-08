@@ -15,6 +15,7 @@ public:
     //не знаю насколько синглтону нужен деструктор, но да пусть будет
     ~VariablesDistributor();
 private:
+    friend Variable getVariable(int id);
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
     const int first_system_num = 1000000000;
     const int first_integrate_constant = 1500000000;

@@ -36,6 +36,7 @@ public:
     AbstractExpression* getArgument();
     virtual abs_ex antiderivative(int var) const override;
     virtual void setSimplified(bool simpl) override;
+    virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
 private:
     virtual bool operator<(const AbstractExpression & expr) const override;
 };

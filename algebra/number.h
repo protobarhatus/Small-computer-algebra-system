@@ -54,6 +54,7 @@ public:
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
     virtual void setSimplified(bool simpl) override;
+    virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     long long int numerator;
@@ -65,6 +66,7 @@ private:
 Number abs(Number num);
 Number max(Number a, Number b);
 Number min(Number a, Number b);
+Number pow(Number a, int deg);
 abs_ex toAbsEx(Number n);
 bool isIntegerNumber(const abs_ex & expr);
 /*

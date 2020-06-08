@@ -118,6 +118,11 @@ void Constant::setSimplified(bool simpl)
 {
     this->simplified = simpl;
 }
+
+std::set<std::unique_ptr<AbstractExpression> > Constant::getTrigonometricalFunctions() const
+{
+    return std::set<abs_ex>();
+}
 bool Constant::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == CONSTANT);

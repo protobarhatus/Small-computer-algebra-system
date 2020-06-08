@@ -102,7 +102,7 @@ bool Tangent::operator==(AbstractExpression &right)
 {
     if (right.getId() != TANGENT)
         return false;
-    return *this->argument == *(static_cast<Tangent*>(&right)->argument);
+    return subCompare(this->argument, static_cast<Tangent*>(&right)->argument);
 }
 
 bool Tangent::canDowncastTo()
@@ -299,6 +299,13 @@ void Tangent::setSimplified(bool simpl)
 {
     this->simplified = simpl;
     this->argument->setSimplified(simpl);
+}
+
+std::set<std::unique_ptr<AbstractExpression> > Tangent::getTrigonometricalFunctions() const
+{
+    std::set<abs_ex> res;
+    res.insert(tan(argument));
+    return res;
 }
 
 bool Tangent::operator<(const AbstractExpression &right) const

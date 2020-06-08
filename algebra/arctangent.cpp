@@ -51,7 +51,7 @@ bool ArcTangent::operator==(AbstractExpression &right)
 {
     if (right.getId() != this->getId())
         return false;
-    return *this->argument == *static_cast<ArcTangent*>(&right)->argument;
+    return subCompare(this->argument, static_cast<ArcTangent*>(&right)->argument);
 }
 
 bool ArcTangent::canDowncastTo()
@@ -209,6 +209,11 @@ void ArcTangent::setSimplified(bool simpl)
 {
     this->simplified = simpl;
     this->argument->setSimplified(simpl);
+}
+
+std::set<std::unique_ptr<AbstractExpression> > ArcTangent::getTrigonometricalFunctions() const
+{
+    return this->argument->getTrigonometricalFunctions();
 }
 
 bool ArcTangent::operator<(const AbstractExpression &right) const

@@ -143,6 +143,32 @@ void Polynomial::removeZeroes()
             ++it;
     }
 }
+
+int Polynomial::tryToGetPositionRelativelyZeroOfLinearFunction()
+{
+    //если имеется линейная функция от нескольких переменных, то можно очень просто посчитать ее минимум и максимум на области определения переменных в ней.
+    //в каждом множителе может быть только 1 переменная
+    auto max_rule = [](VariablesDefinition * def)->double { return def->getMaxValue();};
+    auto min_rule = [](VariablesDefinition * def)->double { return def->getMinValue();};
+    double max_value = 0, min_value = 0;
+    for (auto &it : this->monomials)
+    {
+        auto monoms_vars = it->getSetOfVariables();
+        if (monoms_vars.size() > 1)
+            return 0;
+        if (!monoms_vars.empty() && !(it->getMaxDegreeOfVariable(*monoms_vars.begin()).isOne()))
+            return 0;
+        max_value += (it->getCoefficient().compareWith(0) > 0 ? it->getApproximateValue(max_rule) : it->getApproximateValue(min_rule));
+        min_value += (it->getCoefficient().compareWith(0) > 0 ? it->getApproximateValue(min_rule) : it->getApproximateValue(max_rule));
+        if (std::isnan(max_value) || std::isnan(min_value))
+            return 0;
+    }
+    if (max_value >= 0 && min_value >= 0)
+        return 1;
+    if (min_value <= 0 && max_value <= 0)
+        return -1;
+    return 0;
+}
 void Polynomial::openParentheses()
 {
     //in simplified()
@@ -470,7 +496,7 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
         dividend = _dividend;
         dividers = this;
     }*/
-  //  qDebug() << "DIV: " << this->makeStringOfExpression();
+    //qDebug() << "DIV: " << this->makeStringOfExpression();
    // qDebug() << "ON" << _dividend->makeStringOfExpression();
     Polynomial * dividers, * dividend;
     if (this->getSetOfFunctions().empty() && _dividend->getSetOfFunctions().empty())
@@ -569,7 +595,7 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
         Degree var_multiplier = Degree(arg_variable, degree_diff);
         Fractal multiplier = *((coe_of_max_degree / &coefficient_of_max_degree_in_dividend) * Fractal(&var_multiplier));
         Polynomial subtrahend = *dividends_monomials * &multiplier;
-       // qDebug() << "SUBTRAHEND: " << subtrahend.makeStringOfExpression();
+        //qDebug() << "SUBTRAHEND: " << subtrahend.makeStringOfExpression();
        // qDebug() << "DIVINDER: " << divinders_monomials->makeStringOfExpression();
         *divinders_monomials = *divinders_monomials - &subtrahend;
         //qDebug() << "DIFF: " << divinders_monomials->makeStringOfExpression();
@@ -1847,28 +1873,15 @@ int Polynomial::getPositionRelativelyZeroIfHasVariables()
                 return is_a_zero ? b->getPositionRelativelyZero() * -1 : a->getPositionRelativelyZero();
         }
     }
-    //если имеется линейная функция от нескольких переменных, то можно очень просто посчитать ее минимум и максимум на области определения переменных в ней.
-    //в каждом множителе может быть только 1 переменная
-    auto max_rule = [](VariablesDefinition * def)->double { return def->getMaxValue();};
-    auto min_rule = [](VariablesDefinition * def)->double { return def->getMinValue();};
-    double max_value = 0, min_value = 0;
-    for (auto &it : this->monomials)
-    {
-        auto monoms_vars = it->getSetOfVariables();
-        if (monoms_vars.size() > 1)
-            return 0;
-        if (!monoms_vars.empty() && !(it->getMaxDegreeOfVariable(*monoms_vars.begin()).isOne()))
-            return 0;
-        max_value += (it->getCoefficient().compareWith(0) > 0 ? it->getApproximateValue(max_rule) : it->getApproximateValue(min_rule));
-        min_value += (it->getCoefficient().compareWith(0) > 0 ? it->getApproximateValue(min_rule) : it->getApproximateValue(max_rule));
-        if (std::isnan(max_value) || std::isnan(min_value))
-            return 0;
-    }
-    if (max_value >= 0 && min_value >= 0)
-        return 1;
-    if (min_value <= 0 && max_value <= 0)
-        return -1;
-    return 0;
+    int lin_res = this->tryToGetPositionRelativelyZeroOfLinearFunction();
+    if (lin_res != 0)
+        return lin_res;
+    //довольно дорогая проверка на то, является ли этот полином полной степенью более простого полинома
+    auto degr = this->tryToDistinguishFullDegree();
+    if (degr == nullptr)
+        return 0;
+    return degr->getPositionRelativelyZero();
+   // return 0;
 }
 double Polynomial::getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule)
 {
@@ -2081,7 +2094,7 @@ std::array<std::unique_ptr<AbstractExpression>, 3> Polynomial::checkQuadraticFun
             return {nullptr, nullptr, nullptr};
         }
     }
-    if (a == nullptr)
+    if (*a == *zero)
     {
         return {nullptr, nullptr, nullptr};
     }
@@ -2094,14 +2107,18 @@ std::array<std::unique_ptr<AbstractExpression>, 3> Polynomial::checkQuadraticFun
 
 abs_ex Polynomial::tryToDistinguishFullDegree() const
 {
-    auto set = this->getSetOfVariables();
-    if (set != this->getSetOfPolyVariables())
-        return nullptr;
+
     auto polynom = copy(this);
+
+    std::map<QString, int> functions;
+    std::map<int, abs_ex> replaced_functions = replaceEveryFunctionOnSystemVariable(polynom.get(), functions);
+
     std::map<int, abs_ex> replaced_variables;
+    auto set = polynom->getSetOfPolyVariables();
+    auto polynom_ptr = static_cast<Polynomial*>(polynom.get());
     for (auto &it : set)
     {
-        int lcm_of_dens = this->getLcmOfDenominatorsOfDegreesOfVariable(it);
+        int lcm_of_dens = polynom_ptr->getLcmOfDenominatorsOfDegreesOfVariable(it);
         if (lcm_of_dens == 0)
             return nullptr;
         if (lcm_of_dens != 1)
@@ -2112,19 +2129,57 @@ abs_ex Polynomial::tryToDistinguishFullDegree() const
         }
     }
     replaceSystemVariablesToExpressions(polynom, replaced_variables);
-    auto polynom_ptr = static_cast<Polynomial*>(polynom.get());
-    for (auto &it : polynom_ptr->monomials)
-    {
-        it->setSimplified(false);
-        it->simplify();
-    }
-    qDebug() << polynom->makeStringOfExpression();
 
+    if (!replaced_variables.empty())
+    {
+        for (auto &it : polynom_ptr->monomials)
+        {
+            it->setSimplified(false);
+            it->simplify();
+        }
+    }
+   // qDebug() << polynom->makeStringOfExpression();
+
+
+    std::map<int, abs_ex> replaced_back_system_vars;
+    for (auto &it : replaced_variables)
+    {
+        replaced_back_system_vars.insert({Degree::getArgumentOfDegree(it.second.get())->getId(),
+                                         pow(abs_ex(new Variable(it.first)), Number(1) /
+                                          *static_cast<Number*>(Degree::getDegreeOfExpression(it.second.get()).get()))});
+    }
+
+    this->tryToDistingushFullDegreeOfVariablePolynomial(polynom, polynom_ptr);
+
+    if (polynom == nullptr)
+        return nullptr;
+    replaceSystemVariablesToExpressions(polynom, replaced_back_system_vars);
+    if (!replaced_variables.empty())
+    {
+        polynom->setSimplified(false);
+        polynom->simplify();
+    }
+    replaceSystemVariablesBackToFunctions(polynom, replaced_functions);
+    return polynom;
+}
+
+void Polynomial::tryToDistingushFullDegreeOfVariablePolynomial(std::unique_ptr<AbstractExpression> &polynom,
+                                                               Polynomial* polynom_ptr) const
+{
+    auto set = polynom_ptr->getSetOfVariables();
+    if (set != polynom_ptr->getSetOfPolyVariables())
+    {
+        polynom = nullptr;
+        return;
+    }
     assert(polynom_ptr->reduce().isOne());
     int var = *polynom->getSetOfPolyVariables().begin();
     Number var_deg = polynom->getMaxDegreeOfVariable(var);
     if (!var_deg.isCorrect())
-        return nullptr;
+    {
+        polynom = nullptr;
+        return;
+    }
     auto deriv = polynom->derivative(var);
     if (deriv->getId() != POLYNOMIAL)
     {
@@ -2133,20 +2188,30 @@ abs_ex Polynomial::tryToDistinguishFullDegree() const
     }
     if (!has(deriv->getSetOfPolyVariables(), var))
     {
-        return nullptr;
+        polynom = nullptr;
+        return;
     }
     static_cast<Polynomial*>(deriv.get())->reduce();
     auto gcf = gcd(polynom_ptr, static_cast<Polynomial*>(deriv.get()));
     if (!has(gcf->getSetOfPolyVariables(), var))
-        return nullptr;
+    {
+        polynom = nullptr;
+        return;
+    }
     gcf->reduce();
     auto lowest_deg = polynom_ptr->divide(gcf.get());
     if (!lowest_deg.second->isZero())
-        return nullptr;
+    {
+        polynom = nullptr;
+        return;
+    }
     Number low_var_deg = lowest_deg.first->getMaxDegreeOfVariable(var);
 
     if (!(var_deg / low_var_deg).isInteger())
-        return nullptr;
+    {
+        polynom = nullptr;
+        return;
+    }
     int deg = (var_deg / low_var_deg).getNumerator();
 
     auto pow_res = pow(copy(lowest_deg.first.get()), deg);
@@ -2156,19 +2221,8 @@ abs_ex Polynomial::tryToDistinguishFullDegree() const
         pow_res.reset(pow_res_fr->toPolynomWithFractionalCoefficients().release());
     }*/
     auto addictive_multiplier = polynom / pow_res;
-    abs_ex res(lowest_deg.first.release());
-    res = pow(pow(addictive_multiplier, Number(1)/deg)*res, deg);
-    std::map<int, abs_ex> replaced_back_system_vars;
-    for (auto &it : replaced_variables)
-    {
-        replaced_back_system_vars.insert({Degree::getArgumentOfDegree(it.second.get())->getId(),
-                                         pow(abs_ex(new Variable(it.first)), Number(1) /
-                                          *static_cast<Number*>(Degree::getDegreeOfExpression(it.second.get()).get()))});
-    }
-    replaceSystemVariablesToExpressions(res, replaced_back_system_vars);
-    res->setSimplified(false);
-    res->simplify();
-    return res;
+    polynom.reset(lowest_deg.first.release());
+    polynom = pow(pow(addictive_multiplier, Number(1)/deg)*polynom, deg);
 }
 
 long long int Polynomial::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
@@ -2189,6 +2243,18 @@ void Polynomial::setSimplified(bool simpl)
     this->simplified = simpl;
     for (auto &it : this->monomials)
         it->setSimplified(simpl);
+}
+
+std::set<std::unique_ptr<AbstractExpression> > Polynomial::getTrigonometricalFunctions() const
+{
+    std::set<abs_ex> result;
+    for (auto &it : this->monomials)
+    {
+        auto set = it->getTrigonometricalFunctions();
+        for (auto &it1 : set)
+            result.insert(copy(it1));
+    }
+    return result;
 }
 
 

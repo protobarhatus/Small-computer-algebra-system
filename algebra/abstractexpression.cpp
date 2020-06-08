@@ -424,11 +424,14 @@ std::array<std::unique_ptr<AbstractExpression>, 3> checkIfItsQuadraticFunction(c
         }*/
 
     }
-    auto ln_f = checkIfItsLinearFunction(func, var);
+  /*  auto ln_f = checkIfItsLinearFunction(func, var);
     if (ln_f.first != nullptr)
     {
         return {copy(zero), std::move(ln_f.first), std::move(ln_f.second)};
-    }
+    }*/
+    auto ln_f = checkIfItsLinearFunction(func, var);
+    if (ln_f.first != nullptr)
+        return {nullptr, nullptr, nullptr};
     if (func->getId() != POLYNOMIAL)
         return {nullptr, nullptr, nullptr};
     return static_cast<const Polynomial*>(func)->checkQuadraticFunction(var);
@@ -504,7 +507,9 @@ std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const Abstra
                 res[deg] = std::move(res[deg]) + std::move(monom.second);
             }
         }
-
+        for (auto &it : res)
+            if (it == nullptr)
+                it = copy(zero);
     }
     else
     {
@@ -595,4 +600,26 @@ std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const std::u
 std::vector<std::unique_ptr<AbstractExpression> > checkIfItsIntegerPolynom(const std::unique_ptr<AbstractExpression> &func, int var)
 {
     return checkIfItsIntegerPolynom(func.get(), var);
+}
+
+bool subCompare(const std::unique_ptr<AbstractExpression> &a, const std::unique_ptr<AbstractExpression> &b)
+{
+    return *(a - b) == *zero;
+}
+
+bool isDegreeOfArcTrigonometricalFunction(std::unique_ptr<AbstractExpression> &expr)
+{
+    auto arg = Degree::getArgumentOfDegree(expr.get());
+    if (arg->getId() == ARCSINUS || arg->getId() == ARCTANGENT)
+        return true;
+    return false;
+}
+
+bool isExponentialFunction(std::unique_ptr<AbstractExpression>& expr, int var)
+{
+    if (expr->getId() != DEGREE)
+        return false;
+    return has(Degree::getDegreeOfExpression(expr.get())->getSetOfVariables(), var) &&
+            !has(Degree::getArgumentOfDegree(expr.get())->getSetOfVariables(), var);
+
 }

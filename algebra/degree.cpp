@@ -375,11 +375,15 @@ void Degree::reducePolynomialArgument()
 void Degree::transformPolynomialDegree(bool has_vars)
 {
     //in simplified()
-    this->reducePolynomialArgument();
-    if (this->argument->getId() != POLYNOMIAL)
-        return;
-    if (this->argument->getId() == POLYNOMIAL && !this->argument->getSetOfVariables().empty())
+   // this->reducePolynomialArgument();
+    //if (this->argument->getId() != POLYNOMIAL)
+    //    return;
+    if (this->argument->getId() == POLYNOMIAL && has_vars)
     {
+        bool is_root = (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->getDenominator() > 1)
+                || (this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->getCoefficient().getDenominator() > 1);
+        if (!is_root)
+            return;
         auto res = static_cast<Polynomial*>(this->argument.get())->tryToDistinguishFullDegree();
         if (res != nullptr)
         {
@@ -874,6 +878,15 @@ void Degree::setSimplified(bool simpl)
     this->simplified = simpl;
     this->argument->setSimplified(simpl);
     this->degree->setSimplified(simpl);
+}
+
+std::set<std::unique_ptr<AbstractExpression> > Degree::getTrigonometricalFunctions() const
+{
+    std::set<abs_ex> result = this->argument->getTrigonometricalFunctions();
+    auto deg = this->degree->getTrigonometricalFunctions();
+    for (auto &it : deg)
+        result.insert(copy(it));
+    return result;
 }
 
 std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> &&argument, const std::unique_ptr<AbstractExpression> &degree)

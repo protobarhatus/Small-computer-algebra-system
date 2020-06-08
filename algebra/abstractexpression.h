@@ -6,7 +6,7 @@
 #include <QString>
 #include <vector>
 #include <array>
-#define SIM_IF_NEED if (this->simplified) return; else this->simplified = true;
+#define SIM_IF_NEED if (this->simplified) return; //else this->simplified = true;
 #define NONCONST this->simplified = false;
 #define abs_ex std::unique_ptr<AbstractExpression>
 //order there influences on order in polynomials, but it's important only for output
@@ -96,6 +96,8 @@ public:
     //поиск первообразной не добавляет константу интегрирования, это делает интеграл
     virtual abs_ex antiderivative(int var) const = 0;
     virtual void setSimplified(bool simpl) = 0;
+    //в выражении по типу cos(1+cos(x)) вернет ТОЛЬКО cos(1+cos(x))
+    virtual std::set<abs_ex> getTrigonometricalFunctions() const = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -105,7 +107,7 @@ protected:
 
 };
 
-
+bool subCompare(const abs_ex & a, const abs_ex & b);
 QString getStringArgumentOfTrigonometricalFunction(abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);
 //std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);
@@ -123,6 +125,9 @@ abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr);
 abs_ex getArgumentOfTrigonometricalFunction(abs_ex & expr);
 abs_ex getArgumentOfTrigonometricalFunction(AbstractExpression * expr);
 bool isDegreeOfTrigonometricalFunction(abs_ex & expr);
+bool isDegreeOfArcTrigonometricalFunction(abs_ex & expr);
+//выражения a^f(x) считаются экспоненциальной ф-цией, а g(x)^f(x) - нет (x->getId() == var)
+bool isExponentialFunction(abs_ex& expr, int var);
 abs_ex absEx(int num);
 //проверяет, является ли func линейной функцией относительно переменной var
 //если да, то возвращает коэффициенты a и b в выражении ax+b. Если нет, то возвращает пару nullptr, nullptr. b может быть нулем

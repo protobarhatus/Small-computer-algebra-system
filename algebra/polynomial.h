@@ -83,8 +83,10 @@ public:
     //проверяет, является ли полином квадратичной функцией и возвращает коэффициенты a, b, c в выражении вида ax^2+bx+c
     std::array<abs_ex, 3> checkQuadraticFunction(int var) const;
     abs_ex tryToDistinguishFullDegree() const;
+    void tryToDistingushFullDegreeOfVariablePolynomial(abs_ex & polynom, Polynomial * polynom_ptr) const;
     long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const;
     virtual void setSimplified(bool simpl) override;
+    virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
 private:
     bool casted_trigonometry;
     void castTrigonometry();
@@ -105,6 +107,7 @@ private:
     void openParentheses();
     bool foldMonomials(std::list<std::unique_ptr<Fractal>>::iterator first, std::list<std::unique_ptr<Fractal>>::iterator second);
     void removeZeroes();
+    int tryToGetPositionRelativelyZeroOfLinearFunction();
     virtual bool operator<(const AbstractExpression & right) const override;
     //for dividing
     bool is_fractional_coefficients_allowed = false;

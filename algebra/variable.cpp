@@ -166,3 +166,8 @@ void Variable::setSimplified(bool simpl)
 {
     this->simplified = simpl;
 }
+
+std::set<std::unique_ptr<AbstractExpression> > Variable::getTrigonometricalFunctions() const
+{
+    return std::set<abs_ex>();
+}

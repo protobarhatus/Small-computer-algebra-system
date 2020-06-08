@@ -82,7 +82,7 @@ bool Cosinus::operator==(AbstractExpression &right)
 {
     if (right.getId() != COSINUS)
         return false;
-    return *this->argument == *(static_cast<Cosinus*>(&right)->argument);
+    return subCompare(this->argument, static_cast<Cosinus*>(&right)->argument);
 }
 bool Cosinus::canDowncastTo()
 {
@@ -290,6 +290,13 @@ void Cosinus::setSimplified(bool simpl)
 {
     this->simplified = simpl;
     this->argument->setSimplified(simpl);
+}
+
+std::set<std::unique_ptr<AbstractExpression> > Cosinus::getTrigonometricalFunctions() const
+{
+    std::set<abs_ex> result;
+    result.insert(cos(argument));
+    return result;
 }
 
 std::unique_ptr<AbstractExpression> cos(const std::unique_ptr<AbstractExpression> &expr)

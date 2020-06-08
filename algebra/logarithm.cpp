@@ -8,6 +8,10 @@
 #include "number.h"
 #include <cmath>
 #include "absolutevalue.h"
+#include "solving_equations.h"
+#include "arctangent.h"
+#include "sinus.h"
+#include "cosinus.h"
 Logarithm::Logarithm(const std::unique_ptr<AbstractExpression> &argument)
 {
     this->argument = copy(argument);
@@ -47,6 +51,24 @@ void Logarithm::simplify()
     SIM_IF_NEED
     this->argument->simplify();
     this->argument = this->argument->downcast();
+    if (Degree::getArgumentOfDegree(this->argument.get())->getId() == TANGENT)
+    {
+        this->argument = pow(sin(getArgumentOfTrigonometricalFunction(argument))/
+                             cos(getArgumentOfTrigonometricalFunction(argument)),
+                             Degree::getDegreeOfExpression(argument.get()));
+    }
+    if (Degree::getArgumentOfDegree(this->argument.get())->getId() == COTANGENT)
+    {
+        this->argument = pow(cos(getArgumentOfTrigonometricalFunction(argument))/
+                             sin(getArgumentOfTrigonometricalFunction(argument)),
+                             Degree::getDegreeOfExpression(argument.get()));
+    }
+    if (this->argument->getId() == POLYNOMIAL)
+    {
+        auto common_part = static_cast<Polynomial*>(this->argument.get())->reduceCommonPart();
+        if (common_part != nullptr && !(*common_part == *one))
+            this->argument = this->argument * common_part;
+    }
     if (this->argument->getId() == POLYNOMIAL)
     {
         int rt = 2;
@@ -61,6 +83,18 @@ void Logarithm::simplify()
             this->argument = takeDegreeOf(root, rt);
         }
     }
+    if (this->argument->getId() == POLYNOMIAL)
+    {
+        auto facts = factorizePolynom(this->argument);
+        if (facts.first.size() > 1)
+        {
+            abs_ex fractal (new Fractal(facts.second));
+            for (auto &it : facts.first)
+                fractal = std::move(fractal) * std::move(it);
+            this->argument = std::move(fractal);
+        }
+
+    }
     if (this->argument->getPositionRelativelyZero() < 0)
         throw Exception();
     this->simplified = true;
@@ -70,7 +104,7 @@ bool Logarithm::operator==(AbstractExpression &right)
 {
     if (right.getId() != LOGARITHM)
         return false;
-    return *this->argument == *(static_cast<Logarithm*>(&right)->argument);
+    return subCompare(this->argument, static_cast<Logarithm*>(&right)->argument);
 }
 
 bool Logarithm::canDowncastTo()
@@ -219,9 +253,22 @@ std::unique_ptr<AbstractExpression> Logarithm::antiderivative(int var) const
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
-    if (ln_f.first == nullptr)
-        return nullptr;
-    return one / ln_f.first * this->argument * (ln(this->argument) - one);
+    if (ln_f.first != nullptr)
+        return one / ln_f.first * this->argument * (ln(this->argument) - one);
+    auto qc_f = checkIfItsQuadraticFunction(argument, var);
+    if (qc_f[0] != nullptr)
+    {
+        abs_ex x(new Variable(getVariable(var)));
+        auto a = std::move(qc_f[0]);
+        auto b = std::move(qc_f[1]);
+        auto c = std::move(qc_f[2]);
+        auto D = sqr(b) - four*a*c;
+        //D->getPositionRelativelyZero в логарифме не может быть > 0
+        auto D_sqrt = sqrt(-D);
+        auto der = two*a*x + b;
+        return (two*D_sqrt *atan(der/D_sqrt) + der*ln(abs(argument)) - four*a*x)/two/a;
+    }
+    return nullptr;
 }
 
 const std::unique_ptr<AbstractExpression> &Logarithm::getArgument() const
@@ -232,7 +279,12 @@ const std::unique_ptr<AbstractExpression> &Logarithm::getArgument() const
 void Logarithm::setSimplified(bool simpl)
 {
     this->simplified = simpl;
-    this->setSimplified(simpl);
+    this->argument->setSimplified(simpl);
+}
+
+std::set<std::unique_ptr<AbstractExpression> > Logarithm::getTrigonometricalFunctions() const
+{
+    return this->argument->getTrigonometricalFunctions();
 }
 
 bool Logarithm::operator<(const AbstractExpression &right) const
@@ -244,15 +296,15 @@ bool Logarithm::operator<(const AbstractExpression &right) const
 
 std::unique_ptr<AbstractExpression> ln(const std::unique_ptr<AbstractExpression>& arg)
 {
-    return abs_ex(new Logarithm(arg));
+    return abs_ex(new Logarithm(arg))->downcast();
 }
 
 std::unique_ptr<AbstractExpression> ln(std::unique_ptr<AbstractExpression> &&arg)
 {
-    return abs_ex(new Logarithm(std::move(arg)));
+    return abs_ex(new Logarithm(std::move(arg)))->downcast();
 }
 
 std::unique_ptr<AbstractExpression> ln(AbstractExpression *arg)
 {
-    return abs_ex(new Logarithm(copy(arg)));
+    return abs_ex(new Logarithm(copy(arg)))->downcast();
 }

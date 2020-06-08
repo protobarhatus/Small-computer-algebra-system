@@ -84,7 +84,7 @@ bool Sinus::operator==(AbstractExpression &right)
 {
     if (right.getId() != SINUS)
         return false;
-    return *this->argument == *(static_cast<Sinus*>(&right)->argument);
+    return subCompare(this->argument, static_cast<Sinus*>(&right)->argument);
 }
 bool Sinus::canDowncastTo()
 {
@@ -279,6 +279,13 @@ void Sinus::setSimplified(bool simpl)
 {
     this->simplified = simpl;
     this->argument->setSimplified(simpl);
+}
+
+std::set<std::unique_ptr<AbstractExpression> > Sinus::getTrigonometricalFunctions() const
+{
+    std::set<abs_ex> result;
+    result.insert(sin(argument));
+    return result;
 }
 
 std::unique_ptr<AbstractExpression> sin(const std::unique_ptr<AbstractExpression> &expr)

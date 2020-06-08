@@ -79,6 +79,8 @@ VariablesDefinition * VariablesDistributor::getVariablesDefinition(int id)
 }
 Variable getVariable(int id)
 {
+    if (id >= VariablesDistributor::get().first_system_num)
+        return systemVar(id);
     return Variable(id, VariablesDistributor::getVariablesDefinition(id));
 }
 int VariablesDistributor::firstSystemNum()

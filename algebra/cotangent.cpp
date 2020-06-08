@@ -100,7 +100,7 @@ bool Cotangent::operator==(AbstractExpression &right)
 {
     if (right.getId() != COTANGENT)
         return false;
-    return *this->argument == *(static_cast<Cotangent*>(&right)->argument);
+    return subCompare(this->argument, static_cast<Cotangent*>(&right)->argument);
 }
 
 bool Cotangent::canDowncastTo()
@@ -284,6 +284,13 @@ void Cotangent::setSimplified(bool simpl)
 {
     this->simplified = simpl;
     this->argument->setSimplified(simpl);
+}
+
+std::set<std::unique_ptr<AbstractExpression> > Cotangent::getTrigonometricalFunctions() const
+{
+    std::set<abs_ex> set;
+    set.insert(cot(argument));
+    return set;
 }
 
 bool Cotangent::operator<(const AbstractExpression &right) const

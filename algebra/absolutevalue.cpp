@@ -204,6 +204,11 @@ void AbsoluteValue::setSimplified(bool simpl)
     this->expression->setSimplified(simpl);
 }
 
+std::set<std::unique_ptr<AbstractExpression> > AbsoluteValue::getTrigonometricalFunctions() const
+{
+    return this->expression->getTrigonometricalFunctions();
+}
+
 std::unique_ptr<AbstractExpression> abs(const std::unique_ptr<AbstractExpression> &expr)
 {
     return abs_ex(new AbsoluteValue(expr))->downcast();

@@ -61,9 +61,9 @@ public:
     std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> & right);
     std::unique_ptr<Fractal> operator/(const Fractal & right) const;
     //can do if has polynom in numerator and empty denominator and coefficient with denominator = 1. transform expr like c(a+b)(d+e) into cad+cbd+cae+cbe
-    bool canTurnIntoPolynomWithOpeningParentheses();
+    bool canTurnIntoPolynomWithOpeningParentheses() const;
     bool canTurnIntoPolynomWithOpeningParentheses(bool is_fractional_coefficient_allowed);
-    std::unique_ptr<Polynomial> turnIntoPolynomWithOpeningParentheses(bool fractional_coefficients);
+    std::unique_ptr<Polynomial> turnIntoPolynomWithOpeningParentheses(bool fractional_coefficients) const;
 
     static bool lessFrac(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
     virtual void _qDebugOut() override;
@@ -94,13 +94,19 @@ public:
     //параметры могут быть в числетеле, но не в знаменателе
     bool checkIfItsRationalFunction(int var) const;
     void expandNumerator();
+    void expandDenominator();
     void factorizeDenominator();
     void bringRationalFunctionIntoFormToDecay();
     std::list<abs_ex> splitIntoSumOfElementaryFractals();
     std::unique_ptr<Polynomial> toPolynomWithFractionalCoefficients();
     long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const;
-    void setSimplified(bool simpl);
+    void setSimplified(bool simpl) override;
+    virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
+    abs_ex tableAntiderivative(int var) const;
 private:
+    std::pair<abs_ex, abs_ex> checkIfCanDoUniversalTrigonometricSubstitution(int var) const;
+    bool isNumeratorsDegreeBiggerThanDenominatorsDegree(int var) const;
+    abs_ex getAntiderivativeByParts(int var) const;
     bool casted_trigonometry;
     void castTrigonometry();
     void castTrigonometryArguments();

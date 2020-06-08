@@ -144,14 +144,18 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
         div_result = a->divide(last_remainder.get());
     if (div_result.second == nullptr)
         return std::make_unique<Polynomial>(std::make_unique<Number>(1).get());
+    int counter = 0;
     while (!div_result.second->isZero())
     {
+        if (counter > 20)
+            return std::make_unique<Polynomial>(std::make_unique<Number>(1).get());
         std::unique_ptr<Polynomial> current_remainder = std::move(div_result.second);
         current_remainder->reduce();
         div_result = last_remainder->divide(current_remainder.get());
         if (div_result.second == nullptr)
             return std::make_unique<Polynomial>(std::make_unique<Number>(1).get());
         last_remainder = std::move(current_remainder);
+        ++counter;
     }
     if (last_remainder->downcast()->getId() == NUMBER)
         return std::unique_ptr<Polynomial>(new Polynomial(std::make_unique<Number>(1).get()));

@@ -1272,6 +1272,10 @@ void testAlgMod()
 []()->bool {
     AlgExpr x = var();
     return ln(tan(x)) == ln(sin(x))-ln(cos(x));
+},
+[]()->bool { //270
+    AlgExpr x = var();
+    return integral(x*pow(euler(), pow(x, 2)), x) == pow(euler(), x*x)/2;
 }
     };
 

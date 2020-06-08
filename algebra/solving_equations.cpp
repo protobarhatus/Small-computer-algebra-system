@@ -2,7 +2,7 @@
 #include "abstractexpression.h"
 #include "number.h"
 #include "some_algebra_expression_conversions.h"
-#include "fractal.h"
+//#include "fractal.h"
 #include "polynomial.h"
 #include "variablesdistributor.h"
 #include "Matrix.h"
@@ -10,6 +10,7 @@
 #include "algexpr.h"
 #include "polynom.h"
 #include "polynomials_factorization.h"
+std::list<abs_ex> factorizePolynomOfOneVariable(const abs_ex & polynom, int var);
 std::vector<abs_ex> solveEquation(const abs_ex & equation, int var)
 {
     //is linear equation
@@ -147,12 +148,168 @@ std::vector<std::vector<abs_ex>> solveSystemOfEquations(const std::vector<abs_ex
     std::vector<std::vector<abs_ex>> res(0);
     return res;
 }
+std::list<abs_ex> toFactorOfCoefs(const abs_ex & polynom)
+{
+    auto set = polynom->getSetOfPolyVariables();
 
+    std::list<abs_ex> result;
+    if (set.size() <= 1)
+    {
+        result.push_back(copy(polynom));
+        return result;
+    }
+    for (auto &it : set)
+    {
+        auto pol = checkIfItsPolynom(polynom, it);
+       // qDebug() << "COEFS: ";
+        //for (auto &it : pol)
+         //   qDebug() << it->makeStringOfExpression();
+        if (pol.size() > 0 && pol[0] != nullptr)
+        {
+            auto gcf = std::move(pol[0]);
+            if (gcf->getSetOfVariables().empty())
+            {
+                result.push_back(copy(polynom));
+                return result;
+            }
+            for (int i = 1; i < pol.size(); ++i)
+            {
+                Polynomial gcf_pol(gcf.get());
+                Polynomial coef_pol(pol[i].get());
+                if (coef_pol.getSetOfPolyVariables().empty())
+                {
+                    result.push_back(copy(polynom));
+                    return result;
+                }
+                gcf_pol.reduce();
+                coef_pol.reduce();
+                gcf = gcd(&gcf_pol, &coef_pol);
+            }
+            if (!gcf->getSetOfVariables().empty())
+            {
+                auto second = polynom / gcf;
+                result.splice(result.end(), toFactorOfCoefs(gcf));
+                result.splice(result.end(), toFactorOfCoefs(second));
+                return result;
+            }
+        }
+    }
+    result.push_back(copy(polynom));
+    return result;
+}
+std::list<abs_ex> factorizeAsQuadraticFunction(const abs_ex & polynom)
+{
+    auto set = polynom->getSetOfVariables();
+    std::list<abs_ex> result;
+    for (auto &it : set)
+    {
+        auto qc_f = checkIfItsQuadraticFunction(polynom, it);
+        if (qc_f[0] != nullptr)
+        {
+            auto D = sqr(qc_f[1]) - four*qc_f[0]*qc_f[2];
+            //полная степень должна выделиться раньше
+            if (::isZero(D))
+            {
+                assert(false);
+            }
+            if (D->getPositionRelativelyZero() > 0)
+            {
 
-std::list<std::unique_ptr<AbstractExpression> > factorizePolynom(const std::unique_ptr<AbstractExpression> &polynom, int var)
+                auto w = (-qc_f[1] + sqrt(D))/two/qc_f[0];
+                auto u = (-qc_f[1] - sqrt(D))/two/qc_f[0];
+                abs_ex x (new Variable(getVariable(it)));
+                auto res = qc_f[0]*(x - w)*(x - u);
+                if (res->getId() == FRACTAL)
+                {
+                    auto fr = static_cast<Fractal*>(res.get());
+                    if (fr->getCoefficient().isOne() && fr->getFractal().second->size() == 0 &&
+                            fr->getFractal().first->size() == 2 && fr->getFractal().first->begin()->get()->getId() == POLYNOMIAL &&
+                            next(fr->getFractal().first->begin())->get()->getId() == POLYNOMIAL)
+                    {
+                        result.push_back(std::move(*fr->getFractal().first->begin()));
+                        result.push_back(std::move(*next(fr->getFractal().first->begin())));
+                        return result;
+                    }
+                }
+            }
+        }
+    }
+    result.push_back(copy(polynom));
+    return result;
+}
+//это можно расширять, но пока только так
+std::list<abs_ex> factorizePolynomOfSeveralVariablesByAlgorithmOfCoefsFacts(const abs_ex & polynom)
+{
+    std::list<abs_ex> res = toFactorOfCoefs(polynom);
+    if (res.size() == 1)
+        return res;
+    for (auto it = res.begin(); it != res.end(); ++it)
+    {
+        if (it->get()->getSetOfVariables().size() == 1)
+        {
+            res.splice(res.end(), factorizePolynomOfOneVariable(*it, *it->get()->getSetOfVariables().begin()));
+            it = res.erase(it);
+        }
+        else
+        {
+            if (it->get()->getId() == POLYNOMIAL)
+            {
+                auto degr = static_cast<Polynomial*>(it->get())->tryToDistinguishFullDegree();
+                if (degr != nullptr)
+                    *it = std::move(degr);
+            }
+        }
+    }
+    return res;
+}
+std::list<abs_ex> factorizePolynomOfSeveralVariables(const abs_ex & polynom)
+{
+    auto full_deg_res = static_cast<Polynomial*>(polynom.get())->tryToDistinguishFullDegree();
+    if (full_deg_res != nullptr && full_deg_res->getId() == DEGREE)
+    {
+        auto deg = Degree::getDegreeOfExpression(full_deg_res.get());
+        auto res = factorizePolynomOfSeveralVariables(copy(Degree::getArgumentOfDegree(full_deg_res.get())));
+        for (auto &it : res)
+            it = pow(std::move(it), deg);
+        return res;
+    }
+    auto res = factorizePolynomOfSeveralVariablesByAlgorithmOfCoefsFacts(polynom);
+    for (auto it = res.begin(); it != res.end(); )
+    {
+        auto facts = factorizeAsQuadraticFunction(*it);
+        if (facts.size() > 1)
+        {
+            it = res.erase(it);
+            res.splice(res.begin(), std::move(facts));
+        }
+        else
+            ++it;
+    }
+    if (res.size() == 1)
+        return res;
+    for (auto it = res.begin(); it != res.end(); )
+    {
+        auto facts = factorizePolynomOfSeveralVariables(*it);
+        if (facts.size() > 1)
+        {
+            it = res.erase(it);
+            res.splice(res.begin(), std::move(facts));
+
+        }
+        else
+            ++it;
+    }
+    return res;
+}
+std::list<abs_ex> factorizePolynomOfOneVariable(const abs_ex & polynom, int var)
 {
     auto pol = checkIfItsIntegerPolynom(polynom, var);
-    assert(!pol.empty());
+    if (pol.empty())
+    {
+        std::list<abs_ex> res;
+        res.push_back(copy(polynom));
+        return res;
+    }
     Polynom polynom_to_factor(pol.size() - 1);
     for (int i = 0; i < pol.size(); ++i)
         polynom_to_factor[i] = static_cast<Number*>(pol[i].get())->getNumerator();
@@ -168,4 +325,24 @@ std::list<std::unique_ptr<AbstractExpression> > factorizePolynom(const std::uniq
         result.push_back(std::move(expr));
     }
     return result;
+}
+std::pair<std::list<std::unique_ptr<AbstractExpression> >, Number> factorizePolynom(const std::unique_ptr<AbstractExpression> &polynom)
+{
+    //в полиноме уже должно было произойти reduce и takeCommonPart
+    auto set = polynom->getSetOfVariables();
+    std::list<abs_ex> res;
+    if (set.size() == 1)
+    {
+        res = factorizePolynomOfOneVariable(polynom, *set.begin());
+    }
+    else
+        res = factorizePolynomOfSeveralVariables(polynom);
+
+    //это для того, чтобы одинаковые множители свернуть в степень
+    Fractal fr(res);
+    res = std::move(*fr.getFractal().first);
+
+    return {std::move(res), fr.getCoefficient()};
+
+    //return {std::move(res), 1};
 }

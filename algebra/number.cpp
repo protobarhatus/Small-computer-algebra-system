@@ -349,6 +349,11 @@ void Number::setSimplified(bool simpl)
     this->simplified = simpl;
 }
 
+std::set<std::unique_ptr<AbstractExpression> > Number::getTrigonometricalFunctions() const
+{
+    return std::set<abs_ex>();
+}
+
 Number abs(Number num)
 {
     if (num.compareWith(0) < 0)
@@ -378,4 +383,13 @@ bool isIntegerNumber(const std::unique_ptr<AbstractExpression> &expr)
     if (expr->getId() != NUMBER)
         return false;
     return static_cast<const Number*>(expr.get())->isInteger();
+}
+
+Number pow(Number a, int deg)
+{
+    //можно было сделать быстрый через рекурсию, но чет лень
+    Number r = 1;
+    for (int i = 0; i < deg; ++i)
+        r = r*a;
+    return r;
 }

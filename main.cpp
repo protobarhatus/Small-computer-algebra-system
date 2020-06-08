@@ -41,7 +41,7 @@ void out(const Polynom & p)
 }
 int main(int argc, char *argv[])
 {
-    testAlgMod();
+   // testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -125,17 +125,11 @@ int main(int argc, char *argv[])
    //c = (13*a-25)/(a*a-10) - (a*a*a+45*a-73)/(a*a+41*a+93)*(7*a+15)/(a*a-10);
 
    // c.out();
-
-   // c = integral(pow(sin(a*x + b), 2), x);
-
-    //c = integral(sin(x)/pow(cos(x), 2), x);
-
-    //c = integral(1/cos(a*x)/sin(a*x)/sin(a*x), x);
-
-
-    //c = pow(x*x + x + y, 3) + 0;
-    c = pow(sqrt(x) + 1, 2) + 0;
-    c = static_cast<Polynomial*>(c.getExpr().get())->tryToDistinguishFullDegree();
+    c = integral(x*pow(euler(), pow(x, 2)), x);
+   // c = integral((cos((2*x))*((-3)+(cos((2*x))*cos(2*x)))), x);
+  //  auto res = toFactorOfCoefs(c.getExpr());
+  //  for (auto &it : res)
+    //    qDebug() << it->makeStringOfExpression();
 
     qDebug();
     qDebug() << "######################################################";

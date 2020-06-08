@@ -33,6 +33,7 @@ public:
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
     virtual void setSimplified(bool simpl) override;
+    virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
 private:
     friend Variable getVariable(int id);
     friend Variable integratingConstant();

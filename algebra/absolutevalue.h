@@ -34,6 +34,7 @@ public:
     virtual abs_ex antiderivative(int var) const override;
     AbstractExpression* getExpression();
     virtual void setSimplified(bool simpl) override;
+    virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
 private:
     void checkIfNeedToCheckSignToLeadToTheAcceptedForm();
     virtual int getPositionRelativelyZeroIfHasVariables() override;
