@@ -84,7 +84,8 @@ public:
     std::array<abs_ex, 3> checkQuadraticFunction(int var) const;
     abs_ex tryToDistinguishFullDegree() const;
     void tryToDistingushFullDegreeOfVariablePolynomial(abs_ex & polynom, Polynomial * polynom_ptr) const;
-    long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const;
+    virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const override;
+    virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
     virtual void setSimplified(bool simpl) override;
     virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
 private:
@@ -112,5 +113,5 @@ private:
     //for dividing
     bool is_fractional_coefficients_allowed = false;
 };
-
+std::unique_ptr<Polynomial> toPolynomialPointer(const abs_ex & expr);
 #endif // POLYNOMIAL_H

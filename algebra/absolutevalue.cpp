@@ -209,6 +209,16 @@ std::set<std::unique_ptr<AbstractExpression> > AbsoluteValue::getTrigonometrical
     return this->expression->getTrigonometricalFunctions();
 }
 
+long long AbsoluteValue::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return this->expression->getLcmOfDenominatorsOfDegreesOfVariable(var);
+}
+
+long long AbsoluteValue::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return this->expression->getGcdOfNumeratorsOfDegrees(var);
+}
+
 std::unique_ptr<AbstractExpression> abs(const std::unique_ptr<AbstractExpression> &expr)
 {
     return abs_ex(new AbsoluteValue(expr))->downcast();

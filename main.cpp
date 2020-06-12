@@ -28,6 +28,8 @@ int rand(int min, int max)
 #include "algebra/some_algebra_expression_conversions.h"
 #include "algebra/polynom.h"
 #include "algebra/polynomials_factorization.h"
+#include "algebra/solving_differential_equations.h"
+#include "algebra/solving_equations.h"
 void out(const Polynom & p)
 {
     auto debug = qDebug();
@@ -41,7 +43,7 @@ void out(const Polynom & p)
 }
 int main(int argc, char *argv[])
 {
-   // testAlgMod();
+    testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -74,6 +76,9 @@ int main(int argc, char *argv[])
     AlgExpr l = var();
 
     AlgExpr t = var();
+
+    AlgExpr dx = D(x);
+    AlgExpr dy = D(y);
     //GaluaField::initialize(997);
     //Polynom pol({112, 58, -31, 107, -66});
    // Polynom pol({1, 12, -22, -163, 309, -119});
@@ -112,24 +117,28 @@ int main(int argc, char *argv[])
    // TExpr_Builder builder;
    // auto expr = builder.BuildExpr("x^2+x+1");
 
-
+    //!!разобраться с этой хренью. то же самое с логарифмами
+    //c = sqrt(-x*y) / sqrt(-y); c = sqrt(-x*y) + sqrt(-y)
 
 
 //TODO: разобраться с ситуациями по типу
-    //log(tan(x)) - (log(sin(x)) - log(cos(x)))
     //2log(cos(x)) - log(1-sin(x)^2)
     //ТАКЖЕ, если  синусы и косинусы раскрываются по сумме всегда сразу, то мы лишаемся
     //возможности взять интегралы вида 1/sin(ax+b),  1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
     //это надо исправить
 
-   //c = (13*a-25)/(a*a-10) - (a*a*a+45*a-73)/(a*a+41*a+93)*(7*a+15)/(a*a-10);
+    c = ln(-3/x);
 
-   // c.out();
-    c = integral(x*pow(euler(), pow(x, 2)), x);
-   // c = integral((cos((2*x))*((-3)+(cos((2*x))*cos(2*x)))), x);
-  //  auto res = toFactorOfCoefs(c.getExpr());
-  //  for (auto &it : res)
-    //    qDebug() << it->makeStringOfExpression();
+  // c = dx*y - dy*x;
+ //  c = solveDifur(c.getExpr(), x.getExpr()->getId(), y.getExpr()->getId());
+
+    //auto res = solveEquation((2*pow(x, 4) - 3*pow(x, 3) - x*x -3*x + 2), x);
+    //auto res = solveEquation((2*x4 - 15*x3 + 35*x2 - 30* x + 8 ), x);
+   // auto res = solveEquation(x + 2*sqrt(x)-15, x);
+    //auto res = solveEquation(x4 - 4*x2 + 3, x);
+    auto res = solveEquation(pow(2, 2*x) - 8, x);
+    for (auto &it : res)
+        qDebug() << it.toString();
 
     qDebug();
     qDebug() << "######################################################";

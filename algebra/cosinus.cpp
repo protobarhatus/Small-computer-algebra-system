@@ -274,6 +274,37 @@ std::unique_ptr<AbstractExpression> Cosinus::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
+    if (isSqrt(argument))
+    {
+        auto ln_f = checkIfItsLinearFunction(Degree::getArgumentOfDegree(argument.get()), var);
+        if (ln_f.first != nullptr)
+            return two*(sin(argument)*argument +  cos(argument))/ln_f.first;
+    }
+    if (argument->getId() == LOGARITHM)
+    {
+        auto ln_f = checkIfItsFunctionOfLinearArgument(argument, var);
+        auto arg = getArgumentOfFunction(argument);
+        if (ln_f.first != nullptr)
+            return arg*(cos(argument) + sin(argument)) /two/ln_f.first;
+    }
+    if (argument->getId() == FRACTAL)
+    {
+        auto c = toAbsEx(static_cast<Fractal*>(argument.get())->getFractalWithoutVariable(var));
+        auto log = argument / c;
+        if (log->getId() == LOGARITHM)
+        {
+            auto ln_f = checkIfItsFunctionOfLinearArgument(log, var);
+            auto arg = getArgumentOfFunction(log);
+            if (ln_f.first != nullptr)
+                return arg*(cos(argument) + c*sin(argument))/ln_f.first/(pow(c, 2) + one);
+        }
+        if (isSqrt(log))
+        {
+            auto ln_f = checkIfItsLinearFunction(Degree::getArgumentOfDegree(log.get()), var);
+            if (ln_f.first != nullptr)
+                return (two * sin(argument)*argument + two *cos(argument))/ln_f.first / pow(c, 2);
+        }
+    }
    //да, оно тут раскрывается по сумме и линейного
     auto lin_f = checkIfItsLinearFunction(this->argument, var);
     if (lin_f.first == nullptr)
@@ -297,6 +328,16 @@ std::set<std::unique_ptr<AbstractExpression> > Cosinus::getTrigonometricalFuncti
     std::set<abs_ex> result;
     result.insert(cos(argument));
     return result;
+}
+
+long long Cosinus::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return this->argument->getLcmOfDenominatorsOfDegreesOfVariable(var);
+}
+
+long long Cosinus::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return this->argument->getGcdOfNumeratorsOfDegrees(var);
 }
 
 std::unique_ptr<AbstractExpression> cos(const std::unique_ptr<AbstractExpression> &expr)

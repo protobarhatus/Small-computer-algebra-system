@@ -284,6 +284,7 @@ std::unique_ptr<AbstractExpression> Tangent::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
+
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
     if (ln_f.first == nullptr)
         return nullptr;
@@ -306,6 +307,16 @@ std::set<std::unique_ptr<AbstractExpression> > Tangent::getTrigonometricalFuncti
     std::set<abs_ex> res;
     res.insert(tan(argument));
     return res;
+}
+
+long long Tangent::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return this->argument->getLcmOfDenominatorsOfDegreesOfVariable(var);
+}
+
+long long Tangent::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return this->argument->getGcdOfNumeratorsOfDegrees(var);
 }
 
 bool Tangent::operator<(const AbstractExpression &right) const

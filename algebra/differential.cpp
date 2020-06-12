@@ -180,6 +180,16 @@ std::set<std::unique_ptr<AbstractExpression> > Differential::getTrigonometricalF
     return this->argument->getTrigonometricalFunctions();
 }
 
+long long Differential::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return this->argument->getLcmOfDenominatorsOfDegreesOfVariable(var);
+}
+
+long long Differential::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return this->argument->getGcdOfNumeratorsOfDegrees(var);
+}
+
 bool Differential::operator<(const AbstractExpression &expr) const
 {
     assert(expr.getId() == DIFFERENTIAL);

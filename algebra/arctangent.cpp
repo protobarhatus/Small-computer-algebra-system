@@ -7,6 +7,7 @@
 #include "variablesdistributor.h"
 #include "logarithm.h"
 #include <cmath>
+#include "fractal.h"
 ArcTangent::ArcTangent(const std::unique_ptr<AbstractExpression> &arg)
 {
     this->argument = copy(arg);
@@ -58,7 +59,7 @@ bool ArcTangent::canDowncastTo()
 {
     if (this->argument->getId() == TANGENT)
     {
-        auto tan_arg = getArgumentOfTrigonometricalFunction(this->argument);
+        auto tan_arg = getArgumentOfFunction(this->argument);
         int pos = (tan_arg + getPi()/two)->getPositionRelativelyZero();
         if (!(pos > 0))
             return false;
@@ -77,7 +78,7 @@ bool ArcTangent::canDowncastTo()
 std::unique_ptr<AbstractExpression> ArcTangent::downcastTo()
 {
     if (this->argument->getId() == TANGENT)
-        return getArgumentOfTrigonometricalFunction(std::move(this->argument));
+        return getArgumentOfFunction(std::move(this->argument));
     abs_ex & arg = this->argument;
     if (*arg == *-sqrt(numToAbs(3)))
         return -getPi()/three;
@@ -193,6 +194,25 @@ std::unique_ptr<AbstractExpression> ArcTangent::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
+    if (isSqrt(argument))
+    {
+        auto ln_f = checkIfItsLinearFunction(Degree::getArgumentOfDegree(argument.get()), var);
+        auto arg = Degree::getArgumentOfDegree(argument.get());
+        if (ln_f.first != nullptr)
+            return ((copy(arg) + one)*atan(argument) - argument) /ln_f.first;
+    }
+    if (argument->getId() == FRACTAL)
+    {
+        auto c = toAbsEx(static_cast<Fractal*>(argument.get())->getFractalWithoutVariable(var));
+        auto log = argument / c;
+        if (isSqrt(log))
+        {
+            auto ln_f = checkIfItsLinearFunction(Degree::getArgumentOfDegree(log.get()), var);
+            auto arg = Degree::getArgumentOfDegree(log.get());
+            if (ln_f.first != nullptr)
+                return ((pow(c, 2)*copy(arg) + one) *atan(argument) - argument)/ln_f.first/pow(c, 2);
+        }
+    }
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
     if (ln_f.first == nullptr)
         return nullptr;
@@ -214,6 +234,16 @@ void ArcTangent::setSimplified(bool simpl)
 std::set<std::unique_ptr<AbstractExpression> > ArcTangent::getTrigonometricalFunctions() const
 {
     return this->argument->getTrigonometricalFunctions();
+}
+
+long long ArcTangent::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return this->argument->getLcmOfDenominatorsOfDegreesOfVariable(var);
+}
+
+long long ArcTangent::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return this->argument->getGcdOfNumeratorsOfDegrees(var);
 }
 
 bool ArcTangent::operator<(const AbstractExpression &right) const

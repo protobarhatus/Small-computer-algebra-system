@@ -5,6 +5,7 @@ VariablesDistributor::VariablesDistributor()
 {
     this->system_var_def = new VariablesDefinition;
     Variable::system_id_counter = this->first_system_num;
+    Variable::integrating_constant_id_counter = this->first_integrate_constant;
 }
 VariablesDistributor& VariablesDistributor::get()
 {
@@ -72,6 +73,8 @@ VariablesDefinition * VariablesDistributor::getVariablesDefinition(int id)
     VariablesDistributor & ref = VariablesDistributor::get();
     //if (id > ref.variables.size())
       //  return ref.system_var_def;
+    if (id >= ref.first_integrate_constant)
+        return VariablesDistributor::get().system_var_def;
     if (id >= ref.first_system_num)
         return ref.system_variables[id - ref.first_system_num];
     assert(id <= ref.variables.size());
@@ -123,4 +126,19 @@ Variable systemVar(int min, int max)
 
     Variable new_var = Variable(Variable::system_id_counter - 1, makeVariablesName(Variable::system_id_counter - 1));
     return new_var;
+}
+
+std::unique_ptr<AbstractExpression> integratingConstantExpr()
+{
+    return abs_ex(new Variable(integratingConstant()));
+}
+
+std::unique_ptr<AbstractExpression> systemVarExpr()
+{
+    return abs_ex(new Variable(systemVar()));
+}
+
+std::unique_ptr<AbstractExpression> getVariableExpr(int id)
+{
+    return abs_ex (new Variable(getVariable(id)));
 }

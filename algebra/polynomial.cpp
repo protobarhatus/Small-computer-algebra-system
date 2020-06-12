@@ -740,7 +740,7 @@ std::unique_ptr<AbstractExpression> Polynomial::reduceCommonPart()
         it = *it / *static_cast<Fractal*>(common_part.get());
     }
     this->simplify();
-    return common_part;
+    return common_part->downcast();
 }
 bool Polynomial::isIrrationalSum()
 {
@@ -2123,8 +2123,11 @@ abs_ex Polynomial::tryToDistinguishFullDegree() const
             return nullptr;
         if (lcm_of_dens != 1)
         {
-            abs_ex new_var (new Variable(systemVar(0, std::numeric_limits<int>::max())));
-
+            abs_ex new_var;
+            if (lcm_of_dens % 2 == 0)
+                new_var = abs_ex(new Variable(systemVar(0, std::numeric_limits<int>::max())));
+            else
+                new_var = systemVarExpr();
             replaced_variables.insert({it, pow(new_var, lcm_of_dens)});
         }
     }
@@ -2238,6 +2241,24 @@ long long int Polynomial::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
     return res;
 }
 
+long long Polynomial::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    long long int res = 0;
+    auto zgcd = [](long long a, long long b)->long long {
+        if (a == 0)
+            return b;
+        if (b == 0)
+            return a;
+        return gcd(a, b);
+    };
+    for (auto &it : monomials)
+    {
+        long long int mon_res = it->getLcmOfDenominatorsOfDegreesOfVariable(var);
+        res = zgcd(res, mon_res);
+    }
+    return res;
+}
+
 void Polynomial::setSimplified(bool simpl)
 {
     this->simplified = simpl;
@@ -2281,4 +2302,15 @@ void Polynomial::castTrigonometricalFunctions()
     for (auto &it : this->monomials)
         it->convertTrigonometricalFunctionsByFormulas(cast_types);
     this->casted_trigonometry = true;
+}
+std::unique_ptr<Polynomial> toPolynomialPointer(const abs_ex & expr)
+{
+    if (expr->getId() == POLYNOMIAL)
+    {
+        return std::unique_ptr<Polynomial>(static_cast<Polynomial*>(copy(expr).release()));
+    }
+    else
+    {
+        return std::unique_ptr<Polynomial>(new Polynomial(expr.get()));
+    }
 }

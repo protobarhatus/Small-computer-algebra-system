@@ -99,10 +99,13 @@ public:
     void bringRationalFunctionIntoFormToDecay();
     std::list<abs_ex> splitIntoSumOfElementaryFractals();
     std::unique_ptr<Polynomial> toPolynomWithFractionalCoefficients();
-    long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const;
+    virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const override;
+    virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
     void setSimplified(bool simpl) override;
     virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
     abs_ex tableAntiderivative(int var) const;
+    void separatePolynomialsDegree();
+    abs_ex tryToFindLogarithmInNumerator() const;
 private:
     std::pair<abs_ex, abs_ex> checkIfCanDoUniversalTrigonometricSubstitution(int var) const;
     bool isNumeratorsDegreeBiggerThanDenominatorsDegree(int var) const;
@@ -138,6 +141,7 @@ private:
     Number coefficient;
 };
 abs_ex integrate(const abs_ex & frac);
+abs_ex definiteIntegral(const abs_ex &func, const abs_ex & from, const abs_ex & to);
 abs_ex toAbsEx(const std::unique_ptr<Fractal> & expr);
 abs_ex toAbsEx(std::unique_ptr<Fractal> && expr);
 std::unique_ptr<Fractal> toFrac(abs_ex & expr);

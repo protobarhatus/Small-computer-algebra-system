@@ -50,6 +50,8 @@ public:
     virtual abs_ex antiderivative(int var) const override;
     virtual void setSimplified(bool simpl) override;
     virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
+    virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const override;
+    virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     void reducePolynomialArgument();
@@ -73,6 +75,7 @@ std::unique_ptr<AbstractExpression> takeDegreeOf(Number argument, Number degree)
 abs_ex pow(const abs_ex & arg, const abs_ex & deg);
 abs_ex pow(abs_ex && arg, const abs_ex & deg);
 abs_ex pow(abs_ex && arg, abs_ex && deg);
+abs_ex pow(const abs_ex & arg, abs_ex && deg);
 abs_ex pow(const abs_ex & arg, Number deg);
 abs_ex pow(abs_ex && arg, Number deg);
 abs_ex pow(Number arg, Number deg);
@@ -80,4 +83,5 @@ abs_ex sqrt(const abs_ex & arg);
 abs_ex sqrt(abs_ex && arg);
 abs_ex sqr(const abs_ex & arg);
 abs_ex sqr(abs_ex && arg);
+bool isSqrt(const abs_ex & expr);
 #endif // DEGREE_H

@@ -9,45 +9,45 @@
 abs_ex cosinusToSinus(abs_ex && cosinus_square)
 {
 
-    return one - takeDegreeOf(abs_ex(new Sinus(getArgumentOfTrigonometricalFunction(std::move(cosinus_square)))), Number(2));
+    return one - takeDegreeOf(abs_ex(new Sinus(getArgumentOfFunction(std::move(cosinus_square)))), Number(2));
 }
 abs_ex sinusToCosinus(abs_ex && sinus_square)
 {
-    return one - takeDegreeOf(abs_ex(new Cosinus(getArgumentOfTrigonometricalFunction(std::move(sinus_square)))), Number(2));
+    return one - takeDegreeOf(abs_ex(new Cosinus(getArgumentOfFunction(std::move(sinus_square)))), Number(2));
 }
 abs_ex tangentToCosinus(abs_ex && tangent_square)
 {
-    return one / takeDegreeOf(abs_ex(new Cosinus(getArgumentOfTrigonometricalFunction(std::move(tangent_square)))), Number(2)) - one;
+    return one / takeDegreeOf(abs_ex(new Cosinus(getArgumentOfFunction(std::move(tangent_square)))), Number(2)) - one;
 }
 abs_ex cosinusToTangent(abs_ex && cosinus_square)
 {
-    return one / (one + takeDegreeOf(abs_ex(new Tangent(getArgumentOfTrigonometricalFunction(std::move(cosinus_square)))), Number(2)));
+    return one / (one + takeDegreeOf(abs_ex(new Tangent(getArgumentOfFunction(std::move(cosinus_square)))), Number(2)));
 }
 abs_ex cotangentToSinus(abs_ex && cotangent_square)
 {
-    return one / takeDegreeOf(abs_ex(new Sinus(getArgumentOfTrigonometricalFunction(std::move(cotangent_square)))), Number(2)) - one;
+    return one / takeDegreeOf(abs_ex(new Sinus(getArgumentOfFunction(std::move(cotangent_square)))), Number(2)) - one;
 }
 abs_ex sinusToCotangent(abs_ex && sinus_square)
 {
-    return one / (one + takeDegreeOf(abs_ex(new Cotangent(getArgumentOfTrigonometricalFunction(std::move(sinus_square)))), Number(2)));
+    return one / (one + takeDegreeOf(abs_ex(new Cotangent(getArgumentOfFunction(std::move(sinus_square)))), Number(2)));
 }
 abs_ex tangentToFractal(abs_ex && tangent_degree)
 {
-    abs_ex argument = getArgumentOfTrigonometricalFunction(std::move(tangent_degree));
+    abs_ex argument = getArgumentOfFunction(std::move(tangent_degree));
     return takeDegreeOf(abs_ex(new Sinus(copy(argument))) / abs_ex(new Cosinus(copy(argument))), Degree::getDegreeOfExpression(tangent_degree.get()));
 }
 abs_ex cotangentToFractal(abs_ex && cotangent_degree)
 {
-    abs_ex argument = getArgumentOfTrigonometricalFunction(std::move(cotangent_degree));
+    abs_ex argument = getArgumentOfFunction(std::move(cotangent_degree));
     return takeDegreeOf(abs_ex(new Cosinus(copy(argument))) / abs_ex(new Sinus(copy(argument))), Degree::getDegreeOfExpression(cotangent_degree.get()));
 }
 abs_ex tangentToCotangent(abs_ex && tangent_degree)
 {
-    return one / takeDegreeOf(abs_ex(new Cotangent(getArgumentOfTrigonometricalFunction(std::move(tangent_degree)))), Degree::getDegreeOfExpression(tangent_degree.get()));
+    return one / takeDegreeOf(abs_ex(new Cotangent(getArgumentOfFunction(std::move(tangent_degree)))), Degree::getDegreeOfExpression(tangent_degree.get()));
 }
 abs_ex cotangentToTangent(abs_ex && cotangent_degree)
 {
-    return one / takeDegreeOf(abs_ex(new Tangent(getArgumentOfTrigonometricalFunction(std::move(cotangent_degree)))), Degree::getDegreeOfExpression(cotangent_degree.get()));
+    return one / takeDegreeOf(abs_ex(new Tangent(getArgumentOfFunction(std::move(cotangent_degree)))), Degree::getDegreeOfExpression(cotangent_degree.get()));
 }
 //Если нет тангенса и котангенса, то: если есть только косинусы и sin^2, то sin^2 -> 1 - cos^2 (SINUS_TO_COSINUS). Иначе cos^2 -> 1-sin^2 (COSINUS_TO_SINUS)
 //Если есть синусы и cot^2, то cot^2 -> 1/sin^2 - 1 (COTANGENT_TO_SINUS)
@@ -120,7 +120,7 @@ abs_ex convertTrigonometricalFunctionByArgument(abs_ex &&func_degree, Trigonomet
 abs_ex fromHalfArgument(abs_ex &&func_degree)
 {
 
-    abs_ex  arg = getArgumentOfTrigonometricalFunction(func_degree) * two;
+    abs_ex  arg = getArgumentOfFunction(func_degree) * two;
     abs_ex degree = Degree::getDegreeOfExpression(func_degree.get()) / two;
     abs_ex res;
     switch(Degree::getArgumentOfDegree(func_degree.get())->getId())
@@ -145,7 +145,7 @@ abs_ex fromHalfArgument(abs_ex &&func_degree)
 
 abs_ex fromDoubleArgument(abs_ex &&func_degree)
 {
-    abs_ex  arg = getArgumentOfTrigonometricalFunction(func_degree) / two;
+    abs_ex  arg = getArgumentOfFunction(func_degree) / two;
     abs_ex degree = Degree::getDegreeOfExpression(func_degree.get());
     abs_ex res;
     switch (Degree::getArgumentOfDegree(func_degree.get())->getId())
@@ -170,7 +170,7 @@ abs_ex fromDoubleArgument(abs_ex &&func_degree)
 
 abs_ex fromTrippleArgument(abs_ex &&func_degree)
 {
-    abs_ex  arg = getArgumentOfTrigonometricalFunction(func_degree) / absEx(3);
+    abs_ex  arg = getArgumentOfFunction(func_degree) / absEx(3);
     abs_ex degree = Degree::getDegreeOfExpression(func_degree.get());
     abs_ex res;
     switch (Degree::getArgumentOfDegree(func_degree.get())->getId())

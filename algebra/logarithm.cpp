@@ -53,14 +53,14 @@ void Logarithm::simplify()
     this->argument = this->argument->downcast();
     if (Degree::getArgumentOfDegree(this->argument.get())->getId() == TANGENT)
     {
-        this->argument = pow(sin(getArgumentOfTrigonometricalFunction(argument))/
-                             cos(getArgumentOfTrigonometricalFunction(argument)),
+        this->argument = pow(sin(getArgumentOfFunction(argument))/
+                             cos(getArgumentOfFunction(argument)),
                              Degree::getDegreeOfExpression(argument.get()));
     }
     if (Degree::getArgumentOfDegree(this->argument.get())->getId() == COTANGENT)
     {
-        this->argument = pow(cos(getArgumentOfTrigonometricalFunction(argument))/
-                             sin(getArgumentOfTrigonometricalFunction(argument)),
+        this->argument = pow(cos(getArgumentOfFunction(argument))/
+                             sin(getArgumentOfFunction(argument)),
                              Degree::getDegreeOfExpression(argument.get()));
     }
     if (this->argument->getId() == POLYNOMIAL)
@@ -118,7 +118,15 @@ bool Logarithm::canDowncastTo()
     if (this->argument->getId() == DEGREE)
         return true;
     if (this->argument->getId() == FRACTAL)
+    {
+        auto frac = static_cast<Fractal*>(this->argument.get());
+        if (((frac->getFractal().first->size() == 1 && frac->getFractal().second->empty())
+                ) &&
+                frac->getCoefficient() == -1)
+            return false;
         return true;
+    }
+
     return false;
 }
 
@@ -141,17 +149,37 @@ std::unique_ptr<AbstractExpression> Logarithm::downcastTo()
     if (this->argument->getId() == FRACTAL)
     {
         Fractal* fr = static_cast<Fractal*>(this->argument.get());
-        abs_ex res = ln(toAbsEx(fr->getCoefficient()));
-        auto fr_m = fr->getFractal();
-        for (auto &it : *fr_m.first)
+        if (fr->getCoefficient().getNumerator() > 0)
         {
-            res = res + ln(it);
+            abs_ex res = ln(toAbsEx(fr->getCoefficient()));
+            auto fr_m = fr->getFractal();
+            for (auto &it : *fr_m.first)
+            {
+                res = res + ln(it);
+            }
+            for (auto &it : *fr_m.second)
+            {
+                res = res - ln(it);
+            }
+            return res;
         }
-        for (auto &it : *fr_m.second)
+        abs_ex res = ln(toAbsEx(fr->getCoefficient() * -1));
+        if (fr->getFractal().first->empty())
         {
-            res = res - ln(it);
+            res = std::move(res) - ln(-(*fr->getFractal().second->begin()));
+            for (auto it = next(fr->getFractal().second->begin()); it != fr->getFractal().second->end(); ++it)
+                res = std::move(res) - ln(*it);
+        }
+        else
+        {
+            res = std::move(res) + ln(-(*fr->getFractal().first->begin()));
+            for (auto it = next(fr->getFractal().first->begin()); it != fr->getFractal().first->end(); ++it)
+                res = std::move(res) + ln(*it);
+            for (auto &it : *fr->getFractal().second)
+                res = std::move(res) - ln(it);
         }
         return res;
+       // res = std::move(res) + ln()
     }
     assert(false);
 }
@@ -285,6 +313,16 @@ void Logarithm::setSimplified(bool simpl)
 std::set<std::unique_ptr<AbstractExpression> > Logarithm::getTrigonometricalFunctions() const
 {
     return this->argument->getTrigonometricalFunctions();
+}
+
+long long Logarithm::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return this->argument->getLcmOfDenominatorsOfDegreesOfVariable(var);
+}
+
+long long Logarithm::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return this->argument->getGcdOfNumeratorsOfDegrees(var);
 }
 
 bool Logarithm::operator<(const AbstractExpression &right) const

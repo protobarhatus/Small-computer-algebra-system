@@ -8,7 +8,8 @@
 #include <array>
 #define SIM_IF_NEED if (this->simplified) return; //else this->simplified = true;
 #define NONCONST this->simplified = false;
-#define abs_ex std::unique_ptr<AbstractExpression>
+class AbstractExpression;
+typedef std::unique_ptr<AbstractExpression> abs_ex ;
 //order there influences on order in polynomials, but it's important only for output
 //Id > 0 is for variables
 //На данном этапе развития модуль не сможет работать с тригонометрическими функциями как с переменными. теоретически,
@@ -98,6 +99,8 @@ public:
     virtual void setSimplified(bool simpl) = 0;
     //в выражении по типу cos(1+cos(x)) вернет ТОЛЬКО cos(1+cos(x))
     virtual std::set<abs_ex> getTrigonometricalFunctions() const = 0;
+    virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const = 0 ;
+    virtual long long int getGcdOfNumeratorsOfDegrees(int var) const = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -115,15 +118,18 @@ std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr, std::m
 void replaceSystemVariablesBackToFunctions(std::unique_ptr<AbstractExpression> &expr, std::map<int, abs_ex> & funcs);
 std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression * expr, std::map<QString, int> & funcs);
 void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
+
+void setUpExpressionIntoVariable(abs_ex & func, const abs_ex & expr, int var);
+void setUpExpressionIntoVariable(abs_ex & func, abs_ex && expr, int var);
 //отличие от ...BackToFunctions в том, что она снимает simplified с выражения и упрощает его.
 //делать это в ...BackToFunctions нельзя, так как это вызовет бесконечную рекурсию
 void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
 void replaceSystemVariablesToExpressions(abs_ex &expr, std::map<int, abs_ex> & funcs);
 //void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex> & functions);
 //работает на все функции, не только тригонометрические
-abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr);
-abs_ex getArgumentOfTrigonometricalFunction(abs_ex & expr);
-abs_ex getArgumentOfTrigonometricalFunction(AbstractExpression * expr);
+abs_ex getArgumentOfFunction(abs_ex && expr);
+abs_ex getArgumentOfFunction(const abs_ex & expr);
+abs_ex getArgumentOfFunction(AbstractExpression * expr);
 bool isDegreeOfTrigonometricalFunction(abs_ex & expr);
 bool isDegreeOfArcTrigonometricalFunction(abs_ex & expr);
 //выражения a^f(x) считаются экспоненциальной ф-цией, а g(x)^f(x) - нет (x->getId() == var)

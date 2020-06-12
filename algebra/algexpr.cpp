@@ -10,6 +10,8 @@
 #include "differential.h"
 #include "arctangent.h"
 #include "arcsinus.h"
+#include "solving_equations.h"
+#include "solving_differential_equations.h"
 AlgExpr::AlgExpr()
 {
 
@@ -533,4 +535,19 @@ AlgExpr asin(const AlgExpr &arg)
 AlgExpr asin(AlgExpr && arg)
 {
     return AlgExpr(abs_ex(new ArcSinus(std::move(arg.expression))));
+}
+
+AlgExpr definiteIntegral(const AlgExpr &arg, const AlgExpr &from, const AlgExpr &to)
+{
+    return definiteIntegral(arg.getExpr(), from.getExpr(), to.getExpr());
+}
+
+std::list<AlgExpr> solveEquation(const AlgExpr &equation, const AlgExpr &var)
+{
+    assert(var.getExpr()->getId() > 0);
+    std::list<abs_ex> eq_res = solveEquation(equation.getExpr(), var.getExpr()->getId());
+    std::list<AlgExpr> res;
+    for (auto &it : eq_res)
+        res.push_back(std::move(it));
+    return res;
 }

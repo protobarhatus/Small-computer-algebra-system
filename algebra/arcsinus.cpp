@@ -8,6 +8,7 @@
 #include "logarithm.h"
 #include "exception.h"
 #include <cmath>
+#include "fractal.h"
 ArcSinus::ArcSinus(const std::unique_ptr<AbstractExpression> &arg)
 {
     this->argument = copy(arg);
@@ -66,7 +67,7 @@ bool ArcSinus::canDowncastTo()
 {
     if (this->argument->getId() == SINUS)
     {
-        auto sin_arg = getArgumentOfTrigonometricalFunction(this->argument);
+        auto sin_arg = getArgumentOfFunction(this->argument);
         int pos = (sin_arg + getPi()/two)->getPositionRelativelyZero();
         if (!(pos > 0))
             return false;
@@ -85,7 +86,7 @@ bool ArcSinus::canDowncastTo()
 std::unique_ptr<AbstractExpression> ArcSinus::downcastTo()
 {
     if (this->argument->getId() == SINUS)
-        return getArgumentOfTrigonometricalFunction(std::move(this->argument));
+        return getArgumentOfFunction(std::move(this->argument));
     abs_ex & arg = this->argument;
     if (*arg == *minus_one)
         return -getPi()/two;
@@ -206,6 +207,21 @@ std::unique_ptr<AbstractExpression> ArcSinus::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
+    if (isSqrt(argument))
+    {
+        auto ln_f = checkIfItsLinearFunction(Degree::getArgumentOfDegree(argument.get()), var);
+        auto arg = copy(Degree::getArgumentOfDegree(argument.get()));
+        if (ln_f.first != nullptr)
+        {
+            auto a = std::move(ln_f.first);
+            auto b = std::move(ln_f.second);
+            auto x = getVariableExpr(var);
+            return x *asin(argument) -
+                    (b*(two*a*x - one ) + (one - two*b)*sqrt(arg - one)*sqrt(arg) *ln(sqrt(arg - one) + sqrt(arg)) +
+                     a*x*(a*x - one) +b*b)/(two*a*sqrt(-(arg - one)*arg));
+        }
+    }
+
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
     if (ln_f.first == nullptr)
         return nullptr;
@@ -227,6 +243,16 @@ void ArcSinus::setSimplified(bool simpl)
 std::set<std::unique_ptr<AbstractExpression> > ArcSinus::getTrigonometricalFunctions() const
 {
     return this->argument->getTrigonometricalFunctions();
+}
+
+long long ArcSinus::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return this->argument->getLcmOfDenominatorsOfDegreesOfVariable(var);
+}
+
+long long ArcSinus::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return this->argument->getGcdOfNumeratorsOfDegrees(var);
 }
 
 bool ArcSinus::operator<(const AbstractExpression &right) const

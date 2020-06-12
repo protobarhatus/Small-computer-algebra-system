@@ -177,10 +177,11 @@ QString getStringArgumentOfTrigonometricalFunction(AbstractExpression *expr)
     }
 }
 
-abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr)
+abs_ex getArgumentOfFunction(abs_ex && expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
-    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT);
+    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT ||
+           arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS);
     switch (arg->getId()) {
     case SINUS:
         return static_cast<Sinus*>(arg)->getArgumentMoved();
@@ -190,6 +191,12 @@ abs_ex getArgumentOfTrigonometricalFunction(abs_ex && expr)
         return static_cast<Tangent*>(arg)->getArgumentMoved();
     case COTANGENT:
         return static_cast<Cotangent*>(arg)->getArgumentMoved();
+    case LOGARITHM:
+        return static_cast<Logarithm*>(arg)->getArgumentMoved();
+    case ARCTANGENT:
+        return static_cast<ArcTangent*>(arg)->getArgumentMoved();
+    case ARCSINUS:
+        return static_cast<ArcSinus*>(arg)->getArgumentMoved();
     default:
         assert(false);
 
@@ -277,10 +284,11 @@ void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<std::uniqu
     }
 }
 */
-std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(std::unique_ptr<AbstractExpression> &expr)
+std::unique_ptr<AbstractExpression> getArgumentOfFunction(const std::unique_ptr<AbstractExpression> &expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
-    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT);
+    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT ||
+           arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS);
     switch (arg->getId()) {
     case SINUS:
         return static_cast<Sinus*>(arg)->getArgumentsCopy();
@@ -290,6 +298,12 @@ std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(std::un
         return static_cast<Tangent*>(arg)->getArgumentsCopy();
     case COTANGENT:
         return static_cast<Cotangent*>(arg)->getArgumentsCopy();
+    case LOGARITHM:
+        return static_cast<Logarithm*>(arg)->getArgumentsCopy();
+    case ARCTANGENT:
+        return static_cast<ArcTangent*>(arg)->getArgumentsCopy();
+    case ARCSINUS:
+        return static_cast<ArcSinus*>(arg)->getArgumentsCopy();
     default:
         assert(false);
 
@@ -457,11 +471,11 @@ std::unique_ptr<AbstractExpression> operator-(std::unique_ptr<AbstractExpression
     return minus_one * std::move(arg);
 }
 
-std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(AbstractExpression *expr)
+std::unique_ptr<AbstractExpression> getArgumentOfFunction(AbstractExpression *expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr);
     assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT
-           ||arg->getId() == LOGARITHM);
+           ||arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS);
     switch (arg->getId()) {
     case SINUS:
         return static_cast<Sinus*>(arg)->getArgumentsCopy();
@@ -473,6 +487,10 @@ std::unique_ptr<AbstractExpression> getArgumentOfTrigonometricalFunction(Abstrac
         return static_cast<Cotangent*>(arg)->getArgumentsCopy();
     case LOGARITHM:
         return static_cast<Logarithm*>(arg)->getArgumentsCopy();
+    case ARCTANGENT:
+        return static_cast<ArcTangent*>(arg)->getArgumentsCopy();
+    case ARCSINUS:
+        return static_cast<ArcSinus*>(arg)->getArgumentsCopy();
     default:
         assert(false);
 
@@ -622,4 +640,24 @@ bool isExponentialFunction(std::unique_ptr<AbstractExpression>& expr, int var)
     return has(Degree::getDegreeOfExpression(expr.get())->getSetOfVariables(), var) &&
             !has(Degree::getArgumentOfDegree(expr.get())->getSetOfVariables(), var);
 
+}
+
+void setUpExpressionIntoVariable(abs_ex & func, const std::unique_ptr<AbstractExpression> &expr, int var)
+{
+    std::map<int, abs_ex> repl_vars;
+    repl_vars.insert({var, copy(expr)});
+    replaceSystemVariablesToExpressions(func, repl_vars);
+    func->setSimplified(false);
+    func->simplify();
+    func = func->downcast();
+}
+
+void setUpExpressionIntoVariable(std::unique_ptr<AbstractExpression> &func, std::unique_ptr<AbstractExpression> &&expr, int var)
+{
+    std::map<int, abs_ex> repl_vars;
+    repl_vars.insert({var, std::move(expr)});
+    replaceSystemVariablesToExpressions(func, repl_vars);
+    func->setSimplified(false);
+    func->simplify();
+    func = func->downcast();
 }

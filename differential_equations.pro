@@ -78,6 +78,7 @@ SOURCES += \
     algebra/cotangent.cpp \
     algebra/degree.cpp \
     algebra/differential.cpp \
+    algebra/equationrootsconditions.cpp \
     algebra/exception.cpp \
     algebra/factorization.cpp \
     algebra/fractal.cpp \
@@ -91,6 +92,7 @@ SOURCES += \
     algebra/polynomials_factorization.cpp \
     algebra/primetest.cpp \
     algebra/sinus.cpp \
+    algebra/solving_differential_equations.cpp \
     algebra/solving_equations.cpp \
     algebra/some_algebra_expression_conversions.cpp \
     algebra/tangent.cpp \
@@ -168,6 +170,7 @@ HEADERS += \
     algebra/cotangent.h \
     algebra/degree.h \
     algebra/differential.h \
+    algebra/equationrootsconditions.h \
     algebra/exception.h \
     algebra/factorization.h \
     algebra/fractal.h \
@@ -181,6 +184,7 @@ HEADERS += \
     algebra/polynomials_factorization.h \
     algebra/primetest.h \
     algebra/sinus.h \
+    algebra/solving_differential_equations.h \
     algebra/solving_equations.h \
     algebra/some_algebra_expression_conversions.h \
     algebra/tangent.h \

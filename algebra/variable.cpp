@@ -171,3 +171,13 @@ std::set<std::unique_ptr<AbstractExpression> > Variable::getTrigonometricalFunct
 {
     return std::set<abs_ex>();
 }
+
+long long Variable::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return 1;
+}
+
+long long Variable::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return 1;
+}

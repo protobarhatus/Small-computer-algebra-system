@@ -165,8 +165,10 @@ AlgExpr D(const AlgExpr & arg);
 AlgExpr D(AlgExpr && arg);
 AlgExpr integral(const AlgExpr & arg);
 AlgExpr integral(const AlgExpr & arg, AlgExpr var);
+AlgExpr definiteIntegral(const AlgExpr & arg, const AlgExpr & from, const AlgExpr & to);
 AlgExpr atan(const AlgExpr & arg);
 AlgExpr atan(AlgExpr && arg);
 AlgExpr asin(const AlgExpr & arg);
 AlgExpr asin(AlgExpr && arg);
+std::list<AlgExpr> solveEquation(const AlgExpr & equation, const AlgExpr & var);
 #endif // ALGEXPR_H

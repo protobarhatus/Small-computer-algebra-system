@@ -34,6 +34,8 @@ public:
     virtual abs_ex antiderivative(int var) const override;
     virtual void setSimplified(bool simpl) override;
     virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
+    virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const override;
+    virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
 private:
     friend Variable getVariable(int id);
     friend Variable integratingConstant();

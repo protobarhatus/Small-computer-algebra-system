@@ -33,9 +33,12 @@ private:
 
 void deleteVariables();
 Variable getVariable(int id);
+abs_ex getVariableExpr(int id);
 Variable systemVar(int num);
 Variable systemVar();
+abs_ex systemVarExpr();
 Variable systemVar(int min, int max);
 Variable integratingConstant();
+abs_ex integratingConstantExpr();
 QString makeVariablesName(int id);
 #endif // VARIABLESDISTRIBUTOR_H

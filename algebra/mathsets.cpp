@@ -12,6 +12,7 @@ void MathSets::init(MathSets & set)
     set.has_initialized = true;
     //простые числа до 2^20 будут занимать примерно 512 кб и будут строиться всего пару секунд, что вполне удовлетворительно
     set.makePrimeNumbers(pow(2, 20));
+    set.makeBinomialCoefficients(30);
 }
 MathSets& MathSets::getInstance()
 {
@@ -19,6 +20,22 @@ MathSets& MathSets::getInstance()
     if (!sets.has_initialized)
         sets.init(sets);
     return sets;
+}
+
+void MathSets::makeBinomialCoefficients(int n)
+{
+    this->binomial_coefficients.resize(n + 1);
+    this->binomial_coefficients[0] = std::vector<long long int>(1, 1);
+    this->binomial_coefficients[1] = std::vector<long long int>(2, 1);
+    for (int i = 2; i <= n; ++i)
+    {
+        this->binomial_coefficients[i].resize(i + 1);
+        this->binomial_coefficients[i][0] = 1;
+        this->binomial_coefficients[i][i] = 1;
+        for (int j = 1; j < i; ++j)
+            this->binomial_coefficients[i][j] = binomial_coefficients[i - 1][j - 1] + binomial_coefficients[i - 1][j];
+    }
+
 }
 void MathSets::makePrimeNumbers(long long int N)
 {
@@ -56,4 +73,19 @@ std::vector<int> & MathSets::getPrimesVector()
 std::set<int> & MathSets::getPrimesSet()
 {
     return MathSets::getInstance().primes_set;
+}
+
+std::vector<std::vector<long long int>> &MathSets::getBinomialCoefs()
+{
+    return MathSets::getInstance().binomial_coefficients;
+}
+
+std::vector<long long> &MathSets::getBinomialCoefs(int degree)
+{
+    return MathSets::getInstance().binomial_coefficients[degree];
+}
+
+int MathSets::maxDegreeOfBinomialCoefs()
+{
+    return MathSets::getInstance().binomial_coefficients.size() - 1;
 }

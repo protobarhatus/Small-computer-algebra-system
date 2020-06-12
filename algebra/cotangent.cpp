@@ -293,6 +293,16 @@ std::set<std::unique_ptr<AbstractExpression> > Cotangent::getTrigonometricalFunc
     return set;
 }
 
+long long Cotangent::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return this->argument->getLcmOfDenominatorsOfDegreesOfVariable(var);
+}
+
+long long Cotangent::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return this->argument->getGcdOfNumeratorsOfDegrees(var);
+}
+
 bool Cotangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == COTANGENT);

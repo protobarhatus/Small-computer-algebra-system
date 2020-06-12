@@ -123,6 +123,16 @@ std::set<std::unique_ptr<AbstractExpression> > Constant::getTrigonometricalFunct
 {
     return std::set<abs_ex>();
 }
+
+long long Constant::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return 1;
+}
+
+long long Constant::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return 0;
+}
 bool Constant::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == CONSTANT);

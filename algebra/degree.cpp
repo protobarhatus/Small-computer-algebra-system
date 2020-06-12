@@ -83,8 +83,8 @@ bool Degree::canDowncastTo()
         auto fr = frac->getFractal();
         //это на случай подобно sqrt(-a), чтобы не пытался разложить на sqrt(-1)*sqrt(a)
         if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->getDenominator() % 2 == 0 &&
-                ((fr.first->size() == 1 && fr.second->empty()) || (fr.first->empty() && fr.second->size() == 1)) &&
-                frac->getCoefficient().getNumerator() < 0)
+                ((fr.first->size() == 1 && fr.second->empty())) &&
+                frac->getCoefficient() == -1)
             return false;
         return true;
     }
@@ -104,6 +104,12 @@ bool Degree::canDowncastTo()
         return true;
     if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM)
         return true;
+    if (*this->argument == *getEuler() && Degree::getArgumentOfDegree(this->degree.get())->getId() == LOGARITHM &&
+            (Degree::getDegreeOfExpression(degree.get()) - one)->getPositionRelativelyZero() > 0)
+        return true;
+    if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->tryToFindLogarithmInNumerator() !=
+            nullptr)
+        return true;
     if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isZero())
         return true;
     return false;
@@ -112,8 +118,15 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo()
 {
 
     assert(canDowncastTo());
+
     if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM)
         return static_cast<Logarithm*>(this->degree.get())->getArgumentMoved();
+    if (*this->argument == *getEuler() && Degree::getArgumentOfDegree(this->degree.get())->getId() == LOGARITHM)
+    {
+        auto arg = static_cast<Logarithm*>(Degree::getArgumentOfDegree(degree.get()))->getArgumentsCopy();
+        return pow(arg, pow(copy(Degree::getArgumentOfDegree(degree.get())), Degree::getDegreeOfExpression(degree.get()) - one));
+    }
+
     if ((this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isOne()) || static_cast<Number*>(this->degree.get())->isZero())
         return std::unique_ptr<AbstractExpression>(new Number(1));
     if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isZero())
@@ -166,8 +179,9 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo()
         if (num_coe.getNumerator() < 0 && this->degree->getId() == NUMBER &&
                 static_cast<Number*>(this->degree.get())->getDenominator() % 2 == 0)
         {
+
             if (!(num_coe * -1).isOne())
-                num.push_back(numToAbs(-num_coe.getNumerator()));
+                num.push_back(pow(numToAbs(-num_coe.getNumerator()), degree));
             if (!denom_coe.isOne())
                 denum.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
             if(fract.first->empty())
@@ -220,6 +234,14 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo()
     {
         return one/takeDegreeOf(std::move(argument), -degree);
     }
+
+    if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL)
+    {
+        auto log = static_cast<Fractal*>(this->degree.get())->tryToFindLogarithmInNumerator();
+        assert(log != nullptr);
+        return pow(static_cast<Logarithm*>(log.get())->getArgumentMoved(), degree/log);
+    }
+
     return copy( this->argument.get());
 }
 AbstractExpression * Degree::getArgumentOfDegree(AbstractExpression *expr)
@@ -650,13 +672,16 @@ int Degree::getPositionRelativelyZeroIfHasVariables()
 {
     if (this->degree->getId() != NUMBER)
         return 0;
+
     int degr = static_cast<Number*>(this->degree.get())->getNumerator();
     if (degr % 2 == 0)
         return 1;
     int root = static_cast<Number*>(this->degree.get())->getDenominator();
     if (root % 2 == 0)
         return 1;
-    return this->argument->getPositionRelativelyZero();
+    if (this->argument->getPositionRelativelyZero() > 0)
+        return 1;
+    return 0;
 }
 double Degree::getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule)
 {
@@ -708,13 +733,23 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
     ln_f = checkIfItsLinearFunction(this->degree, var);
     if (ln_f.first != nullptr && !this->argument->hasVariable(var))
         return one / ln_f.first * takeDegreeOf(this->argument, this->degree) / ln(this->argument);
+    if (isSqrt(this->degree) && !this->argument->hasVariable(var))
+    {
+        auto ln_f = checkIfItsLinearFunction(Degree::getArgumentOfDegree(this->degree.get()), var);
+        if (ln_f.first != nullptr)
+        {
+            auto a = std::move(ln_f.first);
+            auto b = std::move(ln_f.second);
+            return (two * copy(this) * (ln(argument) * degree - one))/a/pow(ln(argument), 2);
+        }
+    }
 
     if (this->argument->getId() == SINUS && *this->degree == *two)
     {
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
         return one / ln_f.first * (arg / two - one/four * sin(two * arg));
     }
     if (this->argument->getId() == COSINUS && *this->degree == *two)
@@ -722,7 +757,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
         return one / ln_f.first * (arg / two + one/four*sin(two * arg));
     }
     if (this->argument->getId() == TANGENT && *this->degree == *two)
@@ -730,7 +765,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
         return one / ln_f.first * (this->argument - arg);
     }
     if (this->argument->getId() == COTANGENT && *this->degree == *two)
@@ -738,7 +773,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
         return one / ln_f.first * (minus_one * arg - this->argument);
     }
     if (this->argument->getId() == LOGARITHM && *this->degree == *two)
@@ -746,7 +781,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
         return one / ln_f.first * (arg * (pow(this->argument, 2) - two*this->argument + two));
     }
 
@@ -755,7 +790,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
 
         return one / ln_f.first / numToAbs(12) * (cos(three*arg) - numToAbs(9)*cos(arg));
     }
@@ -764,7 +799,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
         return one / ln_f.first / numToAbs(12) * (sin(three*arg) + numToAbs(9)*sin(arg));
     }
     if (this->argument->getId() == TANGENT && *this->degree == *three)
@@ -772,7 +807,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
         return one / ln_f.first * (one / (two * takeDegreeOf(cos(arg), 2)) + ln(abs(cos(arg))));
     }
     if (this->argument->getId() == COTANGENT && *this->degree == *three)
@@ -780,7 +815,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
         return one / ln_f.first * (minus_one / (two *takeDegreeOf(sin(arg), 2)) - ln(abs(sin(arg))));
     }
     if (this->argument->getId() == LOGARITHM && *this->degree == *three)
@@ -788,7 +823,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
         ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
         if (ln_f.first == nullptr)
             return nullptr;
-        auto arg = getArgumentOfTrigonometricalFunction(this->argument.get());
+        auto arg = getArgumentOfFunction(this->argument.get());
         return one / ln_f.first * (arg * (takeDegreeOf(this->argument, 3) - three*takeDegreeOf(this->argument, 2)
                                           + numToAbs(6)*this->argument - numToAbs(6)));
     }
@@ -800,7 +835,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
             ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
             if (ln_f.first == nullptr)
                 return nullptr;
-            auto arg = getArgumentOfTrigonometricalFunction(argument.get());
+            auto arg = getArgumentOfFunction(argument.get());
             //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
             //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
             return one/ln_f.first *(-one/degree * pow(argument, degree - one) * cos(arg) +
@@ -811,7 +846,7 @@ std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
             ln_f = checkIfItsFunctionOfLinearArgument(this->argument, var);
             if (ln_f.first == nullptr)
                 return nullptr;
-            auto arg = getArgumentOfTrigonometricalFunction(argument.get());
+            auto arg = getArgumentOfFunction(argument.get());
             //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
             //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
             return one/ln_f.first *(one/degree * pow(argument, degree - one) * sin(arg) +
@@ -889,6 +924,36 @@ std::set<std::unique_ptr<AbstractExpression> > Degree::getTrigonometricalFunctio
     return result;
 }
 
+long long Degree::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    if (argument->getId() == var)
+    {
+        if (degree->getId() == NUMBER)
+            return static_cast<Number*>(degree.get())->getDenominator();
+        return 0;
+    }
+    return lcm(argument->getLcmOfDenominatorsOfDegreesOfVariable(var),
+               degree->getLcmOfDenominatorsOfDegreesOfVariable(var));
+
+}
+
+long long Degree::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    if (argument->getId() == var)
+    {
+        if (degree->getId() == NUMBER)
+            return static_cast<Number*>(degree.get())->getNumerator();
+        return 0;
+    }
+    long long arg = argument->getGcdOfNumeratorsOfDegrees(var);
+    if (arg == 0)
+        return degree->getGcdOfNumeratorsOfDegrees(var);
+    long long deg = degree->getGcdOfNumeratorsOfDegrees(var);
+    if (deg == 0)
+        return arg;
+    return gcd(arg, deg);
+}
+
 std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> &&argument, const std::unique_ptr<AbstractExpression> &degree)
 {
     return takeDegreeOf(std::move(argument), copy(degree));
@@ -942,4 +1007,14 @@ std::unique_ptr<AbstractExpression> pow(std::unique_ptr<AbstractExpression> &&ar
 std::unique_ptr<AbstractExpression> pow(Number arg, Number deg)
 {
     return takeDegreeOf(arg, deg);
+}
+
+bool isSqrt(const std::unique_ptr<AbstractExpression> &expr)
+{
+    return expr->getId() == DEGREE && *Degree::getDegreeOfExpression(expr.get()) == *half;
+}
+
+std::unique_ptr<AbstractExpression> pow(const std::unique_ptr<AbstractExpression> &arg, std::unique_ptr<AbstractExpression> &&deg)
+{
+    return takeDegreeOf(arg, std::move(deg));
 }

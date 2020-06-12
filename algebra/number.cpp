@@ -354,6 +354,16 @@ std::set<std::unique_ptr<AbstractExpression> > Number::getTrigonometricalFunctio
     return std::set<abs_ex>();
 }
 
+long long Number::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
+{
+    return 1;
+}
+
+long long Number::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    return 0;
+}
+
 Number abs(Number num)
 {
     if (num.compareWith(0) < 0)

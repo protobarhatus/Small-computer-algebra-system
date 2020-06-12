@@ -1504,7 +1504,7 @@ std::vector<std::pair<abs_ex, Number>> Fractal::getTrigonometryMultipliersArgume
         if (isDegreeOfTrigonometricalFunction(it) && Degree::getDegreeOfExpression(it.get())->getId() == NUMBER &&
                 static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->isInteger())
         {
-            res.push_back({getArgumentOfTrigonometricalFunction(it), *static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())});
+            res.push_back({getArgumentOfFunction(it), *static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())});
 
         }
     }
@@ -1513,7 +1513,7 @@ std::vector<std::pair<abs_ex, Number>> Fractal::getTrigonometryMultipliersArgume
         if (isDegreeOfTrigonometricalFunction(it) && Degree::getDegreeOfExpression(it.get())->getId() == NUMBER &&
                 static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->isInteger())
         {
-            res.push_back({getArgumentOfTrigonometricalFunction(it), *static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())});
+            res.push_back({getArgumentOfFunction(it), *static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())});
 
         }
     }
@@ -1529,7 +1529,7 @@ void Fractal::convertTrigonometricalMultipliersToDifferentArgument(const std::ma
                 static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->isInteger())
         {
             NONCONST
-            it = convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfTrigonometricalFunction(it)->makeStringOfExpression())->second);
+            it = convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfFunction(it)->makeStringOfExpression())->second);
             //qDebug() << "RES: " << convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfTrigonometricalFunction(it)->makeStringOfExpression())->second)->makeStringOfExpression();
             //qDebug() << "IN FR: " << it->makeStringOfExpression();
         }
@@ -1541,7 +1541,7 @@ void Fractal::convertTrigonometricalMultipliersToDifferentArgument(const std::ma
                 static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->isInteger())
         {
             NONCONST
-            it = convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfTrigonometricalFunction(it)->makeStringOfExpression())->second);
+            it = convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfFunction(it)->makeStringOfExpression())->second);
             //qDebug() << "RES: " << convertTrigonometricalFunctionByArgument(std::move(it), instructions.find(getArgumentOfTrigonometricalFunction(it)->makeStringOfExpression())->second)->makeStringOfExpression();
             //qDebug() << "IN FR: " << it->makeStringOfExpression();
         }
@@ -1634,24 +1634,14 @@ abs_ex Fractal::getAntiderivativeByParts(int var) const
         return integrateByParts(full_polynom, cop_p->downcast(), var);
     return nullptr;
 }
-std::unique_ptr<Polynomial> toPolynomialPointer(const abs_ex & expr)
-{
-    if (expr->getId() == POLYNOMIAL)
-    {
-        return std::unique_ptr<Polynomial>(static_cast<Polynomial*>(copy(expr).release()));
-    }
-    else
-    {
-        return std::unique_ptr<Polynomial>(new Polynomial(expr.get()));
-    }
-}
+
 //да, это будет очередная большая функция. Здесь нет сложного поведения, только проверка на различные табличные интегралы
 //рассчитываем на то, что сработало takeCommonPartOfPolynomial()
 //еще рассчитываем на то, что все полиномы которые можно разложить - разложены
 
 std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
 {
-    qDebug() << this->makeStringOfExpression();
+   // qDebug() << this->makeStringOfExpression();
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
     auto fr_without_var = this->getFractalWithoutVariable(var);
@@ -1960,6 +1950,23 @@ long long int Fractal::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
     return res;
 }
 
+long long Fractal::getGcdOfNumeratorsOfDegrees(int var) const
+{
+    auto zgcd = [](long long a, long long b)->long long {
+        if (a == 0)
+            return b;
+        if (b == 0)
+            return a;
+        return gcd(a, b);
+    };
+    long long int res = 0;
+    for (auto &it : this->numerator)
+        res = zgcd(res, it->getGcdOfNumeratorsOfDegrees(var));
+    for (auto &it : this->denominator)
+        res = zgcd(res, it->getGcdOfNumeratorsOfDegrees(var));
+    return res;
+}
+
 void Fractal::setSimplified(bool simpl)
 {
     this->simplified = simpl;
@@ -2136,7 +2143,7 @@ std::unique_ptr<AbstractExpression> Fractal::tableAntiderivative(int var) const
                     auto ln_f = checkIfItsFunctionOfLinearArgument(arg, var);
                     if (ln_f.first == nullptr)
                         return nullptr;
-                    auto sin_arg = getArgumentOfTrigonometricalFunction(arg);
+                    auto sin_arg = getArgumentOfFunction(arg);
                     //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
                     //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
                     return one/ln_f.first * (-one/(deg - one) * cos(sin_arg)/pow(copy(arg), deg - one) +
@@ -2147,7 +2154,7 @@ std::unique_ptr<AbstractExpression> Fractal::tableAntiderivative(int var) const
                     auto ln_f = checkIfItsFunctionOfLinearArgument(arg, var);
                     if (ln_f.first == nullptr)
                         return nullptr;
-                    auto cos_arg = getArgumentOfTrigonometricalFunction(arg);
+                    auto cos_arg = getArgumentOfFunction(arg);
                     //перед рекурсивным интегралом мы домножаем на ln_f.first, т. к. в нем уже как бы сразу da
                     //и поэтому нельзя, чтобы там повторно выносилось 1/a(что будет делаться), вот и компенсируем домножением
                     //я кстати не совсем уверен в этой формуле
@@ -2156,9 +2163,9 @@ std::unique_ptr<AbstractExpression> Fractal::tableAntiderivative(int var) const
                     return sin(cos_arg)/(ln_f.first * (deg - one) *pow(copy(arg), deg - one)) + (deg-two)/(deg - one) * (one/pow(copy(arg), deg - two))->antiderivative(var);
                 }
                 if (arg->getId() == TANGENT)
-                    return pow(cot(getArgumentOfTrigonometricalFunction(arg)), deg)->antiderivative(var);
+                    return pow(cot(getArgumentOfFunction(arg)), deg)->antiderivative(var);
                 if (arg->getId() == COTANGENT)
-                    return pow(tan(getArgumentOfTrigonometricalFunction(arg)), deg)->antiderivative(var);
+                    return pow(tan(getArgumentOfFunction(arg)), deg)->antiderivative(var);
                 auto qc_f = ::checkIfItsQuadraticFunction(arg, var);
                 if (qc_f[0] != nullptr)
                 {//  1/(ax^2+bx+c)^n == 1/((sqrt(a)x+ b/sqrt(a)/2)^2 + c - b^2/(2a))^n
@@ -2674,7 +2681,7 @@ std::unique_ptr<AbstractExpression> Fractal::tableAntiderivative(int var) const
             if (ln_f_cos.first != nullptr && ln_f_sin.first != nullptr && *(ln_f_cos.first - ln_f_sin.first) == *zero &&
                     *(ln_f_cos.second - ln_f_sin.second) == *zero)
             {
-                auto arg = getArgumentOfTrigonometricalFunction(Degree::getArgumentOfDegree(first.get()));
+                auto arg = getArgumentOfFunction(Degree::getArgumentOfDegree(first.get()));
                 return one/ln_f_sin.first * (tan(arg) - cot(arg));
             }
         }
@@ -2723,8 +2730,11 @@ std::unique_ptr<AbstractExpression> Fractal::tableAntiderivative(int var) const
             {
                 auto arg = copy(Degree::getArgumentOfDegree(second.get()));
                 auto qc_f = ::checkIfItsQuadraticFunction(Degree::getDegreeOfExpression(second.get()), var);
-                if (::isZero(qc_f[1]))
-                    return second / two / qc_f[0] / ln(arg);
+                if (qc_f[0] != nullptr)
+                {
+                    if (::isZero(qc_f[1]))
+                        return second / two / qc_f[0] / ln(arg);
+                }
 
             }
         }
@@ -2859,13 +2869,53 @@ std::unique_ptr<AbstractExpression> Fractal::tableAntiderivative(int var) const
                         return (pow(copy(arg1), ideg1) * pow(one - sqr(copy(arg1)), ideg2/2))->antiderivative(var);
                     }
                     else if (ideg1 == ideg2)
-                        return pow(half * sin(two* getArgumentOfTrigonometricalFunction(arg1)), ideg1)->antiderivative(var);
+                        return pow(half * sin(two* getArgumentOfFunction(arg1)), ideg1)->antiderivative(var);
                     else
                         return (pow(one - sqr(copy(arg2)), ideg1/2) * pow(copy(arg2), ideg2))->antiderivative(var);
                 }
             }
         }
     }
+    return nullptr;
+}
+
+void Fractal::separatePolynomialsDegree()
+{
+    NONCONST
+    for (auto it = this->numerator.begin(); it != this->numerator.end();)
+    {
+        if (it->get()->getId() == DEGREE && Degree::getDegreeOfExpression(it->get())->getId() == POLYNOMIAL)
+        {
+            auto arg = copy(Degree::getArgumentOfDegree(it->get()));
+            auto degs = static_cast<Polynomial*>(Degree::getDegreeOfExpression(it->get()).get())->getMonomialsPointers();
+            for (auto &it : degs)
+                this->numerator.push_front(pow(arg, copy(it)));
+            it = this->numerator.erase(it);
+        }
+        else
+            ++it;
+    }
+    for (auto it = this->denominator.begin(); it != this->denominator.end();)
+    {
+        if (it->get()->getId() == DEGREE && Degree::getDegreeOfExpression(it->get())->getId() == POLYNOMIAL)
+        {
+            auto arg = copy(Degree::getArgumentOfDegree(it->get()));
+            auto degs = static_cast<Polynomial*>(Degree::getDegreeOfExpression(it->get()).get())->getMonomialsPointers();
+            for (auto &it : degs)
+                this->denominator.push_front(pow(arg, copy(it)));
+            it = this->denominator.erase(it);
+        }
+        else
+            ++it;
+    }
+    //в конце никаких simplify(), иначе все эти разделенные степени обратно засунутся!
+}
+
+std::unique_ptr<AbstractExpression> Fractal::tryToFindLogarithmInNumerator() const
+{
+    for (auto &it : this->numerator)
+        if (Degree::getArgumentOfDegree(it.get())->getId() == LOGARITHM)
+            return copy(Degree::getArgumentOfDegree(it.get()));
     return nullptr;
 }
 
@@ -2983,12 +3033,12 @@ std::unique_ptr<Fractal> operator-(const std::unique_ptr<Fractal> & left, const 
 
 std::unique_ptr<AbstractExpression> toAbsEx(const std::unique_ptr<Fractal> &expr)
 {
-    return abs_ex(new Fractal(expr.get()));
+    return abs_ex(new Fractal(expr.get()))->downcast();
 }
 
 std::unique_ptr<AbstractExpression> toAbsEx(std::unique_ptr<Fractal> &&expr)
 {
-    return abs_ex(expr.release());
+    return abs_ex(expr.release())->downcast();
 }
 
 std::unique_ptr<Fractal> toFrac(std::unique_ptr<AbstractExpression> &expr)
@@ -3037,4 +3087,41 @@ std::unique_ptr<AbstractExpression> integrate(const std::unique_ptr<AbstractExpr
 
     }
     return fr_without_diff->antiderivative(*diff->getSetOfVariables().begin());
+}
+std::pair<abs_ex, int> getAntiderivAndVar(const abs_ex & frac)
+{
+    if (frac->getId() == DIFFERENTIAL)
+    {
+        Differential* diff = static_cast<Differential*>(frac.get());
+        assert(diff->getSetOfVariables().size() == 1);
+        return { diff->antiderivative(*diff->getSetOfVariables().begin()), *diff->getSetOfVariables().begin()};
+
+    }
+    assert(frac->getId() == FRACTAL);
+    auto fr= static_cast<const Fractal*>(frac.get())->getFractal();
+    fr.first->sort(&AbstractExpression::lessToSort);
+    assert(fr.first->back()->getId() == DIFFERENTIAL);
+    Differential* diff = static_cast<Differential*>(fr.first->back().get());
+    assert(diff->getSetOfVariables().size() == 1);
+    return {integrate(copy(frac)), *diff->getSetOfVariables().begin()};
+}
+std::unique_ptr<AbstractExpression> definiteIntegral(const std::unique_ptr<AbstractExpression> &frac, const std::unique_ptr<AbstractExpression> &from, const std::unique_ptr<AbstractExpression> &to)
+{
+
+    auto integ_and_var = getAntiderivAndVar(frac);
+    if (integ_and_var.first == nullptr)
+        return nullptr;
+    auto left = std::move(integ_and_var.first);
+    auto right = copy(left);
+    int var = integ_and_var.second;
+    std::map<int, abs_ex> left_replace;
+    left_replace.insert({var, copy(to)});
+    replaceSystemVariablesToExpressions(left, left_replace);
+    left->setSimplified(false);
+    std::map<int, abs_ex> right_replace;
+    right_replace.insert({var, copy(from)});
+    replaceSystemVariablesToExpressions(right, right_replace);
+    right->setSimplified(false);
+    return left - right;
+
 }
