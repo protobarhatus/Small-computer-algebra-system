@@ -124,10 +124,10 @@ bool Tangent::canDowncastTo()
             return true;
         return false;
     }
-    if ( this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
+    if ( this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberOnAxis(pi_member->getCoefficient()))
         return true;
-    if ( this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
-        return true;
+    //if ( this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
+     //   return true;
     if (this->argument->getPositionRelativelyZero() < 0)
         return true;
     return false;
@@ -162,17 +162,17 @@ abs_ex Tangent::downcastTo()
     {
         return minus_one * cot(this->argument - toAbsEx(this->pi_member));
     }
-    if ( this->pi_member != nullptr && isPiMemberInTable(pi_member->getCoefficient()))
+    if ( this->pi_member != nullptr && isPiMemberOnAxis(pi_member->getCoefficient()))
     {
         auto left = this->argument - abs_ex(new Fractal(this->pi_member.get()));
         return (tan(left) + tan(toAbsEx(this->pi_member)))/(one - tan(left)*tan(toAbsEx(this->pi_member)));
     }
-    if ( this->argument->getId() == POLYNOMIAL)
+  /*  if ( this->argument->getId() == POLYNOMIAL)
     {
         auto monoms = static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers();
         auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
         return (tan(right) + tan(this->argument - right))/(one - tan(right)*tan(this->argument - right));
-    }
+    }*/
     if (this->argument->getPositionRelativelyZero() < 0)
         return -tan(-argument);
     return abs_ex(nullptr);

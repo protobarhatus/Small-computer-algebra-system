@@ -128,8 +128,8 @@ int main(int argc, char *argv[])
     //это надо исправить
 
 
-    //c = sin(-3);
 
+c = integral(1/pow(cos(a*x), 3), x);
   // c = dx*y - dy*x;
  //  c = solveDifur(c.getExpr(), x.getExpr()->getId(), y.getExpr()->getId());
 
@@ -142,8 +142,8 @@ int main(int argc, char *argv[])
    // auto res = solveEquation(2*ln(y) - ln(3) + ln(x), x);
    // auto res = solveEquation(x4 - 4*x3 + 6*x2 - 4*x - 2, x);
    // auto res = solveEquation(abs(2*x + 1) + abs(x - 3) - 5, x);
-  //  auto res = solveEquation(sin(2*x) - A(1)/2, x);
-    auto res = solveEquation(sin(2*x + 1) - sin(x - 3), x);
+    auto res = solveEquation(sin(2*x) - A(1)/2, x);
+ //   auto res = solveEquation(sin(2*x + 1) - sin(x - 3), x);
     qDebug() << "RES: ";
     for (auto &it : res)
         qDebug() << it.toString();

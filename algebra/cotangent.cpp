@@ -1,4 +1,4 @@
-#include "Cotangent.h"
+#include "cotangent.h"
 #include "some_algebra_expression_conversions.h"
 #include "sinus.h"
 #include <assert.h>
@@ -13,6 +13,7 @@
 #include "absolutevalue.h"
 #include "logarithm.h"
 #include "variablesdistributor.h"
+#include "tangent.h"
 Cotangent::Cotangent(const abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
@@ -116,6 +117,8 @@ bool Cotangent::canDowncastTo()
             return true;
         return false;
     }*/
+    if ( this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberOnAxis(pi_member->getCoefficient()))
+        return true;
     if (this->is_pi_member_only)
     {
         if (pi_member->getCoefficient().getDenominator() <= 6 && pi_member->getCoefficient().getDenominator() != 5)
@@ -151,6 +154,22 @@ abs_ex Cotangent::downcastTo()
         if (coe == Number(5, 6))
             return takeDegreeOf(Number(3), Number(1, 2)) * abs_ex(new Number(-1));
     }
+    if (this->pi_member->getCoefficient() == Number(1, 2) || this->pi_member->getCoefficient() == Number(-1, 2))
+        return -tan(argument - toAbsEx(pi_member));
+    if (this->pi_member != nullptr && isPiMemberOnAxis(pi_member->getCoefficient()))
+    {
+        auto left = this->argument - abs_ex(new Fractal(this->pi_member.get()));
+        return (cot(left)*cot(toAbsEx(pi_member)) - one)/(cot(left) + cot(toAbsEx(pi_member)));
+    }
+    /*if (this->pi_member != nullptr && abs(this->pi_member->getCoefficient()) == Number(1, 2))
+    {
+        return minus_one * cot(this->argument - toAbsEx(this->pi_member));
+    }
+    if ( this->pi_member != nullptr && isPiMemberOnAxis(pi_member->getCoefficient()))
+    {
+        auto left = this->argument - abs_ex(new Fractal(this->pi_member.get()));
+        return (tan(left) + tan(toAbsEx(this->pi_member)))/(one - tan(left)*tan(toAbsEx(this->pi_member)));
+    }*/
     if (this->argument->getPositionRelativelyZero() < 0)
         return -cot(-argument);
     return abs_ex(nullptr);

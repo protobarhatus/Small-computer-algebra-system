@@ -103,10 +103,10 @@ bool Cosinus::canDowncastTo()
             return true;
         return false;
     }
-    if (this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
+    if (this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberOnAxis(pi_member->getCoefficient()))
         return true;
-    if (this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
-        return true;
+    //if (this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
+    //    return true;
     if (this->argument->getPositionRelativelyZero() < 0)
         return true;
     return false;
@@ -139,17 +139,12 @@ abs_ex Cosinus::downcastTo()
         if (coe == Number(5, 6) || coe == Number(7, 6))
             return takeDegreeOf(Number(3), Number(1, 2)) * abs_ex(new Number(-1, 2));
     }
-    if (this->pi_member != nullptr && isPiMemberInTable(pi_member->getCoefficient()))
+    if (this->pi_member != nullptr && isPiMemberOnAxis(pi_member->getCoefficient()))
     {
         auto left = this->argument - abs_ex(new Fractal(this->pi_member.get()));
         return cos(left)*cos(toAbsEx(this->pi_member)) - sin(toAbsEx(this->pi_member))*sin(left);
     }
-    if (this->argument->getId() == POLYNOMIAL)
-    {
-        auto monoms = static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers();
-        auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
-        return cos(this->argument - right) * cos(right) - sin(right) * sin(this->argument - right);
-    }
+
     if (this->argument->getPositionRelativelyZero() < 0)
         return cos(-argument);
     return abs_ex(nullptr);
