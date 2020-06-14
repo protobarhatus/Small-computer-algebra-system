@@ -51,25 +51,25 @@ public:
     //also system comparing, not math
     static bool less(const AbstractExpression * left, const AbstractExpression * right);
     //function for std::sort
-    static bool lessToSort(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
+    static bool lessToSort(const abs_ex & left, const abs_ex & right);
 
     virtual bool operator==(AbstractExpression & right) = 0;
     bool operator!=(AbstractExpression & right);
     //returns simplified and downcasted fractal
-    std::unique_ptr<AbstractExpression> operator*(AbstractExpression & expr);
-    std::unique_ptr<AbstractExpression> operator/(AbstractExpression & expr);
+    abs_ex operator*(AbstractExpression & expr);
+    abs_ex operator/(AbstractExpression & expr);
     //returns simplified and downcasted polynomial
-    std::unique_ptr<AbstractExpression> operator+(AbstractExpression & expr);
-    std::unique_ptr<AbstractExpression> operator-(AbstractExpression & expr);
+    abs_ex operator+(AbstractExpression & expr);
+    abs_ex operator-(AbstractExpression & expr);
     virtual bool canDowncastTo() = 0;
     //need an addition when new types of expression added
     bool canDowncast();
 
     //ВНИМАНИЕ!: сейчас downcastTo занимается копированием, однако, мне, наверно стоит изменить это на перемещение
-    virtual std::unique_ptr<AbstractExpression> downcastTo() = 0;
+    virtual abs_ex downcastTo() = 0;
 
     //does downcasting till can for unlimitted amount of levels
-    std::unique_ptr<AbstractExpression> downcast();
+    abs_ex downcast();
     //in expression like x*tan(y)^z returns only x
     virtual std::set<int> getSetOfPolyVariables() const = 0;
     //in expression like x^z returns both of them
@@ -115,7 +115,7 @@ QString getStringArgumentOfTrigonometricalFunction(abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);
 //std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);
 std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr, std::map<QString, int> & funcs);
-void replaceSystemVariablesBackToFunctions(std::unique_ptr<AbstractExpression> &expr, std::map<int, abs_ex> & funcs);
+void replaceSystemVariablesBackToFunctions(abs_ex &expr, std::map<int, abs_ex> & funcs);
 std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression * expr, std::map<QString, int> & funcs);
 void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
 
@@ -155,11 +155,11 @@ abs_ex numToAbs(int num);
 //тригонометрические и логарифмическая функции
 std::pair<abs_ex, abs_ex> checkIfItsFunctionOfLinearArgument(const abs_ex & func, int var);
 std::pair<abs_ex, abs_ex> checkIfItsFunctionOfLinearArgument(const AbstractExpression * func, int var);
-std::unique_ptr<AbstractExpression> operator*(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
-std::unique_ptr<AbstractExpression> operator/(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
+abs_ex operator*(const abs_ex & left, const abs_ex & right);
+abs_ex operator/(const abs_ex & left, const abs_ex & right);
 
-std::unique_ptr<AbstractExpression> operator+(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
-std::unique_ptr<AbstractExpression> operator-(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right);
+abs_ex operator+(const abs_ex & left, const abs_ex & right);
+abs_ex operator-(const abs_ex & left, const abs_ex & right);
 
 
 abs_ex operator-(const abs_ex & arg);

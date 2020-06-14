@@ -43,7 +43,7 @@ void out(const Polynom & p)
 }
 int main(int argc, char *argv[])
 {
-    testAlgMod();
+ //   testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
     qDebug() << res[1][0]->makeStringOfExpression();
     qDebug() << res[2][0]->makeStringOfExpression();*/
 
-
+//auto res = factorizePolynom((a*a*a + 3*a*a*b + 3*a*a + 3*a*b*b + 6*a*b + b*b*b + 3*b*b).getExpr()).first;
 
     //c = (a + b) / 2;
    // TExpr_Builder builder;
@@ -127,7 +127,8 @@ int main(int argc, char *argv[])
     //возможности взять интегралы вида 1/sin(ax+b),  1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
     //это надо исправить
 
-    c = ln(-3/x);
+
+    //c = sin(-3);
 
   // c = dx*y - dy*x;
  //  c = solveDifur(c.getExpr(), x.getExpr()->getId(), y.getExpr()->getId());
@@ -136,7 +137,14 @@ int main(int argc, char *argv[])
     //auto res = solveEquation((2*x4 - 15*x3 + 35*x2 - 30* x + 8 ), x);
    // auto res = solveEquation(x + 2*sqrt(x)-15, x);
     //auto res = solveEquation(x4 - 4*x2 + 3, x);
-    auto res = solveEquation(pow(2, 2*x) - 8, x);
+   // auto res = solveEquation(pow(2, 2*x) - 8, x);
+    //auto res = solveEquation(pow(2, 2*x) + pow(2, x) + 2 - a, x);
+   // auto res = solveEquation(2*ln(y) - ln(3) + ln(x), x);
+   // auto res = solveEquation(x4 - 4*x3 + 6*x2 - 4*x - 2, x);
+   // auto res = solveEquation(abs(2*x + 1) + abs(x - 3) - 5, x);
+  //  auto res = solveEquation(sin(2*x) - A(1)/2, x);
+    auto res = solveEquation(sin(2*x + 1) - sin(x - 3), x);
+    qDebug() << "RES: ";
     for (auto &it : res)
         qDebug() << it.toString();
 

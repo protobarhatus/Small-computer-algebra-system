@@ -12,6 +12,7 @@
 #include "trigonometrical_conversions.h"
 #include "number.h"
 #include "random"
+#include "solving_equations.h"
 Polynomial::Polynomial()
 {
 
@@ -221,11 +222,11 @@ bool Polynomial::canDowncastTo()
         return true;
     return this->monomials.size() == 1;
 }
-std::unique_ptr<AbstractExpression> Polynomial::downcastTo()
+abs_ex Polynomial::downcastTo()
 {
     assert(canDowncastTo());
     if ( this->isZero())
-        return std::unique_ptr<AbstractExpression>(new Number(0));
+        return abs_ex(new Number(0));
     return this->monomials.begin()->get()->downcast();
 }
 AlgebraExpression Polynomial::getId() const
@@ -307,11 +308,11 @@ bool Polynomial::isMonomial()
 {
     return this->monomials.size() == 1;
 }
-std::unique_ptr<AbstractExpression> Polynomial::turnIntoMonomial()
+abs_ex Polynomial::turnIntoMonomial()
 {
     assert(this->isMonomial());
     Fractal * monomial = new Fractal(*(this->monomials.begin()->get()));
-    return std::unique_ptr<AbstractExpression>(monomial);
+    return abs_ex(monomial);
 
 }
 Polynomial::Polynomial(const Polynomial & pol)
@@ -564,7 +565,7 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
     std::list<std::unique_ptr<Fractal>> result_list;
     Number deg_of_max = divinders_monomials->getMaxDegreeOfVariable(argument_variables_id);
     Number deg_of_div = dividends_monomials->getMaxDegreeOfVariable(argument_variables_id);
-    std::unique_ptr<AbstractExpression> arg_variable(new Variable(argument_variables_id));
+    abs_ex arg_variable(new Variable(argument_variables_id));
 
     Number last_deg_of_max = deg_of_max;
     while (deg_of_max.isCorrect() && deg_of_max.compareWith(deg_of_div) >= 0)
@@ -591,7 +592,7 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
             else
                 ++it;
         }
-        std::unique_ptr<AbstractExpression> degree_diff(new Number(deg_of_max - deg_of_div));
+        abs_ex degree_diff(new Number(deg_of_max - deg_of_div));
         Degree var_multiplier = Degree(arg_variable, degree_diff);
         Fractal multiplier = *((coe_of_max_degree / &coefficient_of_max_degree_in_dividend) * Fractal(&var_multiplier));
         Polynomial subtrahend = *dividends_monomials * &multiplier;
@@ -722,13 +723,13 @@ QString Polynomial::makeStringOfExpression() const
         result = result.remove(1, 1);
     return result;
 }
-std::unique_ptr<AbstractExpression> Polynomial::reduceCommonPart()
+abs_ex Polynomial::reduceCommonPart()
 {
     NONCONST
     if (this->monomials.size() < 2)
             return copy(one);
     assert(this->monomials.size() >= 2);
-    std::unique_ptr<AbstractExpression> common_part = this->monomials.begin()->get()->findCommonPart((++this->monomials.begin())->get());
+    abs_ex common_part = this->monomials.begin()->get()->findCommonPart((++this->monomials.begin())->get());
     auto it = ++++this->monomials.begin();
     while (it != this->monomials.end())
     {
@@ -768,7 +769,7 @@ bool Polynomial::canGetRidOfIrrationalytyByMultiplying()
     return true;
 }
 
-std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression>> Polynomial::multiplyIrrationalSumOnAppropriateFormula()
+std::pair<abs_ex, abs_ex> Polynomial::multiplyIrrationalSumOnAppropriateFormula()
 {
     assert(this->canGetRidOfIrrationalytyByMultiplying());
     Polynomial* left = new Polynomial;
@@ -792,21 +793,21 @@ std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpressio
             left->pushBack(std::unique_ptr<Fractal>(new Fractal(it.get())));
     }
 
-    std::unique_ptr<AbstractExpression> l_ptr(left), r_ptr(right);
+    abs_ex l_ptr(left), r_ptr(right);
   //  qDebug() << left->makeStringOfExpression();
-  //  return std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression>>(*l_ptr * *l_ptr - *r_ptr * *r_ptr, *l_ptr - *r_ptr);
-    std::unique_ptr<AbstractExpression> zero(new Number(0));
+  //  return std::pair<abs_ex, abs_ex>(*l_ptr * *l_ptr - *r_ptr * *r_ptr, *l_ptr - *r_ptr);
+    abs_ex zero(new Number(0));
     long long int deg = static_cast<Degree*>(right->monomials.front()->getFractal().first->front().get())->getRootValue();
     if (deg % 2 == 0)
-        return std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression>>((*l_ptr - *r_ptr)*(*l_ptr + *r_ptr)+zero, *l_ptr - *r_ptr);
-    std::unique_ptr<AbstractExpression> second_multiplier(new Polynomial);
+        return std::pair<abs_ex, abs_ex>((*l_ptr - *r_ptr)*(*l_ptr + *r_ptr)+zero, *l_ptr - *r_ptr);
+    abs_ex second_multiplier(new Polynomial);
     bool plus = true;
     for (long long int i = deg - 1; i >= 0; --i)
     {
-        std::unique_ptr<AbstractExpression> num_l(new Number(i));
-        std::unique_ptr<AbstractExpression> a(new Degree(l_ptr, num_l));
-        std::unique_ptr<AbstractExpression> num_r(new Number(deg - 1 - i));
-        std::unique_ptr<AbstractExpression> b(new Degree(r_ptr, num_r));
+        abs_ex num_l(new Number(i));
+        abs_ex a(new Degree(l_ptr, num_l));
+        abs_ex num_r(new Number(deg - 1 - i));
+        abs_ex b(new Degree(r_ptr, num_r));
         if (plus)
             second_multiplier = second_multiplier + a * b;
         else
@@ -816,26 +817,26 @@ std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpressio
     AbstractExpression * th = static_cast<AbstractExpression*>(this);
 //    auto d = *th * *second_multiplier;
 
-    return std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression>>(*th * *second_multiplier + zero, std::move(second_multiplier));
+    return std::pair<abs_ex, abs_ex>(*th * *second_multiplier + zero, std::move(second_multiplier));
 }
 
-std::unique_ptr<AbstractExpression> Polynomial::toDegree(long long degree)
+abs_ex Polynomial::toDegree(long long degree)
 {
-    std::unique_ptr<AbstractExpression> result(new Polynomial);
+    abs_ex result(new Polynomial);
     Polynomial * result_ptr = static_cast<Polynomial*>(result.get());
     VariablesCombinations combinations(this->monomials.size());
     combinations[0] = degree;
     std::vector<std::list<std::unique_ptr<Fractal>>::iterator> monoms_vec;
     for (auto it = this->monomials.begin(); it != this->monomials.end(); ++it)
         monoms_vec.push_back(it);
-    auto absToFrac = [](std::unique_ptr<AbstractExpression> && ptr)->std::unique_ptr<Fractal> {
+    auto absToFrac = [](abs_ex && ptr)->std::unique_ptr<Fractal> {
         if (ptr->getId() == FRACTAL)
             return std::unique_ptr<Fractal> (static_cast<Fractal*>(ptr.release()));
         return std::unique_ptr<Fractal>(new Fractal(std::move(ptr)));
     };
     do
     {
-        std::unique_ptr<AbstractExpression> monom = getDegrCoefficientPtr(degree, combinations);
+        abs_ex monom = getDegrCoefficientPtr(degree, combinations);
         for (int i = 0; i < combinations.size(); ++i)
             monom = monom * takeDegreeOf(makeAbstractExpression(FRACTAL, monoms_vec[i]->get()), combinations[i]);
         result_ptr->pushBack(absToFrac(std::move(monom)));
@@ -848,7 +849,7 @@ std::unique_ptr<AbstractExpression> Polynomial::toDegree(long long degree)
 
 
 //from here all functions are for taking full root from polynom
-std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRoot(long long int root)
+abs_ex Polynomial::tryToTakeRoot(long long int root)
 {
     Polynomial *polynom;
     std::map<int, abs_ex> functions;
@@ -864,12 +865,12 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRoot(long long int root
     }
     auto set = polynom->getSetOfPolyVariables();
     if (polynom->getSetOfVariables() != set || root > 20 || root < 2 || (set.empty() && root > 2))
-        return std::unique_ptr<AbstractExpression>(nullptr);
+        return abs_ex(nullptr);
     for (auto &it : polynom->monomials)
         for (auto &it1 : *it->getFractal().first)
             if (Degree::getArgumentOfDegree(it1.get())->getId() == POLYNOMIAL || Degree::getDegreeOfExpression(it1.get())->getId() != NUMBER)
-                return std::unique_ptr<AbstractExpression>(nullptr);
-    std::unique_ptr<AbstractExpression> root_ptr;
+                return abs_ex(nullptr);
+    abs_ex root_ptr;
     if (set.empty())
         root_ptr = polynom->tryToTakeRootOfNonVariablesPolynomial();
     else
@@ -877,7 +878,7 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRoot(long long int root
     if (root_ptr != nullptr)
         replaceSystemVariablesBackToFunctions(root_ptr, functions);
     if (root_ptr != nullptr && root % 2 == 0)
-        return std::unique_ptr<AbstractExpression>(new AbsoluteValue(std::move(root_ptr)));
+        return abs_ex(new AbsoluteValue(std::move(root_ptr)));
     return root_ptr;
 }
 typedef std::vector<Number> DegreesPattern;
@@ -1057,7 +1058,7 @@ std::unique_ptr<Fractal> chooseAddictive(std::list<std::list<std::unique_ptr<Fra
             break;
         }
     }
-    auto absToFrac = [](std::unique_ptr<AbstractExpression> && ptr)->std::unique_ptr<Fractal> {
+    auto absToFrac = [](abs_ex && ptr)->std::unique_ptr<Fractal> {
         if (ptr->getId() == FRACTAL)
             return std::unique_ptr<Fractal> (static_cast<Fractal*>(ptr.release()));
         return std::unique_ptr<Fractal>(new Fractal(std::move(ptr)));
@@ -1101,7 +1102,7 @@ std::list<std::unique_ptr<Fractal>> getAddictivesFromSameGroup(std::list<std::li
     Number def_sum = getSumOfDegrees(degree_of_defined_addictive.get());
     std::unique_ptr<Fractal> root_as_frac(new Fractal(root));
 
-    auto absToFrac = [](std::unique_ptr<AbstractExpression> && ptr)->std::unique_ptr<Fractal> {
+    auto absToFrac = [](abs_ex && ptr)->std::unique_ptr<Fractal> {
         if (ptr->getId() == FRACTAL)
             return std::unique_ptr<Fractal> (static_cast<Fractal*>(ptr.release()));
         return std::unique_ptr<Fractal>(new Fractal(std::move(ptr)));
@@ -1129,7 +1130,7 @@ std::list<std::unique_ptr<Fractal>> getAddictivesFromSameGroup(std::list<std::li
     result_vector.push_back(result.begin());
     for (auto it = ++group.begin(); it != group.end() && in(getPatternOfMonomialsDegree((*it)->get())); ++it)
     {
-        std::unique_ptr<AbstractExpression> monom = makeAbstractExpression(FRACTAL, (*it)->get());
+        abs_ex monom = makeAbstractExpression(FRACTAL, (*it)->get());
         if (result.size() > 1)
         {
             VariablesCombinations combinations = VariablesCombinations(result.size());
@@ -1141,7 +1142,7 @@ std::list<std::unique_ptr<Fractal>> getAddictivesFromSameGroup(std::list<std::li
                     summ = sum(summ, mult(getPatternOfMonomialsDegree((*result_vector[i]).get()), combinations[i]));
                 if (summ == getPatternOfMonomialsDegree((*it)->get()))
                 {
-                    std::unique_ptr<AbstractExpression> multiplicator = openAbs(takeDegreeOf(makeAbstractExpression(FRACTAL, (*result_vector.begin())->get()), combinations[0]));
+                    abs_ex multiplicator = openAbs(takeDegreeOf(makeAbstractExpression(FRACTAL, (*result_vector.begin())->get()), combinations[0]));
                     for (int i = 1; i < combinations.size(); ++i)
                         if (combinations[i] != 0)
                             multiplicator = multiplicator * openAbs(takeDegreeOf(makeAbstractExpression(FRACTAL, (*result_vector[i]).get()), combinations[i]));
@@ -1172,7 +1173,7 @@ std::list<std::unique_ptr<Fractal>> getAddictivesInPolynom(std::list<std::list<s
     //выбирается член с максимальной степенью из любой группы (необходимое слагаемое - корень
     //группы д. б. отсортированы
     std::list<std::unique_ptr<Fractal>> result;
-    auto absToFrac = [](std::unique_ptr<AbstractExpression> && ptr)->std::unique_ptr<Fractal> {
+    auto absToFrac = [](abs_ex && ptr)->std::unique_ptr<Fractal> {
         if (ptr->getId() == FRACTAL)
             return std::unique_ptr<Fractal> (static_cast<Fractal*>(ptr.release()));
         return std::unique_ptr<Fractal>(new Fractal(std::move(ptr)));
@@ -1250,7 +1251,7 @@ void sortGroup(std::list<std::unique_ptr<Fractal>> & group)
         return sum_a.compareWith(sum_b) == 1;
      });
 }
-std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfVariablesPolynomial(long long root)
+abs_ex Polynomial::tryToTakeRootOfVariablesPolynomial(long long root)
 {
     auto s = this->getSetOfVariables();
     auto deriv = this->derivative(*s.begin());
@@ -1392,17 +1393,17 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfVariablesPolynomi
         for (auto &it : groups)
         {
             if (it.begin()->get()->getCoefficient().getNumerator() < 0)
-                return std::unique_ptr<AbstractExpression>(nullptr);
+                return abs_ex(nullptr);
         }
     }
     auto addictives = getAddictivesInPolynom(groups, monoms, root);
-    std::unique_ptr<AbstractExpression> result_polynom = std::unique_ptr<AbstractExpression>(new Polynomial(std::move(addictives)))
+    abs_ex result_polynom = abs_ex(new Polynomial(std::move(addictives)))
             + takeDegreeOf(std::move(addictive_without_wars), Number(1) / root);
-    std::unique_ptr<AbstractExpression> zero(new Number(0));
+    abs_ex zero(new Number(0));
     if (*this == *(takeDegreeOf(result_polynom, root) + zero))
         return result_polynom;
 
-    return std::unique_ptr<AbstractExpression>(nullptr);
+    return abs_ex(nullptr);
 }
 
 
@@ -1412,7 +1413,7 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfVariablesPolynomi
 
 
 //square root
-std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfNonVariablesPolynomial()
+abs_ex Polynomial::tryToTakeRootOfNonVariablesPolynomial()
 {
     auto monoms = this->getMonomialsPointers();
     std::list<Fractal*> monoms_without_free_member;
@@ -1436,12 +1437,12 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfNonVariablesPolyn
             monoms_without_free_member.push_back(it);
         }
     if (!has_free_member || has_non_square_root || free_member->getCoefficient().getNumerator() < 0)
-        return std::unique_ptr<AbstractExpression>(nullptr);
-    std::unique_ptr<AbstractExpression> result;
-    std::unique_ptr<AbstractExpression> two_p(new Number(2));
-    std::unique_ptr<AbstractExpression> half(new Number(1, 2));
-    std::unique_ptr<AbstractExpression> minus(new Number(-1));
-    std::unique_ptr<AbstractExpression> zero(new Number(0));
+        return abs_ex(nullptr);
+    abs_ex result;
+    abs_ex two_p(new Number(2));
+    abs_ex half(new Number(1, 2));
+    abs_ex minus(new Number(-1));
+    abs_ex zero(new Number(0));
     Number hl(1, 2);
     auto frac_to_underroot = [](Fractal * frac)->Number {
         Number n = frac->getCoefficient() * frac->getCoefficient();
@@ -1455,11 +1456,11 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfNonVariablesPolyn
             n *= *static_cast<Number*>(Degree::getArgumentOfDegree(it.get()));
         return n;
     };
-    auto numToAbs = [](Number num)->std::unique_ptr<AbstractExpression> {
-        return std::unique_ptr<AbstractExpression>(new Number(num));
+    auto numToAbs = [](Number num)->abs_ex {
+        return abs_ex(new Number(num));
     };
-    auto intToAbs = [](long long int num)->std::unique_ptr<AbstractExpression> {
-        return std::unique_ptr<AbstractExpression> (new Number(num));
+    auto intToAbs = [](long long int num)->abs_ex {
+        return abs_ex (new Number(num));
     };
     double lli_limit = std::numeric_limits<long long int>::max();
     //просто определенные формулы для каждого из вариантов размера исходного. делить на кучу функций нет смысла, так
@@ -1475,12 +1476,12 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfNonVariablesPolyn
         if (rtex >= 0)
             undr = root((a*a-b).getNumerator(), 2, s);
         if (!s)
-            return std::unique_ptr<AbstractExpression>(nullptr);
-        std::unique_ptr<AbstractExpression> a_p (new Number(a));
-        std::unique_ptr<AbstractExpression> undr_p (new Number(undr));
+            return abs_ex(nullptr);
+        abs_ex a_p (new Number(a));
+        abs_ex undr_p (new Number(undr));
 
-        std::unique_ptr<AbstractExpression> l (new Degree((a_p + undr_p) / two_p, half));
-        std::unique_ptr<AbstractExpression> r (new Degree((a_p - undr_p) / two_p, half));
+        abs_ex l (new Degree((a_p + undr_p) / two_p, half));
+        abs_ex r (new Degree((a_p - undr_p) / two_p, half));
         if (is_negative)
             return l - r;
         return l + r;
@@ -1496,7 +1497,7 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfNonVariablesPolyn
         if (a >= lli_limit / b ||
                 a >= free_member || b >= free_member || a * b >= free_member || a + b + a * b >= free_member ||
                 free_member >= pow(2, 60))
-                return std::unique_ptr<AbstractExpression>(nullptr);
+                return abs_ex(nullptr);
         long long int c = a * b;
         if (b > a)
         {
@@ -1544,7 +1545,7 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfNonVariablesPolyn
                 if (cf == edge_cf)
                 {
                     if (ca == edge_ca)
-                        return std::unique_ptr<AbstractExpression>(nullptr);
+                        return abs_ex(nullptr);
                     ++ca;
                     cf = 1;
                 }
@@ -1585,11 +1586,11 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfNonVariablesPolyn
             Number nx = frac_to_underroot(*monoms_without_free_member.begin()), ny =
                     frac_to_underroot(*(++monoms_without_free_member.begin())),
                     nz = frac_to_underroot(*(++++monoms_without_free_member.begin()));
-            std::unique_ptr<AbstractExpression> x = takeDegreeOf(nx,hl),
+            abs_ex x = takeDegreeOf(nx,hl),
                     y = takeDegreeOf(ny, hl),
                     z = takeDegreeOf(nz, hl);
-            auto formula = [&two_p, &half, &minus](abs_ex & mult1, abs_ex & mult2, abs_ex & divider, bool is_negative)->std::unique_ptr<AbstractExpression> {
-                std::unique_ptr<AbstractExpression> res (new Degree(mult1 * mult2 / divider / two_p,
+            auto formula = [&two_p, &half, &minus](abs_ex & mult1, abs_ex & mult2, abs_ex & divider, bool is_negative)->abs_ex {
+                abs_ex res (new Degree(mult1 * mult2 / divider / two_p,
                                                                     makeAbstractExpression(NUMBER, half.get())));
                 if (is_negative)
                     res = res * minus;
@@ -1776,7 +1777,7 @@ std::unique_ptr<AbstractExpression> Polynomial::tryToTakeRootOfNonVariablesPolyn
 
 
     }
-    return std::unique_ptr<AbstractExpression>(nullptr);
+    return abs_ex(nullptr);
 }
 void Polynomial::pushBack(std::unique_ptr<Fractal> &&fractal)
 {
@@ -1818,12 +1819,12 @@ int Polynomial::getPositionRelativelyZeroIfHasVariables()
     {
         int var_id = *vars.begin();
         bool succes = true;
-        std::unique_ptr<AbstractExpression> var(new Variable(getVariable(var_id)));
+        abs_ex var(new Variable(getVariable(var_id)));
 
-        std::unique_ptr<AbstractExpression> a, b, c;
-        a = std::unique_ptr<AbstractExpression>(new Number(0));
-        b = std::unique_ptr<AbstractExpression>(new Number(0));
-        c = std::unique_ptr<AbstractExpression>(new Number(0));
+        abs_ex a, b, c;
+        a = abs_ex(new Number(0));
+        b = abs_ex(new Number(0));
+        c = abs_ex(new Number(0));
         for (auto &it : this->monomials)
         {
             //может возникнуть подозрение, что узнавать так о степени переменной некоректно, ведь это запрос на максимальную степень. Однако в дроби может быть только одно вхождение
@@ -1845,24 +1846,24 @@ int Polynomial::getPositionRelativelyZeroIfHasVariables()
         bool is_a_zero = false;
         if (a == nullptr)
         {
-            a = std::unique_ptr<AbstractExpression>(new Number(0));
+            a = abs_ex(new Number(0));
             is_a_zero = true;
         }
         if (b == nullptr)
-            b = std::unique_ptr<AbstractExpression>(new Number(0));
+            b = abs_ex(new Number(0));
         if (c == nullptr)
-            c = std::unique_ptr<AbstractExpression>(new Number(0));
+            c = abs_ex(new Number(0));
         if (succes)
         {
-            std::unique_ptr<AbstractExpression> four(new Number(4));
-            std::unique_ptr<AbstractExpression> D = b * b - four * a * c;
+            abs_ex four(new Number(4));
+            abs_ex D = b * b - four * a * c;
             if (D->getPositionRelativelyZero() < 0)
                 return a->getPositionRelativelyZero();
-            std::unique_ptr<AbstractExpression> minus(new Number(-1));
-            std::unique_ptr<AbstractExpression> two(new Number(2));
-            std::unique_ptr<AbstractExpression> hl(new Number(1, 2));
-            std::unique_ptr<AbstractExpression> root1_ptr = is_a_zero ? (minus * c / b) : (minus * b + takeDegreeOf(D, hl)) / two / a;
-            std::unique_ptr<AbstractExpression> root2_ptr = is_a_zero ? (minus * c / b) : (minus * b - takeDegreeOf(D, hl)) / two / a;
+            abs_ex minus(new Number(-1));
+            abs_ex two(new Number(2));
+            abs_ex hl(new Number(1, 2));
+            abs_ex root1_ptr = is_a_zero ? (minus * c / b) : (minus * b + takeDegreeOf(D, hl)) / two / a;
+            abs_ex root2_ptr = is_a_zero ? (minus * c / b) : (minus * b - takeDegreeOf(D, hl)) / two / a;
             double root1 = root1_ptr->getApproximateValue(), root2 = root2_ptr->getApproximateValue();
             auto definition = VariablesDistributor::getVariablesDefinition(var_id);
             auto max = [](double a, double b) { return a > b ? a : b;};
@@ -1877,11 +1878,14 @@ int Polynomial::getPositionRelativelyZeroIfHasVariables()
     if (lin_res != 0)
         return lin_res;
     //довольно дорогая проверка на то, является ли этот полином полной степенью более простого полинома
-    auto degr = this->tryToDistinguishFullDegree();
-    if (degr == nullptr)
-        return 0;
-    return degr->getPositionRelativelyZero();
-   // return 0;
+    if (isPolynomOfAllVariables(copy(this)))
+    {
+        auto degr = this->tryToDistinguishFullDegree();
+        if (degr == nullptr)
+            return 0;
+        return degr->getPositionRelativelyZero();
+    }
+    return 0;
 }
 double Polynomial::getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule)
 {
@@ -1954,7 +1958,7 @@ std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > P
     return params;
 }
 
-std::unique_ptr<AbstractExpression> Polynomial::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Polynomial::changeSomePartOn(QString part, abs_ex &on_what)
 {
     //NONCONST
     abs_ex its_part = nullptr;
@@ -1983,7 +1987,7 @@ std::unique_ptr<AbstractExpression> Polynomial::changeSomePartOn(QString part, s
     return its_part;
 }
 
-std::unique_ptr<AbstractExpression> Polynomial::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Polynomial::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
             return changeSomePartOn(part, on_what);
@@ -2013,7 +2017,7 @@ std::unique_ptr<Fractal> Polynomial::toCommonDenominator()
     {
         numer.push_back(*it * *denom);
     }
-    std::unique_ptr<AbstractExpression> den(denom.release());
+    abs_ex den(denom.release());
     return std::unique_ptr<Fractal>(new Fractal(abs_ex(new Polynomial(numer)), std::move(den)));
 }
 
@@ -2027,7 +2031,7 @@ void Polynomial::setFractionalCoefficientsAllowed(bool allow)
     this->is_fractional_coefficients_allowed = allow;
 }
 
-std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > Polynomial::checkIfItIsLinearFunction(int var) const
+std::pair<abs_ex, abs_ex > Polynomial::checkIfItIsLinearFunction(int var) const
 {
     abs_ex a = copy(zero), b = copy(zero);
     for (auto &it : monomials)
@@ -2047,7 +2051,7 @@ std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpressio
 
 }
 
-std::unique_ptr<AbstractExpression> Polynomial::derivative(int var) const
+abs_ex Polynomial::derivative(int var) const
 {
     abs_ex der = copy(zero);
     for (auto &it : this->monomials)
@@ -2055,7 +2059,7 @@ std::unique_ptr<AbstractExpression> Polynomial::derivative(int var) const
     return der;
 }
 
-std::unique_ptr<AbstractExpression> Polynomial::antiderivative(int var) const
+abs_ex Polynomial::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -2070,12 +2074,12 @@ std::unique_ptr<AbstractExpression> Polynomial::antiderivative(int var) const
     return result;
 }
 
-std::array<std::unique_ptr<AbstractExpression>, 3> Polynomial::checkQuadraticFunction(int var_id) const
+std::array<abs_ex, 3> Polynomial::checkQuadraticFunction(int var_id) const
 {
-    std::unique_ptr<AbstractExpression> a, b, c;
-    a = std::unique_ptr<AbstractExpression>(new Number(0));
-    b = std::unique_ptr<AbstractExpression>(new Number(0));
-    c = std::unique_ptr<AbstractExpression>(new Number(0));
+    abs_ex a, b, c;
+    a = abs_ex(new Number(0));
+    b = abs_ex(new Number(0));
+    c = abs_ex(new Number(0));
     for (auto &it : this->monomials)
     {
         //может возникнуть подозрение, что узнавать так о степени переменной некоректно, ведь это запрос на максимальную степень. Однако в дроби может быть только одно вхождение
@@ -2099,9 +2103,9 @@ std::array<std::unique_ptr<AbstractExpression>, 3> Polynomial::checkQuadraticFun
         return {nullptr, nullptr, nullptr};
     }
     if (b == nullptr)
-        b = std::unique_ptr<AbstractExpression>(new Number(0));
+        b = abs_ex(new Number(0));
     if (c == nullptr)
-        c = std::unique_ptr<AbstractExpression>(new Number(0));
+        c = abs_ex(new Number(0));
     return {std::move(a), std::move(b), std::move(c)};
 }
 
@@ -2166,7 +2170,7 @@ abs_ex Polynomial::tryToDistinguishFullDegree() const
     return polynom;
 }
 
-void Polynomial::tryToDistingushFullDegreeOfVariablePolynomial(std::unique_ptr<AbstractExpression> &polynom,
+void Polynomial::tryToDistingushFullDegreeOfVariablePolynomial(abs_ex &polynom,
                                                                Polynomial* polynom_ptr) const
 {
     auto set = polynom_ptr->getSetOfVariables();
@@ -2228,6 +2232,96 @@ void Polynomial::tryToDistingushFullDegreeOfVariablePolynomial(std::unique_ptr<A
     polynom = pow(pow(addictive_multiplier, Number(1)/deg)*polynom, deg);
 }
 
+std::pair<std::list<abs_ex> , Number> Polynomial::tryToFactorizeByDistingushesOfFullDegree() const
+{
+    abs_ex polynom = copy(this);
+    Polynomial * polynom_ptr = static_cast<Polynomial*>(polynom.get());
+    auto set = polynom_ptr->getSetOfVariables();
+    if (set != polynom_ptr->getSetOfPolyVariables())
+    {
+        return {std::list<abs_ex>(), 0};
+    }
+    assert(polynom_ptr->reduce().isOne());
+    int var = *polynom->getSetOfPolyVariables().begin();
+    Number var_deg = polynom->getMaxDegreeOfVariable(var);
+    if (!var_deg.isCorrect())
+    {
+        return {std::list<abs_ex>(), 0};
+    }
+    auto deriv = polynom->derivative(var);
+    if (deriv->getId() != POLYNOMIAL)
+    {
+        std::unique_ptr<Fractal> der_fr(new Fractal(deriv.get()));
+        deriv.reset(der_fr->toPolynomWithFractionalCoefficients().release());
+    }
+    if (!has(deriv->getSetOfPolyVariables(), var))
+    {
+        return {std::list<abs_ex>(), 0};
+    }
+    static_cast<Polynomial*>(deriv.get())->reduce();
+    auto gcf = gcd(polynom_ptr, static_cast<Polynomial*>(deriv.get()));
+    if (!has(gcf->getSetOfPolyVariables(), var))
+    {
+        return {std::list<abs_ex>(), 0};
+    }
+    gcf->reduce();
+    auto lowest_deg = polynom_ptr->divide(gcf.get());
+    if (!lowest_deg.second->isZero())
+    {
+        return {std::list<abs_ex>(), 0};
+    }
+    std::list<abs_ex> res;
+    auto factor_res = factorizePolynom(copy(lowest_deg.first.get()));
+    auto gcf_factor_res = factorizePolynom(copy(gcf.get()));
+    for (auto it = gcf_factor_res.first.begin(); it != gcf_factor_res.first.end();)
+    {
+        bool divided = false;
+        for (auto &it1 : factor_res.first)
+        {
+            auto it_pol = toPolynomialPointer(*it);
+            auto it1_pol = toPolynomialPointer(it1);
+            auto div_res = it_pol->divide(it1_pol.get());
+            if (div_res.first != nullptr && div_res.second->isZero())
+            {
+                divided = true;
+                gcf_factor_res.first.push_back(copy(it1));
+                gcf_factor_res.first.push_back(copy(div_res.first.get()));
+                it = gcf_factor_res.first.erase(it);
+                break;
+            }
+        }
+        if (!divided)
+            ++it;
+    }
+    for (auto it = factor_res.first.begin(); it != factor_res.first.end();)
+    {
+        bool divided = false;
+        for (auto &it1 : gcf_factor_res.first)
+        {
+           // qDebug() << it->get()->makeStringOfExpression();
+           // qDebug() << it1->makeStringOfExpression();
+            auto it_pol = toPolynomialPointer(*it);
+            auto it1_pol = toPolynomialPointer(it1);
+            auto div_res = it_pol->divide(it1_pol.get());
+            if (div_res.first != nullptr && !::isZero(copy(div_res.first.get()) - one) && div_res.second->isZero())
+            {
+               // qDebug() << div_res.first->makeStringOfExpression();
+            //    qDebug() << it1->makeStringOfExpression();
+                divided = true;
+                factor_res.first.push_back(copy(it1));
+                factor_res.first.push_back(copy(div_res.first.get()));
+                it = factor_res.first.erase(it);
+                break;
+            }
+        }
+        if (!divided)
+            ++it;
+    }
+    res.splice(res.end(), factor_res.first);
+    res.splice(res.end(), gcf_factor_res.first);
+    return {std::move(res), factor_res.second * gcf_factor_res.second};
+}
+
 long long int Polynomial::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 {
     long long int res = 1;
@@ -2266,7 +2360,15 @@ void Polynomial::setSimplified(bool simpl)
         it->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Polynomial::getTrigonometricalFunctions() const
+bool Polynomial::hasLogarithmicMonoms() const
+{
+    for (auto &it : this->monomials)
+        if (it->tryToFindLogarithmInNumerator() != nullptr)
+            return true;
+    return false;
+}
+
+std::set<abs_ex > Polynomial::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> result;
     for (auto &it : this->monomials)

@@ -88,7 +88,7 @@ void Cotangent::simplify()
             if (coe.compareWith(0) < 0 && !(coe.getDenominator() == 1 && coe.getNumerator() % 1 == 0))
                 to_sub -= 1;
             this->pi_member = this->pi_member - std::unique_ptr<Fractal>(new Fractal(getPi(), to_sub));
-            this->argument = this->argument - std::unique_ptr<AbstractExpression>(new Fractal(getPi(), to_sub));
+            this->argument = this->argument - abs_ex(new Fractal(getPi(), to_sub));
         }
         if (this->is_pi_member_only && coe == Number(0))
             throw Exception();
@@ -122,10 +122,12 @@ bool Cotangent::canDowncastTo()
             return true;
         return false;
     }
+    if (this->argument->getPositionRelativelyZero() < 0)
+        return true;
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Cotangent::downcastTo()
+abs_ex Cotangent::downcastTo()
 {
     if (this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
     {
@@ -149,7 +151,8 @@ std::unique_ptr<AbstractExpression> Cotangent::downcastTo()
         if (coe == Number(5, 6))
             return takeDegreeOf(Number(3), Number(1, 2)) * abs_ex(new Number(-1));
     }
-
+    if (this->argument->getPositionRelativelyZero() < 0)
+        return -cot(-argument);
     return abs_ex(nullptr);
 }
 
@@ -226,12 +229,12 @@ QString Cotangent::getStringArgument() const
     return this->argument->makeStringOfExpression();
 }
 
-std::unique_ptr<AbstractExpression> Cotangent::getArgumentMoved()
+abs_ex Cotangent::getArgumentMoved()
 {
     return std::move(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Cotangent::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Cotangent::changeSomePartOn(QString part, abs_ex &on_what)
 {
    // NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -243,7 +246,7 @@ std::unique_ptr<AbstractExpression> Cotangent::changeSomePartOn(QString part, st
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Cotangent::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Cotangent::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
         if (this->argument->makeStringOfExpression() == part)
@@ -255,17 +258,17 @@ std::unique_ptr<AbstractExpression> Cotangent::changeSomePartOnExpression(QStrin
         return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Cotangent::getArgumentsCopy()
+abs_ex Cotangent::getArgumentsCopy()
 {
     return copy(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Cotangent::derivative(int var) const
+abs_ex Cotangent::derivative(int var) const
 {
     return minus_one / takeDegreeOf(sin(this->argument), 2) * this->argument->derivative(var);
 }
 
-std::unique_ptr<AbstractExpression> Cotangent::antiderivative(int var) const
+abs_ex Cotangent::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -275,7 +278,7 @@ std::unique_ptr<AbstractExpression> Cotangent::antiderivative(int var) const
     return one/ln_f.first * ln(abs(sin(this->argument)));
 }
 
-const std::unique_ptr<AbstractExpression> &Cotangent::getArgument() const
+const abs_ex &Cotangent::getArgument() const
 {
     return this->argument;
 }
@@ -286,7 +289,7 @@ void Cotangent::setSimplified(bool simpl)
     this->argument->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Cotangent::getTrigonometricalFunctions() const
+std::set<abs_ex > Cotangent::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> set;
     set.insert(cot(argument));
@@ -309,12 +312,12 @@ bool Cotangent::operator<(const AbstractExpression &right) const
     return AbstractExpression::less(this->argument.get(), (static_cast<Cotangent*>(const_cast<AbstractExpression*>(&right))->argument.get()));
 }
 
-std::unique_ptr<AbstractExpression> cot(const std::unique_ptr<AbstractExpression> &expr)
+abs_ex cot(const abs_ex &expr)
 {
-    return abs_ex(new Cotangent(expr));
+    return abs_ex(new Cotangent(expr))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> cot(std::unique_ptr<AbstractExpression> &&expr)
+abs_ex cot(abs_ex &&expr)
 {
-    return abs_ex(new Cotangent(std::move(expr)));
+    return abs_ex(new Cotangent(std::move(expr)))->downcast();
 }

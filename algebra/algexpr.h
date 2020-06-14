@@ -97,7 +97,7 @@ public:
 
 private:
     bool isEqualTo(const AlgExpr & sec) const;
-    std::unique_ptr<AbstractExpression> expression;
+    abs_ex expression;
 };
 
 AlgExpr operator+(const AlgExpr & left, const AlgExpr & right);

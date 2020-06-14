@@ -3,15 +3,15 @@
 #include<algebra/abstractexpression.h>
 #include<list>
 class Fractal;
-typedef std::list<std::unique_ptr<AbstractExpression>> fractal_argument;
+typedef std::list<abs_ex> fractal_argument;
 class Degree : public AbstractExpression
 {
 public:
-    Degree(std::unique_ptr<AbstractExpression> && argument, std::unique_ptr<AbstractExpression>  && degree);
-    Degree(const std::unique_ptr<AbstractExpression> & argument, const std::unique_ptr<AbstractExpression> & degree);
+    Degree(abs_ex && argument, abs_ex  && degree);
+    Degree(const abs_ex & argument, const abs_ex & degree);
     Degree(const Degree & degree);
-    Degree(const std::unique_ptr<AbstractExpression> & argument, Number degree);
-    Degree(std::unique_ptr<AbstractExpression> && argument, Number degree);
+    Degree(const abs_ex & argument, Number degree);
+    Degree(abs_ex && argument, Number degree);
     //is this function used anywhere?
     bool isArgument();
     virtual AlgebraExpression getId() const override;
@@ -19,9 +19,9 @@ public:
     virtual void simplify() override;
 
     virtual bool canDowncastTo() override;
-    std::unique_ptr<AbstractExpression> downcastTo() override;
+    abs_ex downcastTo() override;
     static AbstractExpression * getArgumentOfDegree(AbstractExpression * expr);
-    static std::unique_ptr<AbstractExpression> getDegreeOfExpression(AbstractExpression * expr);
+    static abs_ex getDegreeOfExpression(AbstractExpression * expr);
     bool isZeroDegree();
     //it is possible when degree is integer number
     bool canGetListOfArguments();
@@ -58,19 +58,19 @@ private:
     void transformPolynomialDegree(bool has_vars);
     void takeArgumentsMultipliersIntoDegree();
     virtual bool operator<(const AbstractExpression & right) const override;
-    std::unique_ptr<AbstractExpression> degree;
-    std::unique_ptr<AbstractExpression> argument;
+    abs_ex degree;
+    abs_ex argument;
 
 
 };
 
 bool canReduceWithDowngradingDegree(AbstractExpression * left, AbstractExpression * right);
-std::unique_ptr<AbstractExpression> takeDegreeOf(const std::unique_ptr<AbstractExpression> & argument, const std::unique_ptr<AbstractExpression> & degree);
-std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> && argument, std::unique_ptr<AbstractExpression> && degree);
-std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> && argument, const std::unique_ptr<AbstractExpression> & degree);
-std::unique_ptr<AbstractExpression> takeDegreeOf(const std::unique_ptr<AbstractExpression> & argument, Number degree);
-std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> && argument, Number degree);
-std::unique_ptr<AbstractExpression> takeDegreeOf(Number argument, Number degree);
+abs_ex takeDegreeOf(const abs_ex & argument, const abs_ex & degree);
+abs_ex takeDegreeOf(abs_ex && argument, abs_ex && degree);
+abs_ex takeDegreeOf(abs_ex && argument, const abs_ex & degree);
+abs_ex takeDegreeOf(const abs_ex & argument, Number degree);
+abs_ex takeDegreeOf(abs_ex && argument, Number degree);
+abs_ex takeDegreeOf(Number argument, Number degree);
 
 abs_ex pow(const abs_ex & arg, const abs_ex & deg);
 abs_ex pow(abs_ex && arg, const abs_ex & deg);

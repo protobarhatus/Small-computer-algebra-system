@@ -9,13 +9,13 @@
 #include "exception.h"
 #include <cmath>
 #include "fractal.h"
-ArcSinus::ArcSinus(const std::unique_ptr<AbstractExpression> &arg)
+ArcSinus::ArcSinus(const abs_ex &arg)
 {
     this->argument = copy(arg);
     this->simplify();
 }
 
-ArcSinus::ArcSinus(std::unique_ptr<AbstractExpression> &&arg)
+ArcSinus::ArcSinus(abs_ex &&arg)
 {
     this->argument = std::move(arg);
     this->simplify();
@@ -76,17 +76,31 @@ bool ArcSinus::canDowncastTo()
             return false;
         return true;
     }
+    if (this->argument->getId() == COSINUS)
+    {
+        auto cos_arg = getArgumentOfFunction(this->argument);
+        int pos = cos_arg->getPositionRelativelyZero();
+        if (!(pos > 0))
+            return false;
+        pos = (cos_arg - getPi())->getPositionRelativelyZero();
+        if (!(pos < 0))
+            return false;
+        return true;
+    }
+
     abs_ex & arg = this->argument;
-    if (*arg == *-sqrt(numToAbs(3)) || *arg == *numToAbs(-1) || *arg == *(-sqrt(numToAbs(3))/numToAbs(3)) || *arg == *zero || *arg == *(sqrt(three)/three) ||
-            *arg == *one || *arg == *sqrt(three))
+    if (*arg == *minus_one || *arg == *(-sqrt(three)/two) || *arg == *-half || *arg == *zero || *arg == *(-sqrt(two)/two)||
+             *arg == *half || *arg == *(-sqrt(two)/two) || *arg == *(sqrt(three)/two) || *arg == *one)
         return true;
     return false;
 }
 
-std::unique_ptr<AbstractExpression> ArcSinus::downcastTo()
+abs_ex ArcSinus::downcastTo()
 {
     if (this->argument->getId() == SINUS)
         return getArgumentOfFunction(std::move(this->argument));
+    if (this->argument->getId() == COSINUS)
+        return getPi()/two - getArgumentOfFunction(std::move(this->argument));
     abs_ex & arg = this->argument;
     if (*arg == *minus_one)
         return -getPi()/two;
@@ -163,12 +177,12 @@ QString ArcSinus::getStringArgument() const
     return this->argument->makeStringOfExpression();
 }
 
-std::unique_ptr<AbstractExpression> ArcSinus::getArgumentMoved()
+abs_ex ArcSinus::getArgumentMoved()
 {
     return std::move(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> ArcSinus::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex ArcSinus::changeSomePartOn(QString part, abs_ex &on_what)
 {
   //  NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -180,7 +194,7 @@ std::unique_ptr<AbstractExpression> ArcSinus::changeSomePartOn(QString part, std
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> ArcSinus::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex ArcSinus::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
         if (this->argument->makeStringOfExpression() == part)
@@ -193,17 +207,17 @@ std::unique_ptr<AbstractExpression> ArcSinus::changeSomePartOnExpression(QString
     }
 
 
-std::unique_ptr<AbstractExpression> ArcSinus::getArgumentsCopy()
+abs_ex ArcSinus::getArgumentsCopy()
 {
     return copy(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> ArcSinus::derivative(int var) const
+abs_ex ArcSinus::derivative(int var) const
 {
     return this->argument->derivative(var) / sqrt(one - sqr(this->argument));
 }
 
-std::unique_ptr<AbstractExpression> ArcSinus::antiderivative(int var) const
+abs_ex ArcSinus::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -229,7 +243,7 @@ std::unique_ptr<AbstractExpression> ArcSinus::antiderivative(int var) const
     return (one / ln_f.first) * (this->argument * asin(this->argument) + sqrt(one - sqr(this->argument)));
 }
 
-const std::unique_ptr<AbstractExpression> &ArcSinus::getArgument() const
+const abs_ex &ArcSinus::getArgument() const
 {
     return this->argument;
 }
@@ -240,7 +254,7 @@ void ArcSinus::setSimplified(bool simpl)
     this->argument->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > ArcSinus::getTrigonometricalFunctions() const
+std::set<abs_ex > ArcSinus::getTrigonometricalFunctions() const
 {
     return this->argument->getTrigonometricalFunctions();
 }
@@ -263,12 +277,22 @@ bool ArcSinus::operator<(const AbstractExpression &right) const
 
 
 
-std::unique_ptr<AbstractExpression> asin(const std::unique_ptr<AbstractExpression> &arg)
+abs_ex asin(const abs_ex &arg)
 {
-    return abs_ex(new ArcSinus(arg));
+    return abs_ex(new ArcSinus(arg))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> asin(std::unique_ptr<AbstractExpression> &&arg)
+abs_ex asin(abs_ex &&arg)
 {
-    return abs_ex(new ArcSinus(std::move(arg)));
+    return abs_ex(new ArcSinus(std::move(arg)))->downcast();
+}
+
+abs_ex acos(const abs_ex &arg)
+{
+    return getPi()/two - asin(arg);
+}
+
+abs_ex acos(abs_ex &&arg)
+{
+    return getPi()/two - asin(std::move(arg));
 }

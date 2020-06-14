@@ -74,7 +74,7 @@ void Sinus::simplify()
             if (coe.compareWith(0) < 0 && !(coe.getDenominator() == 1 && coe.getNumerator() % 2 == 0))
                 to_sub -= 2;
             this->pi_member = this->pi_member - std::unique_ptr<Fractal>(new Fractal(getPi(), to_sub));
-            this->argument = this->argument - std::unique_ptr<AbstractExpression>(new Fractal(getPi(), to_sub));
+            this->argument = this->argument - abs_ex(new Fractal(getPi(), to_sub));
         }
 
     }
@@ -92,7 +92,8 @@ bool Sinus::canDowncastTo()
         return true;
     //if (pi_member == nullptr)
     //    return false;
-
+    if (this->argument->getPositionRelativelyZero() < 0)
+        return true;
     if (this->is_pi_member_only)
     {
         if (pi_member->getCoefficient().getDenominator() <= 6 && pi_member->getCoefficient().getDenominator() != 5)
@@ -143,6 +144,10 @@ abs_ex Sinus::downcastTo()
         auto monoms = static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers();
         auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
         return sin(this->argument - right) * cos(right) + sin(right) * cos(this->argument - right);
+    }
+    if (this->argument->getPositionRelativelyZero() < 0)
+    {
+        return -sin(-argument);
     }
     return abs_ex(nullptr);
 }
@@ -227,12 +232,12 @@ QString Sinus::getStringArgument() const
     return this->argument->makeStringOfExpression();
 }
 
-std::unique_ptr<AbstractExpression> Sinus::getArgumentMoved()
+abs_ex Sinus::getArgumentMoved()
 {
     return std::move(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Sinus::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Sinus::changeSomePartOn(QString part, abs_ex &on_what)
 {
   //  NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -244,23 +249,23 @@ std::unique_ptr<AbstractExpression> Sinus::changeSomePartOn(QString part, std::u
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Sinus::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Sinus::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
            return  changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Sinus::getArgumentsCopy()
+abs_ex Sinus::getArgumentsCopy()
 {
     return copy(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Sinus::derivative(int var) const
+abs_ex Sinus::derivative(int var) const
 {
     return cos(this->argument) * this->argument->derivative(var);
 }
 
-std::unique_ptr<AbstractExpression> Sinus::antiderivative(int var) const
+abs_ex Sinus::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -301,7 +306,7 @@ std::unique_ptr<AbstractExpression> Sinus::antiderivative(int var) const
     return minus_one / ln_f.first * cos(this->argument);
 }
 
-const std::unique_ptr<AbstractExpression> &Sinus::getArgument() const
+const abs_ex &Sinus::getArgument() const
 {
     return this->argument;
 }
@@ -312,7 +317,7 @@ void Sinus::setSimplified(bool simpl)
     this->argument->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Sinus::getTrigonometricalFunctions() const
+std::set<abs_ex > Sinus::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> result;
     result.insert(sin(argument));
@@ -329,12 +334,12 @@ long long Sinus::getGcdOfNumeratorsOfDegrees(int var) const
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
 }
 
-std::unique_ptr<AbstractExpression> sin(const std::unique_ptr<AbstractExpression> &expr)
+abs_ex sin(const abs_ex &expr)
 {
     return abs_ex(new Sinus(expr))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> sin(std::unique_ptr<AbstractExpression> &&expr)
+abs_ex sin(abs_ex &&expr)
 {
     return abs_ex(new Sinus(std::move(expr)))->downcast();
 }

@@ -43,5 +43,6 @@ private:
     virtual bool operator<(const AbstractExpression & expr) const override;
 };
 abs_ex D(const abs_ex & arg);
+abs_ex D(abs_ex && arg);
 abs_ex fullDifferential(const abs_ex & expr);
 #endif // DIFFERENTIAL_H

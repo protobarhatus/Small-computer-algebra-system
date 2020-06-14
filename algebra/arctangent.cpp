@@ -8,13 +8,13 @@
 #include "logarithm.h"
 #include <cmath>
 #include "fractal.h"
-ArcTangent::ArcTangent(const std::unique_ptr<AbstractExpression> &arg)
+ArcTangent::ArcTangent(const abs_ex &arg)
 {
     this->argument = copy(arg);
     this->simplify();
 }
 
-ArcTangent::ArcTangent(std::unique_ptr<AbstractExpression> &&arg)
+ArcTangent::ArcTangent(abs_ex &&arg)
 {
     this->argument = std::move(arg);
     this->simplify();
@@ -68,6 +68,18 @@ bool ArcTangent::canDowncastTo()
             return false;
         return true;
     }
+    if (this->argument->getId() == COTANGENT)
+    {
+        auto cot_arg = getArgumentOfFunction(this->argument);
+        int pos = cot_arg->getPositionRelativelyZero();
+        if (!(pos > 0))
+            return false;
+        pos = (cot_arg - getPi())->getPositionRelativelyZero();
+        if (!(pos < 0))
+            return false;
+        return true;
+    }
+
     abs_ex & arg = this->argument;
     if (*arg == *-sqrt(numToAbs(3)) || *arg == *numToAbs(-1) || *arg == *(-sqrt(numToAbs(3))/numToAbs(3)) || *arg == *zero || *arg == *(sqrt(three)/three) ||
             *arg == *one || *arg == *sqrt(three))
@@ -75,10 +87,12 @@ bool ArcTangent::canDowncastTo()
     return false;
 }
 
-std::unique_ptr<AbstractExpression> ArcTangent::downcastTo()
+abs_ex ArcTangent::downcastTo()
 {
     if (this->argument->getId() == TANGENT)
         return getArgumentOfFunction(std::move(this->argument));
+    if (this->argument->getId() == COTANGENT)
+        return getPi()/two - getArgumentOfFunction(std::move(this->argument));
     abs_ex & arg = this->argument;
     if (*arg == *-sqrt(numToAbs(3)))
         return -getPi()/three;
@@ -151,12 +165,12 @@ QString ArcTangent::getStringArgument() const
     return this->argument->makeStringOfExpression();
 }
 
-std::unique_ptr<AbstractExpression> ArcTangent::getArgumentMoved()
+abs_ex ArcTangent::getArgumentMoved()
 {
     return std::move(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> ArcTangent::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex ArcTangent::changeSomePartOn(QString part, abs_ex &on_what)
 {
     //NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -168,7 +182,7 @@ std::unique_ptr<AbstractExpression> ArcTangent::changeSomePartOn(QString part, s
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> ArcTangent::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex ArcTangent::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
         if (this->argument->makeStringOfExpression() == part)
@@ -180,17 +194,17 @@ std::unique_ptr<AbstractExpression> ArcTangent::changeSomePartOnExpression(QStri
         return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> ArcTangent::getArgumentsCopy()
+abs_ex ArcTangent::getArgumentsCopy()
 {
     return copy(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> ArcTangent::derivative(int var) const
+abs_ex ArcTangent::derivative(int var) const
 {
     return this->argument->derivative(var) / (sqr(this->argument) + one);
 }
 
-std::unique_ptr<AbstractExpression> ArcTangent::antiderivative(int var) const
+abs_ex ArcTangent::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -220,7 +234,7 @@ std::unique_ptr<AbstractExpression> ArcTangent::antiderivative(int var) const
     return -(ln(sqr(this->argument) + one) - two * this->argument * atan(this->argument))/two/a;
 }
 
-const std::unique_ptr<AbstractExpression> &ArcTangent::getArgument() const
+const abs_ex &ArcTangent::getArgument() const
 {
     return this->argument;
 }
@@ -231,7 +245,7 @@ void ArcTangent::setSimplified(bool simpl)
     this->argument->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > ArcTangent::getTrigonometricalFunctions() const
+std::set<abs_ex > ArcTangent::getTrigonometricalFunctions() const
 {
     return this->argument->getTrigonometricalFunctions();
 }
@@ -253,12 +267,22 @@ bool ArcTangent::operator<(const AbstractExpression &right) const
 }
 
 
-std::unique_ptr<AbstractExpression> atan(const std::unique_ptr<AbstractExpression> &arg)
+abs_ex atan(const abs_ex &arg)
 {
-    return abs_ex(new ArcTangent(arg));
+    return abs_ex(new ArcTangent(arg))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> atan(std::unique_ptr<AbstractExpression> &&arg)
+abs_ex atan(abs_ex &&arg)
 {
-    return abs_ex(new ArcTangent(std::move(arg)));
+    return abs_ex(new ArcTangent(std::move(arg)))->downcast();
+}
+
+abs_ex acot(const abs_ex &arg)
+{
+    return getPi()/two - atan(arg);
+}
+
+abs_ex acot(abs_ex &&arg)
+{
+    return getPi()/two - atan(arg);
 }

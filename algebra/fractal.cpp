@@ -222,7 +222,7 @@ bool Fractal::canDowncastTo()
             (this->numerator.empty() && this->denominator.empty()) ||
             (this->coefficient.getNumerator() == 0);
 }
-std::unique_ptr<AbstractExpression> Fractal::downcastTo()
+abs_ex Fractal::downcastTo()
 {
     assert(this->canDowncastTo());
     if (this->numerator.empty() && this->denominator.empty())
@@ -279,7 +279,7 @@ std::unique_ptr<Fractal> Fractal::operator+(const std::unique_ptr<Fractal> & sec
 {
     if (this->denominator == sec_sum->denominator && this->coefficient == sec_sum->coefficient)
     {
-        std::unique_ptr<AbstractExpression> newnum_ptr = *static_cast<AbstractExpression*>(new Fractal(&this->numerator, this->coefficient.getNumerator())) +
+        abs_ex newnum_ptr = *static_cast<AbstractExpression*>(new Fractal(&this->numerator, this->coefficient.getNumerator())) +
                 *static_cast<AbstractExpression*>(new Fractal(&sec_sum->numerator, sec_sum->coefficient.getNumerator()));
         fractal_argument newnum;
         newnum.push_back(std::move(newnum_ptr));
@@ -290,7 +290,7 @@ std::unique_ptr<Fractal> Fractal::operator+(const std::unique_ptr<Fractal> & sec
     /*
     fractal_argument left_sum = this->numerator * (sec_sum->denominator / this->denominator);
     fractal_argument right_sum = sec_sum->numerator * this->denominator;
-    std::unique_ptr<AbstractExpression> newnum_ptr = *static_cast<AbstractExpression*>(new Fractal(&left_sum)) +
+    abs_ex newnum_ptr = *static_cast<AbstractExpression*>(new Fractal(&left_sum)) +
             *static_cast<AbstractExpression*>(new Fractal(&right_sum));
     fractal_argument newnum;
     newnum.push_back(std::move(newnum_ptr));
@@ -298,21 +298,21 @@ std::unique_ptr<Fractal> Fractal::operator+(const std::unique_ptr<Fractal> & sec
     std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&newnum, &newdenum, this->coefficient * sec_sum->coefficient));
     result->simplify();*/
 
-    std::unique_ptr<AbstractExpression> this_denum = std::unique_ptr<AbstractExpression>(new Fractal(&this->denominator));
-    std::unique_ptr<AbstractExpression> this_num_denum = std::unique_ptr<AbstractExpression>(new Number(this->coefficient.getDenominator()));
+    abs_ex this_denum = abs_ex(new Fractal(&this->denominator));
+    abs_ex this_num_denum = abs_ex(new Number(this->coefficient.getDenominator()));
     this_denum = this_denum * this_num_denum;
-    std::unique_ptr<AbstractExpression> sec_sum_denum = std:: unique_ptr<AbstractExpression>(new Fractal(&sec_sum->denominator));
-    std::unique_ptr<AbstractExpression> sec_sum_num_denum = std::unique_ptr<AbstractExpression>(new Number(sec_sum->coefficient.getDenominator()));
+    abs_ex sec_sum_denum = std:: unique_ptr<AbstractExpression>(new Fractal(&sec_sum->denominator));
+    abs_ex sec_sum_num_denum = abs_ex(new Number(sec_sum->coefficient.getDenominator()));
     sec_sum_denum = sec_sum_denum * sec_sum_num_denum;
 
-    std::unique_ptr<AbstractExpression> this_num = std::unique_ptr<AbstractExpression>(new Fractal(&this->numerator));
-    std::unique_ptr<AbstractExpression> this_num_num = std::unique_ptr<AbstractExpression>(new Number(this->coefficient.getNumerator()));
+    abs_ex this_num = abs_ex(new Fractal(&this->numerator));
+    abs_ex this_num_num = abs_ex(new Number(this->coefficient.getNumerator()));
     this_num = this_num * this_num_num;
-    std::unique_ptr<AbstractExpression> sec_sum_num = std::unique_ptr<AbstractExpression>(new Fractal(&sec_sum->numerator));
-    std::unique_ptr<AbstractExpression> sec_sum_num_num = std::unique_ptr<AbstractExpression>(new Number(sec_sum->coefficient.getNumerator()));
+    abs_ex sec_sum_num = abs_ex(new Fractal(&sec_sum->numerator));
+    abs_ex sec_sum_num_num = abs_ex(new Number(sec_sum->coefficient.getNumerator()));
     sec_sum_num = sec_sum_num * sec_sum_num_num;
-    std::unique_ptr<AbstractExpression> left_sum = this_num * sec_sum_denum;
-    std::unique_ptr<AbstractExpression> right_sum = sec_sum_num * this_denum;
+    abs_ex left_sum = this_num * sec_sum_denum;
+    abs_ex right_sum = sec_sum_num * this_denum;
 
     return std::unique_ptr<Fractal>(new Fractal((left_sum + right_sum).get(), (this_denum * sec_sum_denum).get()));
 }
@@ -360,6 +360,7 @@ void Fractal::simplify()
 
     this->numerator.sort(&AbstractExpression::lessToSort);
     this->denominator.sort(&AbstractExpression::lessToSort);
+    this->pullNumbersIntoCoefficient();
     this->multiplyIrrationalSums();
     this->getRidOfIrrationalityInDenominator();
     this->reduceDegrees();
@@ -466,19 +467,19 @@ void Fractal::reduceMembersWithDowngradingDegree()
         {
            if (canReduceWithDowngradingDegree(it1->get(), it2->get()))
            {
-               std::unique_ptr<AbstractExpression> newDegree = *Degree::getDegreeOfExpression(it1->get()) - *Degree::getDegreeOfExpression(it2->get());
-               std::unique_ptr<AbstractExpression> arg = makeAbstractExpression(Degree::getArgumentOfDegree(it1->get())->getId(), Degree::getArgumentOfDegree(it1->get()));
+               abs_ex newDegree = *Degree::getDegreeOfExpression(it1->get()) - *Degree::getDegreeOfExpression(it2->get());
+               abs_ex arg = makeAbstractExpression(Degree::getArgumentOfDegree(it1->get())->getId(), Degree::getArgumentOfDegree(it1->get()));
                has_erased = true;
                it1 = this->numerator.erase(it1);
                it2 = this->denominator.erase(it2);
 
                if (newDegree->getId() == NUMBER && (static_cast<Number*>(newDegree.get()))->compareWith(0) < 0)
                {
-                   std::unique_ptr<AbstractExpression> multiplier(new Number(-1));
-                   this->pushBackToDenominator(std::unique_ptr<AbstractExpression>(new Degree(std::move(arg), newDegree * multiplier)));
+                   abs_ex multiplier(new Number(-1));
+                   this->pushBackToDenominator(abs_ex(new Degree(std::move(arg), newDegree * multiplier)));
                }
                else
-                   this->pushBackToNumerator(std::unique_ptr<AbstractExpression>(new Degree(std::move(arg), std::move(newDegree))));
+                   this->pushBackToNumerator(abs_ex(new Degree(std::move(arg), std::move(newDegree))));
            }
            else if (Degree::getArgumentOfDegree(it1->get())->getId() == ABSOLUTE_VALUE &&
                     Degree::getDegreeOfExpression(it2->get())->getId() == NUMBER &&
@@ -950,7 +951,7 @@ void Fractal::setSameMembersIntoDegree()
                 if (*Degree::getArgumentOfDegree(it->get()) == *Degree::getArgumentOfDegree(it1->get()))
                 {
                     AbstractExpression * degree = Degree::getArgumentOfDegree(it->get());
-                     auto degr = std::unique_ptr<AbstractExpression>(new Degree(std::unique_ptr<AbstractExpression>(makeAbstractExpression(degree->getId(), degree)),
+                     auto degr = abs_ex(new Degree(abs_ex(makeAbstractExpression(degree->getId(), degree)),
                         Degree::getDegreeOfExpression(it->get()) + Degree::getDegreeOfExpression(it1->get())));
                      degr = degr->downcast();
                      it->swap(degr);
@@ -972,7 +973,7 @@ void Fractal::setSameMembersIntoDegree()
                 if (*Degree::getArgumentOfDegree(it->get()) == *Degree::getArgumentOfDegree(it1->get()))
                 {
                      AbstractExpression * degree = Degree::getArgumentOfDegree(it->get());
-                     auto degr = std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(degree->getId(), degree),
+                     auto degr = abs_ex(new Degree(makeAbstractExpression(degree->getId(), degree),
                         Degree::getDegreeOfExpression(it->get()) + Degree::getDegreeOfExpression(it1->get())));
                      degr = degr->downcast();
                      it->swap(degr);
@@ -1023,7 +1024,7 @@ bool Fractal::lessFrac(const std::unique_ptr<Fractal> &left, const std::unique_p
         return *left < *right;
 
 }
-Fractal::Fractal(std::unique_ptr<AbstractExpression> && num, Number coe) : coefficient(coe)
+Fractal::Fractal(abs_ex && num, Number coe) : coefficient(coe)
 {
     this->pushBackToNumerator(std::move(num));
     this->simplify();
@@ -1066,11 +1067,11 @@ fractal_argument _findCommonPart(fractal_argument & first, fractal_argument & se
             {
                 auto deg1 = Degree::getDegreeOfExpression(it1.get());
                 auto deg2 = Degree::getDegreeOfExpression(it2.get());
-                std::unique_ptr<AbstractExpression> deg_to_set;
+                abs_ex deg_to_set;
                 if (*deg1 == *deg2)
                     deg_to_set = makeAbstractExpression(deg1->getId(), deg1.get());
                 else if (deg1->getId() == NUMBER && deg2->getId() == NUMBER)
-                    deg_to_set = std::unique_ptr<AbstractExpression>(new Number(static_cast<Number*>(deg1.get())->compareWith(*static_cast<Number*>(deg2.get())) < 0 ?
+                    deg_to_set = abs_ex(new Number(static_cast<Number*>(deg1.get())->compareWith(*static_cast<Number*>(deg2.get())) < 0 ?
                                                                                     *static_cast<Number*>(deg1.get()) : *static_cast<Number*>(deg2.get())));
                 else if (deg1->getId() == NUMBER)
                     deg_to_set = makeAbstractExpression(deg1->getId(), deg1.get());
@@ -1103,7 +1104,7 @@ fractal_argument _findCommonPart(fractal_argument & first, fractal_argument & se
                  if (deg_to_set->getId() == NUMBER && static_cast<Number*>(deg_to_set.get())->isOne())
                     result.push_back(makeAbstractExpression(Degree::getArgumentOfDegree(it1.get())->getId(), Degree::getArgumentOfDegree(it1.get())));
                 else
-                    result.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(Degree::getArgumentOfDegree(it1.get())->getId(),
+                    result.push_back(abs_ex(new Degree(makeAbstractExpression(Degree::getArgumentOfDegree(it1.get())->getId(),
                                                                                                                  Degree::getArgumentOfDegree(it1.get())), deg_to_set)));
             }
         }
@@ -1121,9 +1122,9 @@ void Fractal::takeCommonPartOfPolynomials()
         if (it->getId() == POLYNOMIAL)
             this->pushBackToDenominator(static_cast<Polynomial*>(it.get())->reduceCommonPart()->downcast());
 }
-std::unique_ptr<AbstractExpression> Fractal::findCommonPart(Fractal *frac)
+abs_ex Fractal::findCommonPart(Fractal *frac)
 {
-    std::unique_ptr<AbstractExpression> result(new Fractal);
+    abs_ex result(new Fractal);
     Fractal * fr_res = static_cast<Fractal*>(result.get());
     fr_res->setCoefficinet(Number(gcd(this->coefficient.getNumerator(), frac->coefficient.getNumerator()), gcd(this->coefficient.getDenominator(), frac->coefficient.getDenominator())));
     if (this->coefficient.compareWith(0) < 0 && frac->coefficient.compareWith(0) < 0)
@@ -1134,7 +1135,7 @@ std::unique_ptr<AbstractExpression> Fractal::findCommonPart(Fractal *frac)
 }
 void multiplyIrrationalSumsInFractal(fractal_argument * arg)
 {
-    std::unique_ptr<AbstractExpression> result(nullptr);
+    abs_ex result(nullptr);
     bool has_found_first = false;
     fractal_argument::iterator first;
 
@@ -1150,7 +1151,7 @@ void multiplyIrrationalSumsInFractal(fractal_argument * arg)
             }
             else
             {
-                std::unique_ptr<AbstractExpression> zero(new Number(0));
+                abs_ex zero(new Number(0));
                 if (result == nullptr)
                 {
                     result = (*first * *it) + zero;
@@ -1214,16 +1215,16 @@ std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> & left, const 
 void Fractal::sortVariablesInIncreasingOfTheirId()
 {
     NONCONST
-    this->numerator.sort([](const std::unique_ptr<AbstractExpression> & a, const std::unique_ptr<AbstractExpression> & b)->bool{
+    this->numerator.sort([](const abs_ex & a, const abs_ex & b)->bool{
         return Degree::getArgumentOfDegree(a.get())->getId() <  Degree::getArgumentOfDegree(b.get())->getId();
     });
 }
-void Fractal::pushBackToNumerator(std::unique_ptr<AbstractExpression> && expr)
+void Fractal::pushBackToNumerator(abs_ex && expr)
 {
     NONCONST
     this->numerator.push_back(std::move(expr));
 }
-void Fractal::pushBackToDenominator(std::unique_ptr<AbstractExpression> && expr)
+void Fractal::pushBackToDenominator(abs_ex && expr)
 {
     NONCONST
     this->denominator.push_back(std::move(expr));
@@ -1241,16 +1242,16 @@ void Fractal::getRidOfRootsInDenominator()
             done_something = true;
             Number  deg = *static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get());
             long long int new_den_deg = deg.getNumerator() / deg.getDenominator() + 1;
-            std::unique_ptr<AbstractExpression> mult_deg_pt(new Number(Number(new_den_deg)-deg));
-            std::unique_ptr<AbstractExpression> den_deg(new Number(new_den_deg));
-           // it = std::unique_ptr<AbstractExpression> (new Degree(std::unique_ptr<AbstractExpression>(
+            abs_ex mult_deg_pt(new Number(Number(new_den_deg)-deg));
+            abs_ex den_deg(new Number(new_den_deg));
+           // it = abs_ex (new Degree(abs_ex(
           //                                                            Degree::getArgumentOfDegree(it.get())),
          //                                                        std::move(den_deg)));
             AbstractExpression * arg = Degree::getArgumentOfDegree(it.get());
-            it = std::unique_ptr<AbstractExpression> (new Degree(makeAbstractExpression(arg->getId(), arg),
+            it = abs_ex (new Degree(makeAbstractExpression(arg->getId(), arg),
                                                                 std::move(den_deg)));
              arg = Degree::getArgumentOfDegree(it.get());
-            this->numerator.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(arg->getId(), arg),
+            this->numerator.push_back(abs_ex(new Degree(makeAbstractExpression(arg->getId(), arg),
                                                                                      std::move(mult_deg_pt))));
         }
     }
@@ -1451,7 +1452,7 @@ void Fractal::checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bo
     }
 }
 
-std::unique_ptr<AbstractExpression> Fractal::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Fractal::changeSomePartOn(QString part, abs_ex &on_what)
 {
   //  NONCONST
     abs_ex its_part = nullptr;
@@ -1489,7 +1490,7 @@ std::unique_ptr<AbstractExpression> Fractal::changeSomePartOn(QString part, std:
     return its_part;
 }
 
-std::unique_ptr<AbstractExpression> Fractal::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Fractal::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
            return changeSomePartOn(part, on_what);
@@ -1549,7 +1550,7 @@ void Fractal::convertTrigonometricalMultipliersToDifferentArgument(const std::ma
     }
 }
 
-std::unique_ptr<AbstractExpression> Fractal::derivative(int var) const
+abs_ex Fractal::derivative(int var) const
 {
     if (this->coefficient != 1)
     {
@@ -1639,7 +1640,7 @@ abs_ex Fractal::getAntiderivativeByParts(int var) const
 //рассчитываем на то, что сработало takeCommonPartOfPolynomial()
 //еще рассчитываем на то, что все полиномы которые можно разложить - разложены
 
-std::unique_ptr<AbstractExpression> Fractal::antiderivative(int var) const
+abs_ex Fractal::antiderivative(int var) const
 {
    // qDebug() << this->makeStringOfExpression();
     if (!has(this->getSetOfVariables(), var))
@@ -1835,7 +1836,7 @@ void Fractal::bringRationalFunctionIntoFormToDecay()
     this->setSameMembersIntoDegree();
 }
 
-std::list<std::unique_ptr<AbstractExpression> > Fractal::splitIntoSumOfElementaryFractals()
+std::list<abs_ex > Fractal::splitIntoSumOfElementaryFractals()
 {
     qDebug() << this->makeStringOfExpression();
     //это должна быть рациональная функция, но я не хочу вставлять assert
@@ -1977,7 +1978,7 @@ void Fractal::setSimplified(bool simpl)
         it->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Fractal::getTrigonometricalFunctions() const
+std::set<abs_ex > Fractal::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> result;
     for (auto &it : this->numerator)
@@ -1995,7 +1996,7 @@ std::set<std::unique_ptr<AbstractExpression> > Fractal::getTrigonometricalFuncti
     return result;
 }
 
-std::unique_ptr<AbstractExpression> Fractal::tableAntiderivative(int var) const
+abs_ex Fractal::tableAntiderivative(int var) const
 {
     abs_ex x(new Variable(getVariable(var)));
     if (numerator.size() == 0 && denominator.size() == 1)
@@ -2911,7 +2912,12 @@ void Fractal::separatePolynomialsDegree()
     //в конце никаких simplify(), иначе все эти разделенные степени обратно засунутся!
 }
 
-std::unique_ptr<AbstractExpression> Fractal::tryToFindLogarithmInNumerator() const
+abs_ex Fractal::getPartWithVariable(int var) const
+{
+    return copy(this)/this->getFractalWithoutVariable(var);
+}
+
+abs_ex Fractal::tryToFindLogarithmInNumerator() const
 {
     for (auto &it : this->numerator)
         if (Degree::getArgumentOfDegree(it.get())->getId() == LOGARITHM)
@@ -2919,7 +2925,7 @@ std::unique_ptr<AbstractExpression> Fractal::tryToFindLogarithmInNumerator() con
     return nullptr;
 }
 
-std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > Fractal::checkIfCanDoUniversalTrigonometricSubstitution(int var) const
+std::pair<abs_ex, abs_ex > Fractal::checkIfCanDoUniversalTrigonometricSubstitution(int var) const
 {
     auto trig_functions = this->getTrigonometricalFunctions();
     if (trig_functions.empty())
@@ -3031,27 +3037,27 @@ std::unique_ptr<Fractal> operator-(const std::unique_ptr<Fractal> & left, const 
     return *left - right;
 }
 
-std::unique_ptr<AbstractExpression> toAbsEx(const std::unique_ptr<Fractal> &expr)
+abs_ex toAbsEx(const std::unique_ptr<Fractal> &expr)
 {
     return abs_ex(new Fractal(expr.get()))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> toAbsEx(std::unique_ptr<Fractal> &&expr)
+abs_ex toAbsEx(std::unique_ptr<Fractal> &&expr)
 {
     return abs_ex(expr.release())->downcast();
 }
 
-std::unique_ptr<Fractal> toFrac(std::unique_ptr<AbstractExpression> &expr)
+std::unique_ptr<Fractal> toFrac(abs_ex &expr)
 {
     return std::unique_ptr<Fractal>(new Fractal(expr.get()));
 }
 
-std::unique_ptr<Fractal> toFrac(std::unique_ptr<AbstractExpression> &&expr)
+std::unique_ptr<Fractal> toFrac(abs_ex &&expr)
 {
     return std::unique_ptr<Fractal>(new Fractal(std::move(expr)));
 }
 
-std::unique_ptr<AbstractExpression> integrate(const std::unique_ptr<AbstractExpression> &frac)
+abs_ex integrate(const abs_ex &frac)
 {
   //  qDebug() << "INTEGR: " << frac->makeStringOfExpression();
     if (frac->getId() == DIFFERENTIAL)
@@ -3105,7 +3111,7 @@ std::pair<abs_ex, int> getAntiderivAndVar(const abs_ex & frac)
     assert(diff->getSetOfVariables().size() == 1);
     return {integrate(copy(frac)), *diff->getSetOfVariables().begin()};
 }
-std::unique_ptr<AbstractExpression> definiteIntegral(const std::unique_ptr<AbstractExpression> &frac, const std::unique_ptr<AbstractExpression> &from, const std::unique_ptr<AbstractExpression> &to)
+abs_ex definiteIntegral(const abs_ex &frac, const abs_ex &from, const abs_ex &to)
 {
 
     auto integ_and_var = getAntiderivAndVar(frac);

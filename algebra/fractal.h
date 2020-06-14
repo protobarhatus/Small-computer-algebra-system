@@ -5,7 +5,7 @@
 #include <list>
 #include <algebra/number.h>
 #include "trigonometrical_conversions.h"
-typedef std::list<std::unique_ptr<AbstractExpression>> fractal_argument;
+typedef std::list<abs_ex> fractal_argument;
 
 
 class Polynomial;
@@ -28,13 +28,13 @@ public:
     Fractal(AbstractExpression * num, Number coe = Number(1));
     Fractal(fractal_argument * num, Number coe = 1);
     Fractal(const fractal_argument & num, Number coe = 1);
-    Fractal(std::unique_ptr<AbstractExpression> && num, Number coe = 1);
+    Fractal(abs_ex && num, Number coe = 1);
     Fractal& operator=(Fractal && frac);
     virtual void simplify() override;
     virtual AlgebraExpression getId() const override;
 
     virtual bool canDowncastTo() override;
-    virtual std::unique_ptr<AbstractExpression> downcastTo() override;
+    virtual abs_ex downcastTo() override;
     Number getCoefficient();
     void setCoefficinet(Number num);
     virtual bool operator==(AbstractExpression & right) override;
@@ -68,10 +68,10 @@ public:
     static bool lessFrac(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
     virtual void _qDebugOut() override;
     virtual QString makeStringOfExpression() const override;
-    std::unique_ptr<AbstractExpression> findCommonPart(Fractal * frac);
+    abs_ex findCommonPart(Fractal * frac);
     void sortVariablesInIncreasingOfTheirId();
-    void pushBackToNumerator(std::unique_ptr<AbstractExpression> && expr);
-    void pushBackToDenominator(std::unique_ptr<AbstractExpression> && expr);
+    void pushBackToNumerator(abs_ex && expr);
+    void pushBackToDenominator(abs_ex && expr);
 
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;
@@ -106,6 +106,7 @@ public:
     abs_ex tableAntiderivative(int var) const;
     void separatePolynomialsDegree();
     abs_ex tryToFindLogarithmInNumerator() const;
+    abs_ex getPartWithVariable(int var) const;
 private:
     std::pair<abs_ex, abs_ex> checkIfCanDoUniversalTrigonometricSubstitution(int var) const;
     bool isNumeratorsDegreeBiggerThanDenominatorsDegree(int var) const;

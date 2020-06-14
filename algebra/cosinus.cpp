@@ -72,7 +72,7 @@ void Cosinus::simplify()
             if (coe.compareWith(0) < 0 && !(coe.getDenominator() == 1 && coe.getNumerator() % 2 == 0))
                 to_sub -= 2;
             this->pi_member = this->pi_member - std::unique_ptr<Fractal>(new Fractal(getPi(), to_sub));
-            this->argument = this->argument - std::unique_ptr<AbstractExpression>(new Fractal(getPi(), to_sub));
+            this->argument = this->argument - abs_ex(new Fractal(getPi(), to_sub));
         }
 
     }
@@ -106,6 +106,8 @@ bool Cosinus::canDowncastTo()
     if (this->pi_member != nullptr && !this->is_pi_member_only && isPiMemberInTable(pi_member->getCoefficient()))
         return true;
     if (this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
+        return true;
+    if (this->argument->getPositionRelativelyZero() < 0)
         return true;
     return false;
 }
@@ -148,6 +150,8 @@ abs_ex Cosinus::downcastTo()
         auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
         return cos(this->argument - right) * cos(right) - sin(right) * sin(this->argument - right);
     }
+    if (this->argument->getPositionRelativelyZero() < 0)
+        return cos(-argument);
     return abs_ex(nullptr);
 }
 std::set<int> Cosinus::getSetOfPolyVariables() const
@@ -231,12 +235,12 @@ QString Cosinus::getStringArgument() const
     return this->argument->makeStringOfExpression();
 }
 
-std::unique_ptr<AbstractExpression> Cosinus::getArgumentMoved()
+abs_ex Cosinus::getArgumentMoved()
 {
     return std::move(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Cosinus::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Cosinus::changeSomePartOn(QString part, abs_ex &on_what)
 {
    // NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -248,7 +252,7 @@ std::unique_ptr<AbstractExpression> Cosinus::changeSomePartOn(QString part, std:
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Cosinus::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Cosinus::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
         if (this->argument->makeStringOfExpression() == part)
@@ -260,17 +264,17 @@ std::unique_ptr<AbstractExpression> Cosinus::changeSomePartOnExpression(QString 
         return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Cosinus::getArgumentsCopy()
+abs_ex Cosinus::getArgumentsCopy()
 {
     return copy(argument);
 }
 
-std::unique_ptr<AbstractExpression> Cosinus::derivative(int var) const
+abs_ex Cosinus::derivative(int var) const
 {
     return minus_one * sin(this->argument) * this->argument->derivative(var);
 }
 
-std::unique_ptr<AbstractExpression> Cosinus::antiderivative(int var) const
+abs_ex Cosinus::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -312,7 +316,7 @@ std::unique_ptr<AbstractExpression> Cosinus::antiderivative(int var) const
     return one/lin_f.first * sin(this->argument);
 }
 
-const std::unique_ptr<AbstractExpression> &Cosinus::getArgument() const
+const abs_ex &Cosinus::getArgument() const
 {
     return this->argument;
 }
@@ -323,7 +327,7 @@ void Cosinus::setSimplified(bool simpl)
     this->argument->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Cosinus::getTrigonometricalFunctions() const
+std::set<abs_ex > Cosinus::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> result;
     result.insert(cos(argument));
@@ -340,12 +344,12 @@ long long Cosinus::getGcdOfNumeratorsOfDegrees(int var) const
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
 }
 
-std::unique_ptr<AbstractExpression> cos(const std::unique_ptr<AbstractExpression> &expr)
+abs_ex cos(const abs_ex &expr)
 {
     return abs_ex(new Cosinus(expr))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> cos(std::unique_ptr<AbstractExpression> &&expr)
+abs_ex cos(abs_ex &&expr)
 {
     return abs_ex(new Cosinus(std::move(expr)))->downcast();
 }

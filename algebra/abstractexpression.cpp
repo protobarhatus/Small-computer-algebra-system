@@ -51,7 +51,7 @@ bool AbstractExpression::less(const AbstractExpression * left, const AbstractExp
     else
         return *left < *right;
 }
-bool AbstractExpression::lessToSort(const std::unique_ptr<AbstractExpression> &left, const std::unique_ptr<AbstractExpression> &right)
+bool AbstractExpression::lessToSort(const abs_ex &left, const abs_ex &right)
 {
     if (left->getId() != DIFFERENTIAL && right->getId() == DIFFERENTIAL)
         return true;
@@ -73,32 +73,32 @@ bool AbstractExpression::operator!=(AbstractExpression &right)
 {
     return !(*this == right);
 }
-std::unique_ptr<AbstractExpression> AbstractExpression::operator*(AbstractExpression &expr)
+abs_ex AbstractExpression::operator*(AbstractExpression &expr)
 {
     //den is empty
     fractal_argument arg, den;
     arg.push_back(makeAbstractExpression(this->getId(), this));
     arg.push_back(makeAbstractExpression(expr.getId(), &expr));
-    std::unique_ptr<AbstractExpression> frac = std::unique_ptr<AbstractExpression>(new Fractal(&arg, &den));
+    abs_ex frac = abs_ex(new Fractal(&arg, &den));
     return frac->downcast();
 
 }
 
-std::unique_ptr<AbstractExpression> AbstractExpression::operator/(AbstractExpression &expr)
+abs_ex AbstractExpression::operator/(AbstractExpression &expr)
 {
-    std::unique_ptr<AbstractExpression> frac = std::unique_ptr<AbstractExpression>(new Fractal(this, &expr));
+    abs_ex frac = abs_ex(new Fractal(this, &expr));
     return frac->downcast();
 }
-std::unique_ptr<AbstractExpression> AbstractExpression::operator+(AbstractExpression & expr)
+abs_ex AbstractExpression::operator+(AbstractExpression & expr)
 {
-    std::unique_ptr<AbstractExpression> polynom = std::unique_ptr<AbstractExpression>(new Polynomial(this, &expr));
+    abs_ex polynom = abs_ex(new Polynomial(this, &expr));
 
     return polynom->downcast();
 }
-std::unique_ptr<AbstractExpression> AbstractExpression::operator-(AbstractExpression &expr)
+abs_ex AbstractExpression::operator-(AbstractExpression &expr)
 {
     std::unique_ptr<Fractal> subtrahend = std::unique_ptr<Fractal>(new Fractal(&expr, -1));
-    std::unique_ptr<AbstractExpression> polynom = std::unique_ptr<AbstractExpression>(new Polynomial(this, subtrahend.get()));
+    abs_ex polynom = abs_ex(new Polynomial(this, subtrahend.get()));
 
     return polynom->downcast();
 }
@@ -106,7 +106,7 @@ bool AbstractExpression::canDowncast()
 {
     return this->canDowncastTo();
 }
-std::unique_ptr<AbstractExpression> AbstractExpression::downcast()
+abs_ex AbstractExpression::downcast()
 {
     if (!this->canDowncast())
         return makeAbstractExpression(this->getId(), this);
@@ -115,20 +115,20 @@ std::unique_ptr<AbstractExpression> AbstractExpression::downcast()
         expr = expr->downcastTo();
     return expr;
 }
-std::unique_ptr<AbstractExpression> operator*(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right)
+abs_ex operator*(const abs_ex & left, const abs_ex & right)
 {
     return std::move(*left.get() * *right.get());
 }
-std::unique_ptr<AbstractExpression> operator/(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right)
+abs_ex operator/(const abs_ex & left, const abs_ex & right)
 {
     return std::move(*left.get() / *right.get());
 }
 
-std::unique_ptr<AbstractExpression> operator+(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right)
+abs_ex operator+(const abs_ex & left, const abs_ex & right)
 {
     return std::move(*left.get() + *right.get());
 }
-std::unique_ptr<AbstractExpression> operator-(const std::unique_ptr<AbstractExpression> & left, const std::unique_ptr<AbstractExpression> & right)
+abs_ex operator-(const abs_ex & left, const abs_ex & right)
 {
     return std::move(*left.get() - *right.get());
 }
@@ -153,7 +153,7 @@ bool AbstractExpression::hasVariable(int var)
 }
 
 
-QString getStringArgumentOfTrigonometricalFunction(std::unique_ptr<AbstractExpression> &expr)
+QString getStringArgumentOfTrigonometricalFunction(abs_ex &expr)
 {
     return getStringArgumentOfTrigonometricalFunction(expr.get());
 }
@@ -203,13 +203,13 @@ abs_ex getArgumentOfFunction(abs_ex && expr)
     }
 }
 
-bool isDegreeOfTrigonometricalFunction(std::unique_ptr<AbstractExpression> &expr)
+bool isDegreeOfTrigonometricalFunction(abs_ex &expr)
 {
     auto arg = Degree::getArgumentOfDegree(expr.get())->getId();
     return arg == SINUS || arg == COSINUS || arg == TANGENT || arg == COTANGENT;
 }
 /*
-std::vector<std::unique_ptr<AbstractExpression> > replaceEveryFunctionOnSystemVariable(std::unique_ptr<AbstractExpression> &expr)
+std::vector<abs_ex > replaceEveryFunctionOnSystemVariable(abs_ex &expr)
 {
     auto functions = expr->getSetOfFunctions();
     std::vector<abs_ex> result;
@@ -222,11 +222,11 @@ std::vector<std::unique_ptr<AbstractExpression> > replaceEveryFunctionOnSystemVa
     }
     return result;
 }*/
-std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(std::unique_ptr<AbstractExpression> &expr, std::map<QString, int> &funcs)
+std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex &expr, std::map<QString, int> &funcs)
 {
     return replaceEveryFunctionOnSystemVariable(expr.get(), funcs);
 }
-void replaceSystemVariablesBackToFunctions(std::unique_ptr<AbstractExpression> &expr, std::map<int, abs_ex> & funcs)
+void replaceSystemVariablesBackToFunctions(abs_ex &expr, std::map<int, abs_ex> & funcs)
 {
     replaceSystemVariablesBackToFunctions(expr.get(), funcs);
 }
@@ -276,7 +276,7 @@ void replaceSystemVariablesToExpressions(abs_ex & expr, std::map<int, abs_ex> & 
     replaceSystemVariablesToExpressions(expr.get(), funcs);
 }
 /*
-void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<std::unique_ptr<AbstractExpression> > &functions)
+void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex > &functions)
 {
     for (int i = 0; i < functions.size(); ++i)
     {
@@ -284,7 +284,7 @@ void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<std::uniqu
     }
 }
 */
-std::unique_ptr<AbstractExpression> getArgumentOfFunction(const std::unique_ptr<AbstractExpression> &expr)
+abs_ex getArgumentOfFunction(const abs_ex &expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
     assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT ||
@@ -310,18 +310,18 @@ std::unique_ptr<AbstractExpression> getArgumentOfFunction(const std::unique_ptr<
     }
 }
 
-std::unique_ptr<AbstractExpression> absEx(int num)
+abs_ex absEx(int num)
 {
     return abs_ex(new Number(num));
 }
 
 
-std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > checkIfItsLinearFunction(const std::unique_ptr<AbstractExpression> &func, int var)
+std::pair<abs_ex, abs_ex > checkIfItsLinearFunction(const abs_ex &func, int var)
 {
     return checkIfItsLinearFunction(func.get(), var);
 }
 
-std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > checkIfItsLinearFunction(const AbstractExpression *func, int var)
+std::pair<abs_ex, abs_ex > checkIfItsLinearFunction(const AbstractExpression *func, int var)
 {
     if (func->getId() == var)
         return {copy(one), copy(zero)};
@@ -332,17 +332,17 @@ std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpressio
     return {nullptr, nullptr};
 }
 
-std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > checkIfItsFunctionOfLinearArgument(const std::unique_ptr<AbstractExpression> &func, int var)
+std::pair<abs_ex, abs_ex > checkIfItsFunctionOfLinearArgument(const abs_ex &func, int var)
 {
     return checkIfItsFunctionOfLinearArgument(func.get(), var);
 }
 
-std::unique_ptr<AbstractExpression> numToAbs(int num)
+abs_ex numToAbs(int num)
 {
     return abs_ex(new Number(num));
 }
 
-std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression> > checkIfItsFunctionOfLinearArgument(const AbstractExpression *func, int var)
+std::pair<abs_ex, abs_ex > checkIfItsFunctionOfLinearArgument(const AbstractExpression *func, int var)
 {
     switch (func->getId()) {
     case SINUS:
@@ -364,7 +364,7 @@ std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpressio
     }
 }
 
-std::array<std::unique_ptr<AbstractExpression>, 3> checkIfItsQuadraticFunction(const AbstractExpression *func, int var)
+std::array<abs_ex, 3> checkIfItsQuadraticFunction(const AbstractExpression *func, int var)
 {
     if (func->getId() == DEGREE && Degree::getArgumentOfDegree(const_cast<AbstractExpression*>(func))->getId() == var &&
             *Degree::getDegreeOfExpression(const_cast<AbstractExpression*>(func)) == *two)
@@ -451,27 +451,27 @@ std::array<std::unique_ptr<AbstractExpression>, 3> checkIfItsQuadraticFunction(c
     return static_cast<const Polynomial*>(func)->checkQuadraticFunction(var);
 }
 
-std::array<std::unique_ptr<AbstractExpression>, 3> checkIfItsQuadraticFunction(const std::unique_ptr<AbstractExpression> &func, int var)
+std::array<abs_ex, 3> checkIfItsQuadraticFunction(const abs_ex &func, int var)
 {
     return checkIfItsQuadraticFunction(func.get(), var);
 }
 
-bool isZero(const std::unique_ptr<AbstractExpression> &expr)
+bool isZero(const abs_ex &expr)
 {
     return expr->getId() == NUMBER && static_cast<const Number*>(expr.get())->isZero();
 }
 
-std::unique_ptr<AbstractExpression> operator-(const std::unique_ptr<AbstractExpression> &arg)
+abs_ex operator-(const abs_ex &arg)
 {
     return minus_one * arg;
 }
 
-std::unique_ptr<AbstractExpression> operator-(std::unique_ptr<AbstractExpression> &&arg)
+abs_ex operator-(abs_ex &&arg)
 {
     return minus_one * std::move(arg);
 }
 
-std::unique_ptr<AbstractExpression> getArgumentOfFunction(AbstractExpression *expr)
+abs_ex getArgumentOfFunction(AbstractExpression *expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr);
     assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT
@@ -497,7 +497,7 @@ std::unique_ptr<AbstractExpression> getArgumentOfFunction(AbstractExpression *ex
     }
 }
 
-std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const AbstractExpression *func, int var)
+std::vector<abs_ex > checkIfItsPolynom(const AbstractExpression *func, int var)
 {
     std::vector<abs_ex> res(1);
     res[0]=copy(zero);
@@ -551,7 +551,7 @@ std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const Abstra
     return res;
 }
 //да-да, я использую кучу const_cast, что херня, но в данной ситуации мне проще так, рили
-std::pair<Number, std::unique_ptr<AbstractExpression> > checkIfItsMonomOfSomeDegree(const AbstractExpression *func, int var)
+std::pair<Number, abs_ex > checkIfItsMonomOfSomeDegree(const AbstractExpression *func, int var)
 {
     if (func->getId() == var)
         return {1, copy(one)};
@@ -599,7 +599,7 @@ std::pair<Number, std::unique_ptr<AbstractExpression> > checkIfItsMonomOfSomeDeg
     return {0, copy(const_cast<AbstractExpression*>(func))};
 }
 
-std::vector<std::unique_ptr<AbstractExpression> > checkIfItsIntegerPolynom(const AbstractExpression *func, int var)
+std::vector<abs_ex > checkIfItsIntegerPolynom(const AbstractExpression *func, int var)
 {
     if (func->getSetOfVariables().size() > 1)
         return std::vector<abs_ex>();
@@ -610,22 +610,22 @@ std::vector<std::unique_ptr<AbstractExpression> > checkIfItsIntegerPolynom(const
     return std::move(pol_res);
 }
 
-std::vector<std::unique_ptr<AbstractExpression> > checkIfItsPolynom(const std::unique_ptr<AbstractExpression> &func, int var)
+std::vector<abs_ex > checkIfItsPolynom(const abs_ex &func, int var)
 {
     return checkIfItsPolynom(func.get(), var);
 }
 
-std::vector<std::unique_ptr<AbstractExpression> > checkIfItsIntegerPolynom(const std::unique_ptr<AbstractExpression> &func, int var)
+std::vector<abs_ex > checkIfItsIntegerPolynom(const abs_ex &func, int var)
 {
     return checkIfItsIntegerPolynom(func.get(), var);
 }
 
-bool subCompare(const std::unique_ptr<AbstractExpression> &a, const std::unique_ptr<AbstractExpression> &b)
+bool subCompare(const abs_ex &a, const abs_ex &b)
 {
     return *(a - b) == *zero;
 }
 
-bool isDegreeOfArcTrigonometricalFunction(std::unique_ptr<AbstractExpression> &expr)
+bool isDegreeOfArcTrigonometricalFunction(abs_ex &expr)
 {
     auto arg = Degree::getArgumentOfDegree(expr.get());
     if (arg->getId() == ARCSINUS || arg->getId() == ARCTANGENT)
@@ -633,7 +633,7 @@ bool isDegreeOfArcTrigonometricalFunction(std::unique_ptr<AbstractExpression> &e
     return false;
 }
 
-bool isExponentialFunction(std::unique_ptr<AbstractExpression>& expr, int var)
+bool isExponentialFunction(abs_ex& expr, int var)
 {
     if (expr->getId() != DEGREE)
         return false;
@@ -642,7 +642,7 @@ bool isExponentialFunction(std::unique_ptr<AbstractExpression>& expr, int var)
 
 }
 
-void setUpExpressionIntoVariable(abs_ex & func, const std::unique_ptr<AbstractExpression> &expr, int var)
+void setUpExpressionIntoVariable(abs_ex & func, const abs_ex &expr, int var)
 {
     std::map<int, abs_ex> repl_vars;
     repl_vars.insert({var, copy(expr)});
@@ -652,7 +652,7 @@ void setUpExpressionIntoVariable(abs_ex & func, const std::unique_ptr<AbstractEx
     func = func->downcast();
 }
 
-void setUpExpressionIntoVariable(std::unique_ptr<AbstractExpression> &func, std::unique_ptr<AbstractExpression> &&expr, int var)
+void setUpExpressionIntoVariable(abs_ex &func, abs_ex &&expr, int var)
 {
     std::map<int, abs_ex> repl_vars;
     repl_vars.insert({var, std::move(expr)});

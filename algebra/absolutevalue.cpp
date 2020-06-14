@@ -4,12 +4,12 @@
 #include <QDebug>
 #include "fractal.h"
 #include "degree.h"
-AbsoluteValue::AbsoluteValue(const std::unique_ptr<AbstractExpression> & expr)
+AbsoluteValue::AbsoluteValue(const abs_ex & expr)
 {
     this->expression = makeAbstractExpression(expr->getId(), expr.get());
     this->simplify();
 }
-AbsoluteValue::AbsoluteValue(std::unique_ptr<AbstractExpression> && expr)
+AbsoluteValue::AbsoluteValue(abs_ex && expr)
 {
     this->expression = std::move(expr);
     this->simplify();
@@ -74,7 +74,7 @@ bool AbsoluteValue::canDowncastTo()
         return true;
     return false;
 }
-std::unique_ptr<AbstractExpression> AbsoluteValue::downcastTo()
+abs_ex AbsoluteValue::downcastTo()
 {
     assert(canDowncastTo());
     if (this->expr_position > 0)
@@ -89,7 +89,7 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::downcastTo()
             num.push_back(abs_ex(new AbsoluteValue(makeAbstractExpression(it->getId(), it.get()))));
         for (auto &it : *argument_multipliers.second)
             denum.push_back(abs_ex(new AbsoluteValue(makeAbstractExpression(it->getId(), it.get()))));
-        return std::unique_ptr<AbstractExpression>(new Fractal(std::move(num), std::move(denum)));
+        return abs_ex(new Fractal(std::move(num), std::move(denum)));
     }
     if (this->expr_position < 0 && this->expression->getId() == POLYNOMIAL)
     {
@@ -102,7 +102,7 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::downcastTo()
         auto arg = Degree::getArgumentOfDegree(this->expression.get());
         return pow(abs(copy(arg)), Degree::getDegreeOfExpression(this->expression.get()));
     }
-    std::unique_ptr<AbstractExpression> minus(new Number(-1));
+    abs_ex minus(new Number(-1));
     return this->expression * minus;
 }
 std::set<int> AbsoluteValue::getSetOfPolyVariables() const
@@ -152,12 +152,12 @@ int AbsoluteValue::getPositionRelativelyZeroIfHasVariables()
 {
     return 1;
 }
-std::unique_ptr<AbstractExpression> AbsoluteValue::open()
+abs_ex AbsoluteValue::open()
 {
     return std::move(this->expression);
 }
 
-std::unique_ptr<AbstractExpression> AbsoluteValue::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex AbsoluteValue::changeSomePartOn(QString part, abs_ex &on_what)
 {
    // NONCONST
     if (this->expression->makeStringOfExpression() == part)
@@ -169,7 +169,7 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::changeSomePartOn(QString part
     return this->expression->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> AbsoluteValue::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex AbsoluteValue::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
         if (this->expression->makeStringOfExpression() == part)
@@ -181,13 +181,13 @@ std::unique_ptr<AbstractExpression> AbsoluteValue::changeSomePartOnExpression(QS
         return this->expression->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> AbsoluteValue::derivative(int var) const
+abs_ex AbsoluteValue::derivative(int var) const
 {
     assert(false);
     return nullptr;
 }
 
-std::unique_ptr<AbstractExpression> AbsoluteValue::antiderivative(int var) const
+abs_ex AbsoluteValue::antiderivative(int var) const
 {
     assert(false);
     return nullptr;
@@ -204,7 +204,7 @@ void AbsoluteValue::setSimplified(bool simpl)
     this->expression->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > AbsoluteValue::getTrigonometricalFunctions() const
+std::set<abs_ex > AbsoluteValue::getTrigonometricalFunctions() const
 {
     return this->expression->getTrigonometricalFunctions();
 }
@@ -219,12 +219,12 @@ long long AbsoluteValue::getGcdOfNumeratorsOfDegrees(int var) const
     return this->expression->getGcdOfNumeratorsOfDegrees(var);
 }
 
-std::unique_ptr<AbstractExpression> abs(const std::unique_ptr<AbstractExpression> &expr)
+abs_ex abs(const abs_ex &expr)
 {
     return abs_ex(new AbsoluteValue(expr))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> abs(std::unique_ptr<AbstractExpression> &&expr)
+abs_ex abs(abs_ex &&expr)
 {
     return abs_ex(new AbsoluteValue(std::move(expr)))->downcast();
 }

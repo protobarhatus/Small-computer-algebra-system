@@ -273,8 +273,8 @@ std::vector<TrigonometricalFunctionsArgumentsCastType> chooseInstructionsToCastT
 //аргумент, умноженный на какое-либо число.
 //ключ словаря - то самое число,  число в значении словаря - степени триг. функции с этим самым аргументом и то, есть ли у этой функции нечетная степень,
 //а строка - строковое представление функции с этим аргументом
-void distributeTrigonometryArgumentsMultipliersRatios(std::vector<std::pair<std::pair<std::unique_ptr<AbstractExpression>, std::pair<Number, bool> >, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number &, const Number &)> > > > &arguments_multipliers,
-                                                      std::vector<std::pair<std::unique_ptr<AbstractExpression>, Number> > &arguments)
+void distributeTrigonometryArgumentsMultipliersRatios(std::vector<std::pair<std::pair<abs_ex, std::pair<Number, bool> >, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number &, const Number &)> > > > &arguments_multipliers,
+                                                      std::vector<std::pair<abs_ex, Number> > &arguments)
 {
      auto comp = [](const Number & a, const Number & b)->bool { return a.less(b);};
     for (auto &it1 : arguments)
@@ -306,7 +306,7 @@ void distributeTrigonometryArgumentsMultipliersRatios(std::vector<std::pair<std:
 //аргумент, умноженный на какое-либо число.
 //ключ словаря - то самое число,  число в значении словаря - степени триг. функции с этим самым аргументом и то, есть ли у этой функции нечетная степень,
 //а строка - строковое представление функции с этим аргументом
-std::pair<std::map<QString, TrigonometricalFunctionsArgumentsCastType>, bool> chooseInstructionsToCastTrigonometryArguments(std::vector<std::pair<std::pair<std::unique_ptr<AbstractExpression>, std::pair<Number, bool> >, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number &, const Number &)> > > > &arguments_multipliers)
+std::pair<std::map<QString, TrigonometricalFunctionsArgumentsCastType>, bool> chooseInstructionsToCastTrigonometryArguments(std::vector<std::pair<std::pair<abs_ex, std::pair<Number, bool> >, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number &, const Number &)> > > > &arguments_multipliers)
 {
     std::map<QString, TrigonometricalFunctionsArgumentsCastType> instructions;
     bool need_to_convert = false;

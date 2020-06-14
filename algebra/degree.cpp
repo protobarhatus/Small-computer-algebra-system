@@ -19,28 +19,28 @@
 #include "cotangent.h"
 #include "variablesdistributor.h"
 #include "arcsinus.h"
-Degree::Degree(std::unique_ptr<AbstractExpression> && iargument, std::unique_ptr<AbstractExpression> && idegree)
+Degree::Degree(abs_ex && iargument, abs_ex && idegree)
 {
     this->argument = std::move(iargument);
     this->degree = std::move(idegree);
     this->simplify();
 }
-Degree::Degree(const std::unique_ptr<AbstractExpression> & arg, const std::unique_ptr<AbstractExpression> & deg)
+Degree::Degree(const abs_ex & arg, const abs_ex & deg)
 {
     this->argument = makeAbstractExpression(arg->getId(), arg.get());
     this->degree = makeAbstractExpression(deg->getId(), deg.get());
     this->simplify();
 }
-Degree::Degree(const std::unique_ptr<AbstractExpression> & arg, Number deg)
+Degree::Degree(const abs_ex & arg, Number deg)
 {
     this->argument = makeAbstractExpression(arg->getId(), arg.get());
-    this->degree = std::unique_ptr<AbstractExpression>(new Number(deg));
+    this->degree = abs_ex(new Number(deg));
     this->simplify();
 }
-Degree::Degree(std::unique_ptr<AbstractExpression> && arg, Number deg)
+Degree::Degree(abs_ex && arg, Number deg)
 {
     this->argument = std::move(arg);
-    this->degree = std::unique_ptr<AbstractExpression>(new Number(deg));
+    this->degree = abs_ex(new Number(deg));
     this->simplify();
 }
 bool Degree::isArgument()
@@ -110,11 +110,17 @@ bool Degree::canDowncastTo()
     if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->tryToFindLogarithmInNumerator() !=
             nullptr)
         return true;
+    if (*this->argument == *getEuler() && this->degree->getId() == POLYNOMIAL &&
+            static_cast<Polynomial*>(this->degree.get())->hasLogarithmicMonoms())
+        return true;
     if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isZero())
         return true;
+   /* if (this->degree->getId() == FRACTAL && !static_cast<Fractal*>(this->degree.get())->getCoefficient().isOne() &&
+            this->argument->getId() == NUMBER)
+        return true;*/
     return false;
 }
-std::unique_ptr<AbstractExpression> Degree::downcastTo()
+abs_ex Degree::downcastTo()
 {
 
     assert(canDowncastTo());
@@ -128,7 +134,7 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo()
     }
 
     if ((this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isOne()) || static_cast<Number*>(this->degree.get())->isZero())
-        return std::unique_ptr<AbstractExpression>(new Number(1));
+        return abs_ex(new Number(1));
     if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isZero())
         return numToAbs(0);
     if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isOne())
@@ -141,13 +147,13 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo()
         if (static_cast<Number*>(this->argument.get())->getNumerator() != 1)
         {
             Number num_coe = static_cast<Number*>(this->argument.get())->getNumerator();
-            num.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(NUMBER, &num_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            num.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &num_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
             num.begin()->get()->simplify();
         }
         Number denom_coe = static_cast<Number*>(this->argument.get())->getDenominator();
-        denum.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+        denum.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
         denum.begin()->get()->simplify();
-        return std::unique_ptr<AbstractExpression>(new Fractal(&num, &denum));
+        return abs_ex(new Fractal(&num, &denum));
     }    
     else if (this->argument->getId() == NUMBER)
     {
@@ -161,10 +167,10 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo()
             for (auto &it : multiples)
             {
                 bool s;
-                num.push_back(std::unique_ptr<AbstractExpression>(new Degree(std::unique_ptr<AbstractExpression>(new Number(power(it.first, it.second, s))),
+                num.push_back(abs_ex(new Degree(abs_ex(new Number(power(it.first, it.second, s))),
                                                                              makeAbstractExpression(this->degree->getId(), this->degree.get()))));
             }
-            return std::unique_ptr<AbstractExpression>(new Fractal(std::move(num), std::move(den), is_negative ? -1 : 1));
+            return abs_ex(new Fractal(std::move(num), std::move(den), is_negative ? -1 : 1));
         }
     }
     else if (this->argument->getId() == FRACTAL)
@@ -183,7 +189,7 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo()
             if (!(num_coe * -1).isOne())
                 num.push_back(pow(numToAbs(-num_coe.getNumerator()), degree));
             if (!denom_coe.isOne())
-                denum.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+                denum.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
             if(fract.first->empty())
             {
 
@@ -210,23 +216,23 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo()
                 for (auto &it2 : *fract.second)
                     denum.push_back(pow(it2, degree));
             }
-            auto fr =  std::unique_ptr<AbstractExpression>(new Fractal(&num, &denum));
+            auto fr =  abs_ex(new Fractal(&num, &denum));
             fr->simplify();
             return fr;
         }
         if (!num_coe.isOne())
-            num.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(NUMBER, &num_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            num.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &num_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
         for (auto &it : *fract.first)
         {
-            num.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(it->getId(), it.get()), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            num.push_back(abs_ex(new Degree(makeAbstractExpression(it->getId(), it.get()), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
         }
         if (!denom_coe.isOne())
-            denum.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            denum.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
         for (auto &it : *fract.second)
         {
-            denum.push_back(std::unique_ptr<AbstractExpression>(new Degree(makeAbstractExpression(it->getId(), it.get()), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            denum.push_back(abs_ex(new Degree(makeAbstractExpression(it->getId(), it.get()), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
         }
-        auto fr =  std::unique_ptr<AbstractExpression>(new Fractal(&num, &denum));
+        auto fr =  abs_ex(new Fractal(&num, &denum));
         fr->simplify();
         return fr;
     }
@@ -241,8 +247,28 @@ std::unique_ptr<AbstractExpression> Degree::downcastTo()
         assert(log != nullptr);
         return pow(static_cast<Logarithm*>(log.get())->getArgumentMoved(), degree/log);
     }
-
+    if (*this->argument == *getEuler() && this->degree->getId() == POLYNOMIAL)
+    {
+        auto monoms = static_cast<Polynomial*>(this->degree.get())->getMonomialsPointers();
+        abs_ex res = copy(one);
+        abs_ex degree_without_logs = copy(zero);
+        for (auto &it : monoms)
+        {
+            if (it->tryToFindLogarithmInNumerator() == nullptr)
+                degree_without_logs = std::move(degree_without_logs) + copy(it);
+            else
+                res = std::move(res) * pow(this->argument, copy(it));
+        }
+        return res * pow(this->argument, degree_without_logs);
+    }
+   /* if (this->degree->getId() == FRACTAL && !static_cast<Fractal*>(this->degree.get())->getCoefficient().isOne() &&
+            this->argument->getId() == NUMBER)
+    {
+        return pow(pow(argument, static_cast<Fractal*>(this->degree.get())->getCoefficient()),
+                   degree/toAbsEx(static_cast<Fractal*>(this->degree.get())->getCoefficient()));
+    }*/
     return copy( this->argument.get());
+
 }
 AbstractExpression * Degree::getArgumentOfDegree(AbstractExpression *expr)
 {
@@ -252,12 +278,12 @@ AbstractExpression * Degree::getArgumentOfDegree(AbstractExpression *expr)
         return expr;
 
 }
-std::unique_ptr<AbstractExpression> Degree::getDegreeOfExpression(AbstractExpression *expr)
+abs_ex Degree::getDegreeOfExpression(AbstractExpression *expr)
 {
     if (expr->getId() == DEGREE)
         return makeAbstractExpression(static_cast<Degree*>(expr)->degree->getId(), static_cast<Degree*>(expr)->degree.get());
     else
-        return std::unique_ptr<AbstractExpression>(new Number(1));
+        return abs_ex(new Number(1));
 }
 bool canReduceWithDowngradingDegree(AbstractExpression * left, AbstractExpression * right)
 {
@@ -309,7 +335,7 @@ void Degree::simplify()
         }
         this->argument = std::move(static_cast<Degree*>(this->argument.get())->argument);
         if (is_argument_square && (this->degree->getId() != NUMBER || static_cast<Number*>(this->degree.get())->getNumerator() % 2))
-            this->argument = std::unique_ptr<AbstractExpression>(new AbsoluteValue(std::move(argument)));
+            this->argument = abs_ex(new AbsoluteValue(std::move(argument)));
     }
     if ((this->degree->getId() == NUMBER || this->degree->getId() == FRACTAL) && this->argument->getId() == NUMBER)
     {
@@ -349,12 +375,12 @@ void Degree::simplify()
             if (is_fractal)
             {
                 auto args = static_cast<Fractal*>(this->degree.get())->getFractal();
-                this->degree = std::unique_ptr<AbstractExpression>(new Fractal(args.first, args.second, degree));
+                this->degree = abs_ex(new Fractal(args.first, args.second, degree));
                 this->degree = this->degree->downcast();
             }
             else
-                this->degree = std::unique_ptr<AbstractExpression>(new Number(degree));
-            this->argument = std::unique_ptr<AbstractExpression>(new Number(arg_num, arg_denum));
+                this->degree = abs_ex(new Number(degree));
+            this->argument = abs_ex(new Number(arg_num, arg_denum));
         }
     }
     if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isInteger() &&
@@ -551,7 +577,7 @@ void Degree::takeArgumentsMultipliersIntoDegree()
         int gcf = gcd_of_mults(num_mults);
         while (is_negative && gcf % 2 == 0)
             gcf /= 2;
-        std::unique_ptr<AbstractExpression> degr_multiplier = std::unique_ptr<AbstractExpression>(new Number(gcf));
+        abs_ex degr_multiplier = abs_ex(new Number(gcf));
         this->degree = this->degree * degr_multiplier;
         *arg = make_new_num(num_mults, gcf) * (is_negative ? -1 : 1);
 
@@ -642,26 +668,26 @@ long long int Degree::getRootValue()
         return static_cast<Fractal*>(this->degree.get())->getCoefficient().getDenominator();
 
 }
-std::unique_ptr<AbstractExpression> takeDegreeOf(const std::unique_ptr<AbstractExpression> & argument, const std::unique_ptr<AbstractExpression> & degree)
+abs_ex takeDegreeOf(const abs_ex & argument, const abs_ex & degree)
 {
     return Degree(argument, degree).downcast();
 }
-std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> && argument, std::unique_ptr<AbstractExpression> && degree)
+abs_ex takeDegreeOf(abs_ex && argument, abs_ex && degree)
 {
     return Degree(argument, degree).downcast();
 }
-std::unique_ptr<AbstractExpression> takeDegreeOf(const std::unique_ptr<AbstractExpression> & argument, Number degree)
+abs_ex takeDegreeOf(const abs_ex & argument, Number degree)
 {
     return Degree(argument, degree).downcast();
 }
-std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> && argument, Number degree)
+abs_ex takeDegreeOf(abs_ex && argument, Number degree)
 {
     return Degree(argument, degree).downcast();
 }
-std::unique_ptr<AbstractExpression> takeDegreeOf(Number argument, Number degree)
+abs_ex takeDegreeOf(Number argument, Number degree)
 {
-    return Degree(std::unique_ptr<AbstractExpression>(new Number(argument)),
-                  std::unique_ptr<AbstractExpression>(new Number(degree))).downcast();
+    return Degree(abs_ex(new Number(argument)),
+                  abs_ex(new Number(degree))).downcast();
 }
 double Degree::getApproximateValue()
 {
@@ -688,7 +714,7 @@ double Degree::getApproximateValue(const std::function<double (VariablesDefiniti
     return pow(this->argument->getApproximateValue(choosing_value_rule), this->degree->getApproximateValue(choosing_value_rule));
 }
 
-std::unique_ptr<AbstractExpression> Degree::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Degree::changeSomePartOn(QString part, abs_ex &on_what)
 {
   //  NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -700,7 +726,7 @@ std::unique_ptr<AbstractExpression> Degree::changeSomePartOn(QString part, std::
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Degree::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Degree::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
         if (this->argument->makeStringOfExpression() == part)
@@ -712,12 +738,12 @@ std::unique_ptr<AbstractExpression> Degree::changeSomePartOnExpression(QString p
         return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Degree::derivative(int var) const
+abs_ex Degree::derivative(int var) const
 {
     return takeDegreeOf(copy(this->argument), this->degree - one) * (this->argument * this->degree->derivative(var) * ln(this->argument) + this->degree * this->argument->derivative(var));
 }
 
-std::unique_ptr<AbstractExpression> Degree::antiderivative(int var) const
+abs_ex Degree::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -915,7 +941,7 @@ void Degree::setSimplified(bool simpl)
     this->degree->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Degree::getTrigonometricalFunctions() const
+std::set<abs_ex > Degree::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> result = this->argument->getTrigonometricalFunctions();
     auto deg = this->degree->getTrigonometricalFunctions();
@@ -954,67 +980,67 @@ long long Degree::getGcdOfNumeratorsOfDegrees(int var) const
     return gcd(arg, deg);
 }
 
-std::unique_ptr<AbstractExpression> takeDegreeOf(std::unique_ptr<AbstractExpression> &&argument, const std::unique_ptr<AbstractExpression> &degree)
+abs_ex takeDegreeOf(abs_ex &&argument, const abs_ex &degree)
 {
     return takeDegreeOf(std::move(argument), copy(degree));
 }
 
-std::unique_ptr<AbstractExpression> sqrt(const std::unique_ptr<AbstractExpression> &arg)
+abs_ex sqrt(const abs_ex &arg)
 {
     return takeDegreeOf(arg, half);
 }
 
-std::unique_ptr<AbstractExpression> sqrt(std::unique_ptr<AbstractExpression> &&arg)
+abs_ex sqrt(abs_ex &&arg)
 {
     return takeDegreeOf(std::move(arg), half);
 }
 
-std::unique_ptr<AbstractExpression> sqr(const std::unique_ptr<AbstractExpression> &arg)
+abs_ex sqr(const abs_ex &arg)
 {
     return takeDegreeOf(arg, two);
 }
 
-std::unique_ptr<AbstractExpression> sqr(std::unique_ptr<AbstractExpression> &&arg)
+abs_ex sqr(abs_ex &&arg)
 {
     return takeDegreeOf(std::move(arg), two);
 }
 
-std::unique_ptr<AbstractExpression> pow(const std::unique_ptr<AbstractExpression> &arg, const std::unique_ptr<AbstractExpression> &deg)
+abs_ex pow(const abs_ex &arg, const abs_ex &deg)
 {
     return takeDegreeOf(arg, deg);
 }
 
-std::unique_ptr<AbstractExpression> pow(std::unique_ptr<AbstractExpression> &&arg, const std::unique_ptr<AbstractExpression> &deg)
+abs_ex pow(abs_ex &&arg, const abs_ex &deg)
 {
     return takeDegreeOf(std::move(arg), deg);
 }
 
-std::unique_ptr<AbstractExpression> pow(std::unique_ptr<AbstractExpression> &&arg, std::unique_ptr<AbstractExpression> &&deg)
+abs_ex pow(abs_ex &&arg, abs_ex &&deg)
 {
     return takeDegreeOf(std::move(arg), std::move(deg));
 }
 
-std::unique_ptr<AbstractExpression> pow(const std::unique_ptr<AbstractExpression> &arg, Number deg)
+abs_ex pow(const abs_ex &arg, Number deg)
 {
     return takeDegreeOf(arg, deg);
 }
 
-std::unique_ptr<AbstractExpression> pow(std::unique_ptr<AbstractExpression> &&arg, Number deg)
+abs_ex pow(abs_ex &&arg, Number deg)
 {
     return takeDegreeOf(std::move(arg), deg);
 }
 
-std::unique_ptr<AbstractExpression> pow(Number arg, Number deg)
+abs_ex pow(Number arg, Number deg)
 {
     return takeDegreeOf(arg, deg);
 }
 
-bool isSqrt(const std::unique_ptr<AbstractExpression> &expr)
+bool isSqrt(const abs_ex &expr)
 {
     return expr->getId() == DEGREE && *Degree::getDegreeOfExpression(expr.get()) == *half;
 }
 
-std::unique_ptr<AbstractExpression> pow(const std::unique_ptr<AbstractExpression> &arg, std::unique_ptr<AbstractExpression> &&deg)
+abs_ex pow(const abs_ex &arg, abs_ex &&deg)
 {
     return takeDegreeOf(arg, std::move(deg));
 }

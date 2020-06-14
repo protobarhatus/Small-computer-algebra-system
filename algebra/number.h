@@ -16,7 +16,7 @@ public:
     long long int getDenominator() const;
     virtual void simplify() override;
     virtual bool canDowncastTo() override;
-    virtual std::unique_ptr<AbstractExpression> downcastTo() override;
+    virtual abs_ex downcastTo() override;
     Number & operator=(long long int value);
     //the most important values
     bool isOne() const;

@@ -45,4 +45,6 @@ private:
 
 abs_ex atan(const abs_ex & arg);
 abs_ex atan(abs_ex && arg);
+abs_ex acot(const abs_ex & arg);
+abs_ex acot(abs_ex && arg);
 #endif // ARCTANGENT_H

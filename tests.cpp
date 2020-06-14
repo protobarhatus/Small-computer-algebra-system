@@ -782,7 +782,6 @@ void testAlgMod()
 },
             []()->bool {
             AlgExpr x = var();
-            qDebug() << sqrt(sin(x)*sin(x) + 2*sin(x) + 1).toString();
             return sqrt(sin(x)*sin(x) + 2*sin(x) + 1) == abs(sin(x) + 1);
 },
             []()->bool {
@@ -1297,6 +1296,10 @@ void testAlgMod()
 []()->bool {
     AlgExpr a = var();
     return  pow(euler(), 3*a*ln(3)*ln(3)) == pow(3, 3*a*ln(3));
+},
+[]()->bool {
+    AlgExpr a = var();
+    return pow(euler(), 2*ln(3) + 3*a*ln(2) + a + 2) == 9*pow(2, 3*a)*pow(euler(), a + 2);
 }
     };
 

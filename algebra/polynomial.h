@@ -26,10 +26,10 @@ public:
     virtual bool operator==(AbstractExpression & right) override;
     bool isMonomial();
     virtual bool canDowncastTo() override;
-    virtual std::unique_ptr<AbstractExpression> downcastTo() override;
+    virtual abs_ex downcastTo() override;
     //assert if cannot
     //i don't remember why do i need this function, maybe should delete?
-    std::unique_ptr<AbstractExpression> turnIntoMonomial();
+    abs_ex turnIntoMonomial();
     bool canBecameFractal();
     bool isZero();
     void merge(Polynomial * polynomial);
@@ -51,14 +51,14 @@ public:
     Polynomial operator*(AbstractExpression * expr);
     Fractal operator/(AbstractExpression * expr);
     virtual QString makeStringOfExpression() const override;
-    std::unique_ptr<AbstractExpression> reduceCommonPart();
+    abs_ex reduceCommonPart();
     // if it is a sum like sqrt(3)+sqrt(5), it returns result on formula (a+b)(a-b)=a^2-b^2. returns result and multiplier
-    std::pair<std::unique_ptr<AbstractExpression>, std::unique_ptr<AbstractExpression>> multiplyIrrationalSumOnAppropriateFormula();
+    std::pair<abs_ex, abs_ex> multiplyIrrationalSumOnAppropriateFormula();
     //is sum of rational and irrational numbers without any variables
     bool isIrrationalSum();
     bool canGetRidOfIrrationalytyByMultiplying();
-    std::unique_ptr<AbstractExpression> tryToTakeRoot(long long int root);
-    std::unique_ptr<AbstractExpression> toDegree(long long int degree);
+    abs_ex tryToTakeRoot(long long int root);
+    abs_ex toDegree(long long int degree);
 
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;
@@ -84,10 +84,12 @@ public:
     std::array<abs_ex, 3> checkQuadraticFunction(int var) const;
     abs_ex tryToDistinguishFullDegree() const;
     void tryToDistingushFullDegreeOfVariablePolynomial(abs_ex & polynom, Polynomial * polynom_ptr) const;
+    std::pair<std::list<abs_ex>, Number> tryToFactorizeByDistingushesOfFullDegree() const;
     virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const override;
     virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
     virtual void setSimplified(bool simpl) override;
     virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
+    bool hasLogarithmicMonoms() const;
 private:
     bool casted_trigonometry;
     void castTrigonometry();
@@ -96,9 +98,9 @@ private:
     void castTrigonometricalFunctions();
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     void pushBack(std::unique_ptr<Fractal> && fractal);
-    std::unique_ptr<AbstractExpression> tryToTakeRootOfVariablesPolynomial(long long int root);
+    abs_ex tryToTakeRootOfVariablesPolynomial(long long int root);
     //only square root
-    std::unique_ptr<AbstractExpression> tryToTakeRootOfNonVariablesPolynomial();
+    abs_ex tryToTakeRootOfNonVariablesPolynomial();
     std::list<std::unique_ptr<Fractal>> monomials;
     //this functions is for situations when merging can make iterator invalid
     void mergeWithoutSimplifiyng(Polynomial * polynomial, Number coe = 1);

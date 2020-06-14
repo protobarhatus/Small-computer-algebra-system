@@ -43,7 +43,7 @@ bool Constant::canDowncastTo()
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Constant::downcastTo()
+abs_ex Constant::downcastTo()
 {
     return abs_ex(nullptr);
 }
@@ -93,23 +93,23 @@ int Constant::getPositionRelativelyZeroIfHasVariables()
     return (this->value > 0 ? 1 : (this->value < 0 ? -1 : 0));
 }
 
-std::unique_ptr<AbstractExpression> Constant::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Constant::changeSomePartOn(QString part, abs_ex &on_what)
 {
     return nullptr;
 }
 
-std::unique_ptr<AbstractExpression> Constant::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Constant::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     return nullptr;
 }
 
-std::unique_ptr<AbstractExpression> Constant::derivative(int var) const
+abs_ex Constant::derivative(int var) const
 {
 
     return copy(zero);
 }
 
-std::unique_ptr<AbstractExpression> Constant::antiderivative(int var) const
+abs_ex Constant::antiderivative(int var) const
 {
     return abs_ex(new Constant(this->value, this->name)) * abs_ex(new Variable(getVariable(var)));
 }
@@ -119,7 +119,7 @@ void Constant::setSimplified(bool simpl)
     this->simplified = simpl;
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Constant::getTrigonometricalFunctions() const
+std::set<abs_ex > Constant::getTrigonometricalFunctions() const
 {
     return std::set<abs_ex>();
 }

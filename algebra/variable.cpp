@@ -91,10 +91,10 @@ bool Variable::canDowncastTo()
 {
     return false;
 }
-std::unique_ptr<AbstractExpression> Variable::downcastTo()
+abs_ex Variable::downcastTo()
 {
     assert(false);
-    return std::unique_ptr<AbstractExpression>(nullptr);
+    return abs_ex(nullptr);
 }
 void Variable::_qDebugOut()
 {
@@ -138,24 +138,24 @@ double Variable::getApproximateValue(const std::function<double (VariablesDefini
     return choosing_value_rule(this->definition);
 }
 
-std::unique_ptr<AbstractExpression> Variable::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Variable::changeSomePartOn(QString part, abs_ex &on_what)
 {
     return nullptr;
 }
 
-std::unique_ptr<AbstractExpression> Variable::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Variable::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     return nullptr;
 }
 
-std::unique_ptr<AbstractExpression> Variable::derivative(int var) const
+abs_ex Variable::derivative(int var) const
 {
     if (var == this->id)
         return copy(one);
     return copy(zero);
 }
 
-std::unique_ptr<AbstractExpression> Variable::antiderivative(int var) const
+abs_ex Variable::antiderivative(int var) const
 {
     if (this->getId() != var)
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -167,7 +167,7 @@ void Variable::setSimplified(bool simpl)
     this->simplified = simpl;
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Variable::getTrigonometricalFunctions() const
+std::set<abs_ex > Variable::getTrigonometricalFunctions() const
 {
     return std::set<abs_ex>();
 }

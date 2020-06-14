@@ -97,34 +97,40 @@ std::list<abs_ex> checkIfItsExponentialSumEquationAndTryToSolve(abs_ex && equati
     std::list<abs_ex> res;
     auto monoms = static_cast<Polynomial*>(equation.get())->getMonomialsPointers();
     auto downcasted_frac = monoms.begin()._Ptr->_Myval->downcast();
-    auto basis = copy(Degree::getArgumentOfDegree(downcasted_frac.get()));
+    auto var_degree = monoms.begin()._Ptr->_Myval->getPartWithVariable(var);
+    auto basis = copy(Degree::getArgumentOfDegree(var_degree.get()));
     if (basis->hasVariable(var))
         return res;
     if (basis->getPositionRelativelyZero() < 0)
     {
         downcasted_frac = -downcasted_frac;
         basis = -basis;
+        var_degree = -var_degree;
         equation = -equation;
         right = -right;
     }
-    auto deg = Degree::getDegreeOfExpression(downcasted_frac.get());
+    auto deg = Degree::getDegreeOfExpression(var_degree.get());
     abs_ex temp_var = systemVarExpr();
-    abs_ex new_equation = copy(temp_var);
+    abs_ex new_equation = monoms.begin()._Ptr->_Myval->getFractalWithoutVariable(var) * copy(temp_var);
     for (auto it = next(monoms.begin()); it != monoms.end(); ++it)
     {
-        if (!subCompare(copy(Degree::getArgumentOfDegree(it._Ptr->_Myval)), basis))
+        auto monom = it._Ptr->_Myval->getPartWithVariable(var);
+        if (!subCompare(copy(Degree::getArgumentOfDegree(monom.get())), basis))
             return res;
-        if ((Degree::getDegreeOfExpression(it._Ptr->_Myval)/deg )->getId() != NUMBER)
+        if ((Degree::getDegreeOfExpression(monom.get())/deg )->getId() != NUMBER)
             return res;
-        new_equation = std::move(new_equation) + pow(temp_var, (Degree::getDegreeOfExpression(it._Ptr->_Myval)/deg ));
+        new_equation = std::move(new_equation) +
+                it._Ptr->_Myval->getFractalWithoutVariable(var) * pow(temp_var, (Degree::getDegreeOfExpression(monom.get())/deg ));
     }
     new_equation = std::move(new_equation) - std::move(right);
     auto temp_res = solveEquation(new_equation, temp_var->getId());
+    //qDebug() << var_degree->makeStringOfExpression();
     for (auto &it : temp_res)
     {
-        if (it->getPositionRelativelyZero() > 0)
+        //qDebug() << it->makeStringOfExpression();
+        if (it->getPositionRelativelyZero() >= 0)
         {
-            res.splice(res.end(), solveEquation(downcasted_frac - it, var));
+            res.splice(res.end(), solveEquation(var_degree - it, var));
         }
     }
     return res;
@@ -205,6 +211,7 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
         if (right_expr->getPositionRelativelyZero() < 0)
             return res;
         auto arg = copy(static_cast<AbsoluteValue*>(var_expr.get())->getExpression());
+
         res.splice(res.end(), solveEquation(arg - right_expr, var,
         {RootCondition(var, RootCondition::BIGGER_THAN_ZERO, arg),
          RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)}));
@@ -212,19 +219,195 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
         res.splice(res.end(), solveEquation(arg + right_expr, var,
         {RootCondition(var, RootCondition::LESS_THAN_ZERO, arg),
          RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)}));
+
         return res;
-    }/*
-            SINUS = -6,
-            COSINUS = -7,
-            TANGENT = -8,
-            COTANGENT = -9,
-            CONSTANT = -10,
-            LOGARITHM = -11,
-            DIFFERENTIAL = -19,
-            ARCTANGENT = -12,
-            ARCSINUS = -13,*/
+    }
+    if (var_expr->getId() == SINUS)
+    {
+        if ((right_expr - one)->getPositionRelativelyZero() > 0)
+            return res;
+        if ((right_expr + one)->getPositionRelativelyZero() < 0)
+            return res;
+        if (right_expr->hasVariable(var))
+        {
+            //такие особые условия приходится делать из-за поведения аркфункций, которые не раскроют уравнение, потому
+            //что оно в общем случае не попадает в границы области значений арков
+            if (right_expr->getId() == SINUS)
+            {
+                auto var_arg = getArgumentOfFunction(var_expr);
+                auto right_arg = getArgumentOfFunction(right_expr);
+                res.splice(res.end(), solveEquation(var_arg - right_arg - two*getPi()*systemVarExpr(), var));
+                res.splice(res.end(), solveEquation(var_arg - getPi() + right_arg - two*getPi()*systemVarExpr(), var));
+                return res;
+            }
+            if (right_expr->getId() == COSINUS)
+            {
+                auto var_arg = getArgumentOfFunction(var_expr);
+                auto right_arg = getArgumentOfFunction(right_expr);
+                auto int_var = systemVarExpr();
+                res.splice(res.end(), solveEquation(var_arg - right_arg - two*getPi()*int_var, var,
+                                                    RootCondition(var, RootCondition::EQUAL_ZERO, var_expr - getPi()/four - two*getPi()*int_var)));
+                res.splice(res.end(), solveEquation(var_arg - right_arg - two*getPi()*int_var, var,
+                                                    RootCondition(var, RootCondition::EQUAL_ZERO, var_expr + getPi()/four - two*getPi()*int_var)));
+                return res;
+            }
+            //тангенсы и котангенсы должны были преобразоваться
+            return res;
+        }
+        auto var_arg = getArgumentOfFunction(var_expr);
+        auto right_asin = asin(right_expr);
+        res.splice(res.end(), solveEquation(var_arg - right_asin - two*getPi()*systemVarExpr(), var));
+        res.splice(res.end(), solveEquation(var_arg - getPi() + right_asin - two*getPi()*systemVarExpr(), var));
+        return res;
 
+    }
+    if (var_expr->getId() == COSINUS)
+    {
+        if ((right_expr - one)->getPositionRelativelyZero() > 0)
+            return res;
+        if ((right_expr + one)->getPositionRelativelyZero() < 0)
+            return res;
+        if (right_expr->hasVariable(var))
+        {
+            if (right_expr->getId() == SINUS)
+                return solveEquationOfSpecialCases(right_expr, var_expr, var);
+            if (right_expr->getId() == COSINUS)
+            {
+                auto var_arg = getArgumentOfFunction(var_expr);
+                auto right_arg = getArgumentOfFunction(right_expr);
+                res.splice(res.end(), solveEquation(var_arg - right_arg - two*getPi()*systemVarExpr(), var));
+                res.splice(res.end(), solveEquation(var_arg + right_arg - two*getPi()*systemVarExpr(), var));
+                return res;
+            }
+            return res;
+        }
+        auto var_arg = getArgumentOfFunction(var_expr);
+        auto right_acos = acos(right_expr);
+        res.splice(res.end(), solveEquation(var_arg - right_acos - two*getPi()*systemVarExpr(), var));
+        res.splice(res.end(), solveEquation(var_arg + right_acos - two*getPi()*systemVarExpr(), var));
+        return res;
+    }
+    if (var_expr->getId() == TANGENT)
+    {
+        if (right_expr->hasVariable(var))
+        {
+            if (right_expr->getId() == TANGENT)
+            {
+                auto var_arg = getArgumentOfFunction(var_expr);
+                auto right_arg = getArgumentOfFunction(right_expr);
+                return solveEquation(var_arg - right_arg - getPi()*systemVarExpr(), var);
+            }
+            return res;
+        }
+        auto var_arg = getArgumentOfFunction(var_expr);
+        auto right_atan = atan(right_expr);
+        return solveEquation(var_arg - right_atan - getPi()*systemVarExpr(), var);
+    }
+    if (var_expr->getId() == COTANGENT)
+    {
+        if (right_expr->hasVariable(var))
+        {
+            if (right_expr->getId() == COTANGENT)
+            {
+                auto var_arg = getArgumentOfFunction(var_expr);
+                auto right_arg = getArgumentOfFunction(right_expr);
+                return solveEquation(var_arg - right_arg - getPi()*systemVarExpr(), var);
+            }
+            return res;
+        }
+        auto var_arg = getArgumentOfFunction(var_expr);
+        auto right_acot = acot(right_expr);
+        return solveEquation(var_arg - right_acot - getPi()*systemVarExpr(), var);
+    }
+    if (var_expr->getId() == LOGARITHM)
+    {
+        if (right_expr->hasVariable(var))
+        {
+            //вот так мы должны поставить условие потому что иначе будем туда сюда возводить в степень и логарифмировать
+            if (right_expr->getId() == LOGARITHM)
+            {
+                auto var_arg = getArgumentOfFunction(var_expr);
+                auto right_arg = getArgumentOfFunction(right_expr);
+                return solveEquation(var_arg - right_arg, var, {
+                                         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, var_arg),
+                                         RootCondition(var, RootCondition::DONT_EQUAL_ZERO, var_arg),
+                                         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_arg),
+                                         RootCondition(var, RootCondition::DONT_EQUAL_ZERO, right_arg)
+                                     });
+            }
+            return res;
+        }
+        auto var_arg = getArgumentOfFunction(var_expr);
+        return solveEquation(var_arg - pow(getEuler(), right_expr), var, {
+                                 RootCondition(var, RootCondition::BIGGER_THAN_ZERO, var_arg),
+                                 RootCondition(var, RootCondition::DONT_EQUAL_ZERO, var_arg)
+                             });
+    }
+    if (var_expr->getId() == ARCSINUS)
+    {
+        if (right_expr->hasVariable(var))
+        {
+            if (right_expr->getId() == ARCSINUS)
+            {
+                auto var_arg = getArgumentOfFunction(var_expr);
+                auto right_arg = getArgumentOfFunction(right_expr);
+                return solveEquation(var_arg - right_arg, var, {
+                                         RootCondition(var, RootCondition::LESS_THAN_ZERO, var_arg - one),
+                                         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, var_arg + one),
+                                         RootCondition(var, RootCondition::LESS_THAN_ZERO, var_arg - one),
+                                         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, var_arg + one)
+                                     });
+            }
+            return res;
+        }
+        auto var_arg = getArgumentOfFunction(var_expr);
+        abs_ex right_asin = sin(right_expr);
+        return solveEquation(var_arg - right_asin, var, {
+                                 RootCondition(var, RootCondition::LESS_THAN_ZERO, var_arg - one),
+                                 RootCondition(var, RootCondition::BIGGER_THAN_ZERO, var_arg + one),
+                                 RootCondition(var, RootCondition::LESS_THAN_ZERO, right_expr - getPi()/two),
+                                 RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr + getPi()/two)
+                             });
+    }
+    if (right_expr->getId() == ARCTANGENT)
+    {
+        if (right_expr->hasVariable(var))
+        {
+            if (right_expr->getId() == ARCTANGENT)
+            {
+                auto var_arg = getArgumentOfFunction(var_expr);
+                auto right_arg = getArgumentOfFunction(right_expr);
+                return solveEquation(var_arg - right_arg, var);
+            }
+            return res;
+        }
+        auto var_arg = getArgumentOfFunction(var_expr);
+        abs_ex right_atan = tan(right_expr);
+        return solveEquation(var_arg - right_atan, var, {
+                                 RootCondition(var, RootCondition::LESS_THAN_ZERO, right_expr - getPi()/two),
+                                 RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr + getPi()/two)
+                             });
+    }
+    return res;
 
+}
+std::list<abs_ex> checkIfItsMultiplicationOfDegreesAndTryToSolve(const abs_ex & var_part, const abs_ex & right_part, int var)
+{
+    assert(var_part->getId() == FRACTAL);
+    Fractal * fr = static_cast<Fractal*>(var_part.get());
+    assert(fr->getCoefficient().isOne() && fr->getFractal().second->empty());
+    if (Degree::getDegreeOfExpression(fr->getFractal().first->begin()->get())->getId() != NUMBER)
+        return std::list<abs_ex>();
+    long long int lcm_of_denominators = static_cast<Number*>(Degree::getDegreeOfExpression(fr->getFractal().first->begin()->get()).get())
+            ->getDenominator();
+    for (auto it = next(fr->getFractal().first->begin()); it != fr->getFractal().first->end(); ++it)
+    {
+        if (Degree::getDegreeOfExpression(it->get())->getId() != NUMBER)
+            return std::list<abs_ex>();
+        lcm_of_denominators = lcm(lcm_of_denominators, static_cast<Number*>(Degree::getDegreeOfExpression(it->get()).get())
+                                  ->getDenominator());
+    }
+    return solveEquation(pow(var_part, lcm_of_denominators) - right_part, var);
 }
 std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equation, int var)
 {
@@ -236,6 +419,7 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
     abs_ex var_expr = copy(zero);
     abs_ex right_expr = copy(zero);
     auto monoms = equation->getMonomialsPointers();
+   // qDebug() << equation->makeStringOfExpression();
     for (auto &it : monoms)
     {
         if (it->hasVariable(var))
@@ -248,12 +432,24 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
         auto common_part = static_cast<Polynomial*>(var_expr.get())->reduceCommonPart();
         var_expr = std::move(common_part) * std::move(var_expr);
     }
+    //qDebug() << equation->makeStringOfExpression();
+   // qDebug() << var_expr->makeStringOfExpression();
+   // qDebug() << right_expr->makeStringOfExpression();
     if (var_expr->getId() == FRACTAL)
     {
         auto mult = static_cast<Fractal*>(var_expr.get())->getFractalWithoutVariable(var);
         var_expr = std::move(var_expr) / toAbsEx(mult);
-        right_expr = std::move(right_expr) * toAbsEx(mult);
+        right_expr = std::move(right_expr) / toAbsEx(mult);
+        if (var_expr->getId() == FRACTAL)
+        {
+            res = checkIfItsMultiplicationOfDegreesAndTryToSolve(var_expr, right_expr, var);
+            if (res.size() > 0)
+                return res;
+        }
     }
+   // qDebug() << var_expr->makeStringOfExpression();
+   // qDebug() << right_expr->makeStringOfExpression();
+    //qDebug() << var_expr->makeStringOfExpression();;
     var_expr = var_expr + zero;
     if (var_expr->getId() == var)
     {
@@ -283,7 +479,27 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
 
     res = solveEquationOfSpecialCases(var_expr, right_expr, var);
     if (res.size() > 0)
-        return
+        return res;
+    var_expr = copy(zero);
+    right_expr = copy(equation.get());
+    for (auto &it : monoms)
+    {
+        auto var_monom = copy(it)/it->getFractalWithoutVariable(var);
+        if (var_monom->getId() <= DEGREE)
+        {
+            var_expr = copy(it)->downcast();
+            right_expr = right_expr - copy(it);
+            break;
+        }
+    }
+    right_expr = -right_expr;
+    if (var_expr->getId() == FRACTAL)
+    {
+        auto expr_without_var = toAbsEx(static_cast<Fractal*>(var_expr.get())->getFractalWithoutVariable(var));
+        var_expr = var_expr / expr_without_var;
+        right_expr = right_expr / expr_without_var;
+    }
+    res = solveEquationOfSpecialCases(var_expr, right_expr, var);
 
 
     return res;
@@ -314,8 +530,13 @@ std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
     if (equation->getId() == FRACTAL)
     {
         auto fr = static_cast<Fractal*>(equation.get())->getFractal();
+        EquationRootsConditions conditions;
+        for (auto &it : *fr.second)
+            conditions.addCondition(RootCondition(var, RootCondition::DONT_EQUAL_ZERO, it));
         for (auto &it : *fr.first)
-            res.splice(res.end(), _solveEquation(it, var));
+            res.splice(res.end(), solveEquation(it, var, conditions));
+        return res;
+
     }
     if (equation->getId() == ABSOLUTE_VALUE)
         return _solveEquation(copy(static_cast<AbsoluteValue*>(equation.get())->getExpression()), var);
@@ -371,7 +592,21 @@ std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
                 res.splice(res.end(), _solveEquation(copy(Degree::getArgumentOfDegree(it.get())), var));
             }
         }
-        return res;
+        if (res.size() > 0)
+            return res;
+        auto full_deg_dist_res = tryToDistingushFullDegreeWithPrecisionOfCoefficientWithoutVariable(equation, var);
+        if (full_deg_dist_res.first != nullptr)
+        {
+            abs_ex remaining_part = -(equation - pow(full_deg_dist_res.first, full_deg_dist_res.second));
+            //qDebug() << full_deg_dist_res.first->makeStringOfExpression();
+            //qDebug() << remaining_part->makeStringOfExpression();
+            if (full_deg_dist_res.second % 2 == 0 && remaining_part->getPositionRelativelyZero() < 0)
+                return res;
+            res.splice(res.end(), solveEquation(full_deg_dist_res.first + pow(remaining_part, one/numToAbs(full_deg_dist_res.second)), var));
+            if (full_deg_dist_res.second % 2 == 0)
+                res.splice(res.end(), solveEquation(full_deg_dist_res.first - pow(remaining_part, one/numToAbs(full_deg_dist_res.second)), var));
+            return res;
+        }
     }
     if (equation->getId() == POLYNOMIAL)
     {
@@ -389,8 +624,10 @@ std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
         //return { -ln_f.second / ln_f.first};
     return res;
 }
-std::list<std::unique_ptr<AbstractExpression> > solveEquation(const std::unique_ptr<AbstractExpression> &equation, int var)
+std::list<abs_ex > solveEquation(const abs_ex &equation, int var)
 {
+    //при наличии синусов и косинусов, тангенс и котангенс любых аргументов должны раскрыться, а не как сейчас
+    //также и котангенс при наличии тангенса
 
     int lcm_of_dens = equation->getLcmOfDenominatorsOfDegreesOfVariable(var);
     if (lcm_of_dens > 1)
@@ -573,9 +810,9 @@ std::list<abs_ex> toFactorOfCoefs(const abs_ex & polynom)
     for (auto &it : set)
     {
         auto pol = checkIfItsPolynom(polynom, it);
-       // qDebug() << "COEFS: ";
+       // //qDebug() << "COEFS: ";
         //for (auto &it : pol)
-         //   qDebug() << it->makeStringOfExpression();
+         //   //qDebug() << it->makeStringOfExpression();
         if (pol.size() > 0 && pol[0] != nullptr)
         {
             auto gcf = std::move(pol[0]);
@@ -589,6 +826,11 @@ std::list<abs_ex> toFactorOfCoefs(const abs_ex & polynom)
                 Polynomial gcf_pol(gcf.get());
                 Polynomial coef_pol(pol[i].get());
                 if (coef_pol.getSetOfPolyVariables().empty())
+                {
+                    result.push_back(copy(polynom));
+                    return result;
+                }
+                if (gcf->getSetOfVariables().empty())
                 {
                     result.push_back(copy(polynom));
                     return result;
@@ -685,6 +927,11 @@ std::list<abs_ex> factorizePolynomOfSeveralVariables(const abs_ex & polynom)
             it = pow(std::move(it), deg);
         return res;
     }
+    auto deg_res = static_cast<Polynomial*>(polynom.get())->tryToFactorizeByDistingushesOfFullDegree();
+    if (deg_res.first.size() > 1)
+    {
+        return std::move(deg_res.first);
+    }
     auto res = factorizePolynomOfSeveralVariablesByAlgorithmOfCoefsFacts(polynom);
     for (auto it = res.begin(); it != res.end(); )
     {
@@ -738,9 +985,10 @@ std::list<abs_ex> factorizePolynomOfOneVariable(const abs_ex & polynom, int var)
     }
     return result;
 }
-std::pair<std::list<std::unique_ptr<AbstractExpression> >, Number> factorizePolynom(const std::unique_ptr<AbstractExpression> &polynom)
+std::pair<std::list<abs_ex >, Number> factorizePolynom(const abs_ex &polynom)
 {
     //в полиноме уже должно было произойти reduce и takeCommonPart
+    Number reduced = static_cast<Polynomial*>(polynom.get())->reduce();
     auto set = polynom->getSetOfVariables();
     std::list<abs_ex> res;
     if (set.size() == 1)
@@ -754,7 +1002,7 @@ std::pair<std::list<std::unique_ptr<AbstractExpression> >, Number> factorizePoly
     Fractal fr(res);
     res = std::move(*fr.getFractal().first);
 
-    return {std::move(res), fr.getCoefficient()};
+    return {std::move(res), fr.getCoefficient()*reduced};
 
     //return {std::move(res), 1};
 }
@@ -764,4 +1012,45 @@ std::pair<std::list<std::unique_ptr<AbstractExpression> >, Number> factorizePoly
 std::list<abs_ex> solveEquation(const abs_ex &equation, int var, const EquationRootsConditions &conditions)
 {
     return conditions.selectRoots(solveEquation(equation, var));
+}
+
+std::pair<abs_ex, int> tryToDistingushFullDegreeWithPrecisionOfCoefficientWithoutVariable(const abs_ex &polynom, int var)
+{
+    auto its_pol = checkIfItsPolynom(polynom, var);
+    auto deriv = polynom->derivative(var) + zero;
+    if (deriv->getId() != POLYNOMIAL)
+        return {nullptr, 0};
+    auto facts = factorizePolynom(deriv);
+    //если p[x] = (g[x])^n + a, то (p[x])' = n*(g[x])^(n-1)*(g[x])'
+    //если g[x] = w1[x] * w2[x] * w3[x] * ... * wk[x], то
+    //(p[x])' = n*w1[x]^(n-1) * w2[x]^(n-1)*w3[x]^(n-1) * .... * wk[x]^(n - 1) * (g[x])'
+    int d = polynom->getMaxDegreeOfVariable(var).getNumerator();
+    for (auto it = facts.first.begin(); it != facts.first.end(); ++it)
+    {
+        int n = static_cast<Number*>(Degree::getDegreeOfExpression(it->get()).get())->getNumerator() + 1;
+        if (d % n != 0)
+            continue;
+        abs_ex g = copy(one);
+        for (auto it1 = it; it1 != facts.first.end(); ++it1)
+        {
+            if (static_cast<Number*>(Degree::getDegreeOfExpression(it->get()).get())->getNumerator() == n - 1)
+            {
+                g = std::move(g) * copy(Degree::getArgumentOfDegree(it1->get()));
+            }
+        }
+        auto g_polynom = pow(g, n) + zero;
+        auto pol = checkIfItsPolynom(g_polynom, var);
+        if (its_pol.size() == pol.size())
+        {
+            auto multiplier = its_pol.back() / pol.back();
+            if  (multiplier->getId() == NUMBER)
+            {
+                auto sub_res = polynom - g_polynom * multiplier;
+                if (!sub_res->hasVariable(var))
+                    return {g * pow(multiplier, one/numToAbs(n)), n};
+            }
+        }
+    }
+    return {nullptr, 0};
+
 }

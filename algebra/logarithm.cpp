@@ -12,13 +12,14 @@
 #include "arctangent.h"
 #include "sinus.h"
 #include "cosinus.h"
-Logarithm::Logarithm(const std::unique_ptr<AbstractExpression> &argument)
+#include "factorization.h"
+Logarithm::Logarithm(const abs_ex &argument)
 {
     this->argument = copy(argument);
     this->simplify();
 }
 
-Logarithm::Logarithm(std::unique_ptr<AbstractExpression> &&argument)
+Logarithm::Logarithm(abs_ex &&argument)
 {
     this->argument = std::move(argument);
     this->simplify();
@@ -126,11 +127,19 @@ bool Logarithm::canDowncastTo()
             return false;
         return true;
     }
-
+    if (this->argument->getId() == NUMBER)
+    {
+        Number num = *static_cast<Number*>(this->argument.get());
+        if (!num.isInteger())
+            return true;
+        auto facts = factorize(num.getNumerator());
+        if (facts.size() > 1 || (facts.size() == 1 && facts.begin()->second > 1))
+            return true;
+    }
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Logarithm::downcastTo()
+abs_ex Logarithm::downcastTo()
 {
     if (*this->argument == *getEuler())
         return copy(one);
@@ -180,6 +189,17 @@ std::unique_ptr<AbstractExpression> Logarithm::downcastTo()
         }
         return res;
        // res = std::move(res) + ln()
+    }
+    if (this->argument->getId() == NUMBER)
+    {
+        Number num = *static_cast<Number*>(this->argument.get());
+        if (!num.isInteger())
+            return ln(numToAbs(num.getNumerator())) - ln(numToAbs(num.getDenominator()));
+        auto facts = factorize(num.getNumerator());
+        abs_ex res = copy(zero);
+        for (auto &it : facts)
+            res = std::move(res) + numToAbs(it.second) * ln(numToAbs(it.first));
+        return res;
     }
     assert(false);
 }
@@ -238,12 +258,12 @@ QString Logarithm::getStringArgument() const
     return this->argument->makeStringOfExpression();
 }
 
-std::unique_ptr<AbstractExpression> Logarithm::getArgumentMoved()
+abs_ex Logarithm::getArgumentMoved()
 {
     return std::move(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Logarithm::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Logarithm::changeSomePartOn(QString part, abs_ex &on_what)
 {
    // NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -255,13 +275,13 @@ std::unique_ptr<AbstractExpression> Logarithm::changeSomePartOn(QString part, st
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Logarithm::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Logarithm::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
             return changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Logarithm::getArgumentsCopy()
+abs_ex Logarithm::getArgumentsCopy()
 {
     return copy(argument);
 }
@@ -271,12 +291,12 @@ AbstractExpression *Logarithm::getArgument()
     return this->argument.get();
 }
 
-std::unique_ptr<AbstractExpression> Logarithm::derivative(int var) const
+abs_ex Logarithm::derivative(int var) const
 {
     return this->argument->derivative(var) / this->argument;
 }
 #include "variablesdistributor.h"
-std::unique_ptr<AbstractExpression> Logarithm::antiderivative(int var) const
+abs_ex Logarithm::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -299,7 +319,7 @@ std::unique_ptr<AbstractExpression> Logarithm::antiderivative(int var) const
     return nullptr;
 }
 
-const std::unique_ptr<AbstractExpression> &Logarithm::getArgument() const
+const abs_ex &Logarithm::getArgument() const
 {
     return this->argument;
 }
@@ -310,7 +330,7 @@ void Logarithm::setSimplified(bool simpl)
     this->argument->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Logarithm::getTrigonometricalFunctions() const
+std::set<abs_ex > Logarithm::getTrigonometricalFunctions() const
 {
     return this->argument->getTrigonometricalFunctions();
 }
@@ -332,17 +352,17 @@ bool Logarithm::operator<(const AbstractExpression &right) const
     return less(this->argument.get(), static_cast<const Logarithm*>(&right)->argument.get());
 }
 
-std::unique_ptr<AbstractExpression> ln(const std::unique_ptr<AbstractExpression>& arg)
+abs_ex ln(const abs_ex& arg)
 {
     return abs_ex(new Logarithm(arg))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> ln(std::unique_ptr<AbstractExpression> &&arg)
+abs_ex ln(abs_ex &&arg)
 {
     return abs_ex(new Logarithm(std::move(arg)))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> ln(AbstractExpression *arg)
+abs_ex ln(AbstractExpression *arg)
 {
     return abs_ex(new Logarithm(copy(arg)))->downcast();
 }

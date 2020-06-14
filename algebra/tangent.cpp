@@ -90,7 +90,7 @@ void Tangent::simplify()
             if (coe.compareWith(0) < 0 && !(coe.getDenominator() == 1 && coe.getNumerator() % 1 == 0))
                 to_sub -= 1;
             this->pi_member = this->pi_member - std::unique_ptr<Fractal>(new Fractal(getPi(), to_sub));
-            this->argument = this->argument - std::unique_ptr<AbstractExpression>(new Fractal(getPi(), to_sub));
+            this->argument = this->argument - abs_ex(new Fractal(getPi(), to_sub));
         }
         if (this->is_pi_member_only && coe == Number(1, 2))
             throw Exception();
@@ -128,10 +128,12 @@ bool Tangent::canDowncastTo()
         return true;
     if ( this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
         return true;
+    if (this->argument->getPositionRelativelyZero() < 0)
+        return true;
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Tangent::downcastTo()
+abs_ex Tangent::downcastTo()
 {
     if (this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
     {
@@ -171,6 +173,8 @@ std::unique_ptr<AbstractExpression> Tangent::downcastTo()
         auto right = this->argument - abs_ex(new Fractal(*monoms.begin()));
         return (tan(right) + tan(this->argument - right))/(one - tan(right)*tan(this->argument - right));
     }
+    if (this->argument->getPositionRelativelyZero() < 0)
+        return -tan(-argument);
     return abs_ex(nullptr);
 }
 
@@ -247,12 +251,12 @@ QString Tangent::getStringArgument() const
     return this->argument->makeStringOfExpression();
 }
 
-std::unique_ptr<AbstractExpression> Tangent::getArgumentMoved()
+abs_ex Tangent::getArgumentMoved()
 {
     return std::move(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Tangent::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Tangent::changeSomePartOn(QString part, abs_ex &on_what)
 {
   //  NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -264,23 +268,23 @@ std::unique_ptr<AbstractExpression> Tangent::changeSomePartOn(QString part, std:
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Tangent::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Tangent::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
             return changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Tangent::getArgumentsCopy()
+abs_ex Tangent::getArgumentsCopy()
 {
     return copy(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Tangent::derivative(int var) const
+abs_ex Tangent::derivative(int var) const
 {
     return this->argument->derivative(var) / takeDegreeOf(cos(this->argument), 2);
 }
 
-std::unique_ptr<AbstractExpression> Tangent::antiderivative(int var) const
+abs_ex Tangent::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -291,7 +295,7 @@ std::unique_ptr<AbstractExpression> Tangent::antiderivative(int var) const
     return minus_one / ln_f.first * ln(abs(cos(this->argument)));
 }
 
-const std::unique_ptr<AbstractExpression> &Tangent::getArgument() const
+const abs_ex &Tangent::getArgument() const
 {
     return this->argument;
 }
@@ -302,7 +306,7 @@ void Tangent::setSimplified(bool simpl)
     this->argument->setSimplified(simpl);
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Tangent::getTrigonometricalFunctions() const
+std::set<abs_ex > Tangent::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> res;
     res.insert(tan(argument));
@@ -325,12 +329,12 @@ bool Tangent::operator<(const AbstractExpression &right) const
     return AbstractExpression::less(this->argument.get(), (static_cast<Tangent*>(const_cast<AbstractExpression*>(&right))->argument.get()));
 }
 
-std::unique_ptr<AbstractExpression> tan(const std::unique_ptr<AbstractExpression> &expr)
+abs_ex tan(const abs_ex &expr)
 {
-    return abs_ex(new Tangent(expr));
+    return abs_ex(new Tangent(expr))->downcast();
 }
 
-std::unique_ptr<AbstractExpression> tan(std::unique_ptr<AbstractExpression> &&expr)
+abs_ex tan(abs_ex &&expr)
 {
-    return abs_ex(new Tangent(std::move(expr)));
+    return abs_ex(new Tangent(std::move(expr)))->downcast();
 }

@@ -23,18 +23,18 @@ AlgExpr::AlgExpr(const AlgExpr & expr)
 AlgExpr::AlgExpr(AlgExpr && expr)
 {
     //this->expression = std::move(expr.expression);
-    this->expression = std::unique_ptr<AbstractExpression>(expr.expression.release());
+    this->expression = abs_ex(expr.expression.release());
 }
 AlgExpr::AlgExpr(Number num)
 {
-    this->expression = std::unique_ptr<AbstractExpression>(new Number(num));
+    this->expression = abs_ex(new Number(num));
 }
 AlgExpr::AlgExpr(long long int num)
 {
-    this->expression = std::unique_ptr<AbstractExpression>(new Number(num));
+    this->expression = abs_ex(new Number(num));
 }
 
-AlgExpr::AlgExpr(const std::unique_ptr<AbstractExpression> &expr)
+AlgExpr::AlgExpr(const abs_ex &expr)
 {
     this->expression = copy(expr);
 }
@@ -53,27 +53,27 @@ AlgExpr& AlgExpr::operator=(const AlgExpr &expr)
 AlgExpr& AlgExpr::operator=(AlgExpr && expr)
 {
     //this->expression = std::move(expr.expression);
-    this->expression = std::unique_ptr<AbstractExpression>(expr.expression.release());
+    this->expression = abs_ex(expr.expression.release());
     return *this;
 }
 AlgExpr& AlgExpr::operator=(Number num)
 {
-    this->expression = std::unique_ptr<AbstractExpression>(new Number(num));
+    this->expression = abs_ex(new Number(num));
     return *this;
 }
 AlgExpr& AlgExpr::operator=(long long int num)
 {
-    this->expression = std::unique_ptr<AbstractExpression>(new Number(num));
+    this->expression = abs_ex(new Number(num));
     return *this;
 }
 
-AlgExpr &AlgExpr::operator=(const std::unique_ptr<AbstractExpression> &expr)
+AlgExpr &AlgExpr::operator=(const abs_ex &expr)
 {
     this->expression = copy(expr);
     return *this;
 }
 
-AlgExpr &AlgExpr::operator=(std::unique_ptr<AbstractExpression> &&expr)
+AlgExpr &AlgExpr::operator=(abs_ex &&expr)
 {
     this->expression = std::move(expr);
     return *this;
@@ -195,12 +195,12 @@ AlgExpr AlgExpr::operator-() const
     return -1 * *this;
 }
 
-std::unique_ptr<AbstractExpression> &AlgExpr::getExpr()
+abs_ex &AlgExpr::getExpr()
 {
     return this->expression;
 }
 
-const std::unique_ptr<AbstractExpression> &AlgExpr::getExpr() const
+const abs_ex &AlgExpr::getExpr() const
 {
     return this->expression;
 }
@@ -260,7 +260,7 @@ bool AlgExpr::operator!=(QString var_name) const
 AlgExpr pow(const AlgExpr & arg, const AlgExpr & degree)
 {
     AlgExpr result;
-    result.expression = std::unique_ptr<AbstractExpression>(new Degree(arg.expression, degree.expression));
+    result.expression = abs_ex(new Degree(arg.expression, degree.expression));
     result.expression = result.expression->downcast();
     return result;
 }
@@ -271,7 +271,7 @@ AlgExpr root(const AlgExpr & arg, const AlgExpr & degree)
 AlgExpr sqrt(const AlgExpr & arg)
 {
     AlgExpr result;
-    result.expression = std::unique_ptr<AbstractExpression>(new Degree(arg.expression, std::make_unique<Number>(1, 2)));
+    result.expression = abs_ex(new Degree(arg.expression, std::make_unique<Number>(1, 2)));
     result.expression = result.expression->downcast();
 
     return result;
@@ -312,31 +312,31 @@ QString AlgExpr::toString()
 AlgExpr var()
 {
     AlgExpr expr;
-    expr.expression = std::unique_ptr<AbstractExpression>(new Variable(VariablesDistributor::createVariable(VariablesDefinition())));
+    expr.expression = abs_ex(new Variable(VariablesDistributor::createVariable(VariablesDefinition())));
     return expr;
 }
 AlgExpr positiveVar()
 {
     AlgExpr expr;
-    expr.expression = std::unique_ptr<AbstractExpression>(new Variable(VariablesDistributor::createVariable(getPositiveDefinition())));
+    expr.expression = abs_ex(new Variable(VariablesDistributor::createVariable(getPositiveDefinition())));
     return expr;
 }
 AlgExpr var(VariablesDefinition def)
 {
     AlgExpr expr;
-    expr.expression = std::unique_ptr<AbstractExpression>(new Variable(VariablesDistributor::createVariable(def)));
+    expr.expression = abs_ex(new Variable(VariablesDistributor::createVariable(def)));
     return expr;
 }
 AlgExpr abs(AlgExpr & arg)
 {
     AlgExpr expr;
-    expr.expression = std::unique_ptr<AbstractExpression>(new AbsoluteValue(arg.expression))->downcast();
+    expr.expression = abs(arg.expression);
     return expr;
 }
 AlgExpr abs(AlgExpr && arg)
 {
     AlgExpr expr;
-    expr.expression = std::unique_ptr<AbstractExpression>(new AbsoluteValue(std::move(arg.expression)))->downcast();
+    expr.expression = abs(std::move(arg.expression));
     return expr;
 }
 AlgExpr var(double min, double max)
@@ -353,13 +353,13 @@ AlgExpr sqrt(int arg)
 AlgExpr sin(AlgExpr & arg)
 {
     AlgExpr expr;
-    expr.expression= abs_ex(new Sinus(arg.expression))->downcast();
+    expr.expression= sin(arg.expression);
     return expr;
 }
 AlgExpr sin(AlgExpr && arg)
 {
     AlgExpr expr;
-    expr.expression = abs_ex(new Sinus(std::move(arg.expression)))->downcast();
+    expr.expression = sin(std::move(arg.expression));
     return expr;
 }
 AlgExpr pi()
@@ -377,13 +377,13 @@ AlgExpr sin(int arg)
 AlgExpr cos(AlgExpr & arg)
 {
     AlgExpr expr;
-    expr.expression = abs_ex(new Cosinus(arg.expression))->downcast();
+    expr.expression = cos(arg.expression);
     return expr;
 }
 AlgExpr cos(AlgExpr && arg)
 {
     AlgExpr expr;
-    expr.expression = abs_ex(new Cosinus(std::move(arg.expression)))->downcast();
+    expr.expression = cos(std::move(arg.expression));
     return expr;
 }
 AlgExpr cos(int arg)
@@ -394,14 +394,14 @@ AlgExpr cos(int arg)
 AlgExpr tan(AlgExpr &arg)
 {
     AlgExpr expr;
-    expr.expression = abs_ex(new Tangent(arg.expression))->downcast();
+    expr.expression = tan(arg.expression);
     return expr;
 }
 
 AlgExpr tan(AlgExpr &&arg)
 {
     AlgExpr expr;
-    expr.expression = abs_ex(new Tangent(std::move(arg.expression)))->downcast();
+    expr.expression = tan(std::move(arg.expression));
     return expr;
 }
 
@@ -412,14 +412,14 @@ AlgExpr tan(int arg)
 AlgExpr cot(AlgExpr &arg)
 {
     AlgExpr expr;
-    expr.expression = abs_ex(new Cotangent(arg.expression))->downcast();
+    expr.expression = cot(arg.expression);
     return expr;
 }
 
 AlgExpr cot(AlgExpr &&arg)
 {
     AlgExpr expr;
-    expr.expression = abs_ex(new Cotangent(std::move(arg.expression)))->downcast();
+    expr.expression = cot(std::move(arg.expression));
     return expr;
 }
 
@@ -481,12 +481,12 @@ AlgExpr derivative(const AlgExpr &arg, AlgExpr arg_variable)
 
 AlgExpr D(const AlgExpr &arg)
 {
-    return AlgExpr(abs_ex(new Differential(arg.expression)));
+    return AlgExpr(D(arg.expression));
 }
 
 AlgExpr D(AlgExpr &&arg)
 {
-    return AlgExpr(abs_ex(new Differential(std::move(arg.expression))));
+    return AlgExpr(D(std::move(arg.expression)));
 }
 
 AlgExpr operator+(long long left, AlgExpr &&expr)
@@ -522,19 +522,19 @@ AlgExpr integral(const AlgExpr &arg, AlgExpr var)
 
 AlgExpr atan(const AlgExpr &arg)
 {
-    return AlgExpr(abs_ex(new ArcTangent(arg.expression)));
+    return AlgExpr(atan(arg.expression));
 }
 AlgExpr atan(AlgExpr &&arg)
 {
-    return AlgExpr(abs_ex(new ArcTangent(std::move(arg.expression))));
+    return AlgExpr(atan(std::move(arg.expression)));
 }
 AlgExpr asin(const AlgExpr &arg)
 {
-    return AlgExpr(abs_ex(new ArcSinus(arg.expression)));
+    return AlgExpr(asin(arg.expression));
 }
 AlgExpr asin(AlgExpr && arg)
 {
-    return AlgExpr(abs_ex(new ArcSinus(std::move(arg.expression))));
+    return AlgExpr(asin(std::move(arg.expression)));
 }
 
 AlgExpr definiteIntegral(const AlgExpr &arg, const AlgExpr &from, const AlgExpr &to)

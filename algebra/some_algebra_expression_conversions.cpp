@@ -443,3 +443,8 @@ bool has(const std::set<int> &set, int el)
 {
     return set.find(el) != set.end();
 }
+
+bool isPiMemberOnAxis(Number coe)
+{
+    return coe == 1 || coe == -1 || coe == Number(1, 2) || coe == Number(-1, 2);
+}

@@ -3,13 +3,13 @@
 #include "number.h"
 #include <cmath>
 #include "variablesdistributor.h"
-Differential::Differential(const std::unique_ptr<AbstractExpression> &arg)
+Differential::Differential(const abs_ex &arg)
 {
     this->argument = copy(arg);
     this->simplify();
 }
 
-Differential::Differential(std::unique_ptr<AbstractExpression> &arg)
+Differential::Differential(abs_ex &arg)
 {
     this->argument = std::move(arg);
     this->simplify();
@@ -59,7 +59,7 @@ bool Differential::canDowncastTo()
     return false;
 }
 
-std::unique_ptr<AbstractExpression> Differential::downcastTo()
+abs_ex Differential::downcastTo()
 {
     if (this->argument->getId() == NUMBER)
         return copy(zero);
@@ -126,29 +126,29 @@ QString Differential::getStringArgument() const
     return this->argument->makeStringOfExpression();
 }
 
-std::unique_ptr<AbstractExpression> Differential::getArgumentMoved()
+abs_ex Differential::getArgumentMoved()
 {
     return std::move(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Differential::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Differential::changeSomePartOn(QString part, abs_ex &on_what)
 {
    // NONCONST
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Differential::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Differential::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
         return this->argument->changeSomePartOn(part, on_what);
 }
 
-std::unique_ptr<AbstractExpression> Differential::getArgumentsCopy()
+abs_ex Differential::getArgumentsCopy()
 {
     return copy(this->argument);
 }
 
-std::unique_ptr<AbstractExpression> Differential::derivative(int var) const
+abs_ex Differential::derivative(int var) const
 {
     //производная от дифференциала? может быть дифференциал более высокого порядка? пока хз
     assert(false);
@@ -160,7 +160,7 @@ AbstractExpression *Differential::getArgument()
     return this->argument.get();
 }
 
-std::unique_ptr<AbstractExpression> Differential::antiderivative(int var) const
+abs_ex Differential::antiderivative(int var) const
 {
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
@@ -175,7 +175,7 @@ void Differential::setSimplified(bool simpl)
     this->simplified = simpl;
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Differential::getTrigonometricalFunctions() const
+std::set<abs_ex > Differential::getTrigonometricalFunctions() const
 {
     return this->argument->getTrigonometricalFunctions();
 }
@@ -196,7 +196,7 @@ bool Differential::operator<(const AbstractExpression &expr) const
     return AbstractExpression::less(this->argument.get(), static_cast<Differential*>(const_cast<AbstractExpression*>(&expr))->argument.get());
 }
 
-std::unique_ptr<AbstractExpression> fullDifferential(const std::unique_ptr<AbstractExpression> &expr)
+abs_ex fullDifferential(const abs_ex &expr)
 {
     auto set = expr->getSetOfVariables();
     abs_ex res = copy(zero);
@@ -207,7 +207,12 @@ std::unique_ptr<AbstractExpression> fullDifferential(const std::unique_ptr<Abstr
     return res;
 }
 
-std::unique_ptr<AbstractExpression> D(const std::unique_ptr<AbstractExpression> &arg)
+abs_ex D(const abs_ex &arg)
 {
     return abs_ex(new Differential(arg));
+}
+
+abs_ex D(abs_ex &&arg)
+{
+    return abs_ex(new Differential(std::move(arg)));
 }

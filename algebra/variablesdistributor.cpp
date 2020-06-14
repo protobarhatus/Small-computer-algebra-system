@@ -128,17 +128,17 @@ Variable systemVar(int min, int max)
     return new_var;
 }
 
-std::unique_ptr<AbstractExpression> integratingConstantExpr()
+abs_ex integratingConstantExpr()
 {
     return abs_ex(new Variable(integratingConstant()));
 }
 
-std::unique_ptr<AbstractExpression> systemVarExpr()
+abs_ex systemVarExpr()
 {
     return abs_ex(new Variable(systemVar()));
 }
 
-std::unique_ptr<AbstractExpression> getVariableExpr(int id)
+abs_ex getVariableExpr(int id)
 {
     return abs_ex (new Variable(getVariable(id)));
 }

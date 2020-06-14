@@ -29,4 +29,5 @@ void init(VariablesCombinations & combinations, int root);
 bool inc(VariablesCombinations & combinations);
 std::pair<bool, std::unique_ptr<Fractal>> getPiMember(abs_ex & expr);
 bool isPiMemberInTable(Number coe);
+bool isPiMemberOnAxis(Number coe);
 #endif // SOME_ALGEBRA_EXPRESSION_CONVERSIONS_H

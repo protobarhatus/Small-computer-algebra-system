@@ -44,4 +44,6 @@ private:
 };
 abs_ex asin(const abs_ex & arg);
 abs_ex asin(abs_ex && arg);
+abs_ex acos(const abs_ex & arg);
+abs_ex acos(abs_ex && arg);
 #endif // ARCSINUS_H

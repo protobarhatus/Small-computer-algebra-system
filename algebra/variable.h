@@ -22,7 +22,7 @@ public:
     virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
     virtual bool canDowncastTo() override;
-    virtual std::unique_ptr<AbstractExpression> downcastTo() override;
+    virtual abs_ex downcastTo() override;
     QString getName() const;
     virtual void _qDebugOut() override;
     virtual QString makeStringOfExpression() const override;

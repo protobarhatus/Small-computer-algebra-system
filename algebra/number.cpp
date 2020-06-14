@@ -42,10 +42,10 @@ bool Number::operator==(AbstractExpression & right)
     Number * num = static_cast<Number*>(&right);
     return this->numerator == num->numerator && this->denominator == num->denominator;
 }
-std::unique_ptr<AbstractExpression> Number::downcastTo()
+abs_ex Number::downcastTo()
 {
     assert(false);
-    return std::unique_ptr<AbstractExpression>(nullptr);
+    return abs_ex(nullptr);
 }
 long long int Number::getNumerator() const
 {
@@ -74,10 +74,10 @@ bool Number::canDowncastTo()
 {
     return false;
 }
-std::unique_ptr<AbstractExpression> downcastTo(AlgebraExpression expr)
+abs_ex downcastTo(AlgebraExpression expr)
 {
     assert(false);
-    return std::unique_ptr<AbstractExpression>(nullptr);
+    return abs_ex(nullptr);
 }
 Number & Number::operator=(long long int value)
 {
@@ -319,12 +319,12 @@ bool Number::operator==(const Number & num)
     return this->numerator == num.numerator && this->denominator == num.denominator;
 }
 
-std::unique_ptr<AbstractExpression> Number::changeSomePartOn(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Number::changeSomePartOn(QString part, abs_ex &on_what)
 {
     return nullptr;
 }
 
-std::unique_ptr<AbstractExpression> Number::changeSomePartOnExpression(QString part, std::unique_ptr<AbstractExpression> &on_what)
+abs_ex Number::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     return nullptr;
 }
@@ -334,12 +334,12 @@ bool Number::less(const Number &b) const
     return (*this - b).compareWith(0) < 0 && *this != b;
 }
 
-std::unique_ptr<AbstractExpression> Number::derivative(int var) const
+abs_ex Number::derivative(int var) const
 {
     return copy(zero);
 }
 
-std::unique_ptr<AbstractExpression> Number::antiderivative(int var) const
+abs_ex Number::antiderivative(int var) const
 {
     return abs_ex(new Number(*this)) * abs_ex(new Variable(getVariable(var)));
 }
@@ -349,7 +349,7 @@ void Number::setSimplified(bool simpl)
     this->simplified = simpl;
 }
 
-std::set<std::unique_ptr<AbstractExpression> > Number::getTrigonometricalFunctions() const
+std::set<abs_ex > Number::getTrigonometricalFunctions() const
 {
     return std::set<abs_ex>();
 }
@@ -383,12 +383,12 @@ Number min(Number a, Number b)
 
 
 
-std::unique_ptr<AbstractExpression> toAbsEx(Number n)
+abs_ex toAbsEx(Number n)
 {
     return abs_ex(new Number(n));
 }
 
-bool isIntegerNumber(const std::unique_ptr<AbstractExpression> &expr)
+bool isIntegerNumber(const abs_ex &expr)
 {
     if (expr->getId() != NUMBER)
         return false;

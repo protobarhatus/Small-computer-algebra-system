@@ -36,9 +36,20 @@ EquationRootsConditions::EquationRootsConditions(EquationRootsConditions &&mov)
     this->conditions = std::move(mov.conditions);
 }
 
+void EquationRootsConditions::addCondition(const RootCondition &condition)
+{
+    this->conditions.push_back(condition);
+}
+
+void EquationRootsConditions::addCondition(RootCondition &&condition)
+{
+    this->conditions.push_back(std::move(condition));
+}
+
 std::list<abs_ex> EquationRootsConditions::selectRoots(std::list<abs_ex> &&roots) const
 {
     std::list<abs_ex> result;
+
     for (auto &it : roots)
         if (check(it))
             result.push_back(std::move(it));
@@ -46,7 +57,7 @@ std::list<abs_ex> EquationRootsConditions::selectRoots(std::list<abs_ex> &&roots
 
 }
 
-bool EquationRootsConditions::check(const std::unique_ptr<AbstractExpression> &root) const
+bool EquationRootsConditions::check(const abs_ex &root) const
 {
     for (auto &it : this->conditions)
         if (!it.check(root))
@@ -54,7 +65,7 @@ bool EquationRootsConditions::check(const std::unique_ptr<AbstractExpression> &r
     return true;
 }
 
-std::list<std::unique_ptr<AbstractExpression> > EquationRootsConditions::selectRoots(const std::list<abs_ex > &roots) const
+std::list<abs_ex > EquationRootsConditions::selectRoots(const std::list<abs_ex > &roots) const
 {
     std::list<abs_ex> result;
     for (auto &it : roots)
@@ -84,8 +95,29 @@ RootCondition::RootCondition(RootCondition &&mov) :
 
 }
 
-RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, const std::unique_ptr<AbstractExpression> &expression) :
-    var(_var), condition_expression(copy(expression)), type(condition)
+RootCondition &RootCondition::operator=(const RootCondition &cop)
+{
+    var = cop.var;
+    is_expr_independent_of_var = cop.is_expr_independent_of_var;
+    res_of_independent_condition = cop.res_of_independent_condition;
+    type = cop.type;
+    condition_expression = copy(cop.condition_expression);
+    return *this;
+}
+
+RootCondition &RootCondition::operator=(RootCondition &&cop)
+{
+    var = cop.var;
+    is_expr_independent_of_var = cop.is_expr_independent_of_var;
+    res_of_independent_condition = cop.res_of_independent_condition;
+    type = cop.type;
+    condition_expression = std::move(cop.condition_expression);
+    return *this;
+}
+
+RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, const abs_ex &expression) :
+    var(_var), condition_expression(copy(expression)), type(condition),
+    is_expr_independent_of_var(false)
 {
     if (!condition_expression->hasVariable(var))
     {
@@ -94,8 +126,9 @@ RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, c
     }
 }
 
-RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, std::unique_ptr<AbstractExpression> &&expression) :
-    var(_var), condition_expression(std::move(expression)), type(condition)
+RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, abs_ex &&expression) :
+    var(_var), condition_expression(std::move(expression)), type(condition),
+    is_expr_independent_of_var(false)
 {
     if (!condition_expression->hasVariable(var))
     {
@@ -104,13 +137,19 @@ RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, s
     }
 }
 
-bool RootCondition::check(const std::unique_ptr<AbstractExpression> &root) const
+bool RootCondition::check(const abs_ex &root) const
 {
+    //qDebug() << "CHecking root";
+    //qDebug() << this->condition_expression->makeStringOfExpression();
+    //qDebug() << root->makeStringOfExpression();
+
     if (is_expr_independent_of_var)
         return res_of_independent_condition;
     abs_ex expr_with_root = copy(condition_expression);
+
     if (root != nullptr)
         setUpExpressionIntoVariable(expr_with_root, root, var);
+    //qDebug () << expr_with_root->makeStringOfExpression();
     switch(this->type)
     {
     case BIGGER_THAN_ZERO:
@@ -122,6 +161,8 @@ bool RootCondition::check(const std::unique_ptr<AbstractExpression> &root) const
     case DONT_EQUAL_ZERO:
         return !isZero(expr_with_root);
         break;
+    case EQUAL_ZERO:
+        return isZero(expr_with_root);
     default:
         assert(false);
     }
