@@ -309,6 +309,11 @@ QString AlgExpr::toString()
 {
     return this->expression->makeStringOfExpression();
 }
+
+QString AlgExpr::toWolframString()
+{
+    return this->expression->makeWolframString();
+}
 AlgExpr var()
 {
     AlgExpr expr;
@@ -546,6 +551,15 @@ std::list<AlgExpr> solveEquation(const AlgExpr &equation, const AlgExpr &var)
 {
     assert(var.getExpr()->getId() > 0);
     std::list<abs_ex> eq_res = solveEquation(equation.getExpr(), var.getExpr()->getId());
+    std::list<AlgExpr> res;
+    for (auto &it : eq_res)
+        res.push_back(std::move(it));
+    return res;
+}
+
+std::list<AlgExpr> solveDifur(const AlgExpr &difur, const AlgExpr &x, const AlgExpr &y)
+{
+    std::list<abs_ex> eq_res = solveDifur(difur.getExpr(), x.getExpr()->getId(), y.getExpr()->getId());
     std::list<AlgExpr> res;
     for (auto &it : eq_res)
         res.push_back(std::move(it));

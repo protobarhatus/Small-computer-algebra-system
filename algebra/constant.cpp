@@ -78,6 +78,15 @@ QString Constant::makeStringOfExpression() const
     return this->name;
 }
 
+QString Constant::makeWolframString() const
+{
+    if (this->name == QChar(L'π'))
+        return "Pi";
+    if (this->name == "e")
+        return "E";
+    return this->makeStringOfExpression();
+}
+
 double Constant::getApproximateValue()
 {
     return this->value;

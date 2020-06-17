@@ -24,11 +24,13 @@ ArcSinus::ArcSinus(abs_ex &&arg)
 ArcSinus::ArcSinus(const ArcSinus &cop)
 {
     this->argument = copy(cop.argument);
+    this->simplified = cop.simplified;
 }
 
 ArcSinus::ArcSinus(ArcSinus &&mov)
 {
     this->argument = std::move(mov.argument);
+    this->simplified = mov.simplified;
 }
 
 ArcSinus::~ArcSinus()
@@ -155,6 +157,11 @@ void ArcSinus::_qDebugOut()
 QString ArcSinus::makeStringOfExpression() const
 {
     return "asin(" + this->argument->makeStringOfExpression() + ")";
+}
+
+QString ArcSinus::makeWolframString() const
+{
+    return "ArcSin[" + this->argument->makeWolframString() + "]";
 }
 
 double ArcSinus::getApproximateValue()

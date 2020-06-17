@@ -275,6 +275,11 @@ QString Number::makeStringOfExpression() const
         result += "/" + denum;
     return result;
 }
+
+QString Number::makeWolframString() const
+{
+    return makeStringOfExpression();
+}
 Number Number::operator+=(const Number &number)
 {
     *this = *this + number;

@@ -23,11 +23,19 @@ Sinus::Sinus(abs_ex && arg)
 Sinus::Sinus(const Sinus & copy)
 {
     this->argument = makeAbstractExpression(copy.argument->getId(), copy.argument.get());
+    this->simplified = copy.simplified;
+    if (copy.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*copy.pi_member));
+    this->is_pi_member_only = copy.is_pi_member_only;
     this->simplify();
 }
 Sinus::Sinus(Sinus && mov)
 {
     this->argument = std::move(mov.argument);
+    this->simplified = mov.simplified;
+    if (mov.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*mov.pi_member));
+    this->is_pi_member_only = mov.is_pi_member_only;
     this->simplify();
 }
 void Sinus::simplify()
@@ -175,6 +183,11 @@ void Sinus::_qDebugOut()
 QString Sinus::makeStringOfExpression() const
 {
     return "sin(" + this->argument->makeStringOfExpression() + ")";
+}
+
+QString Sinus::makeWolframString() const
+{
+    return "Sin[" + argument->makeWolframString() + "]";
 }
 double Sinus::getApproximateValue()
 {

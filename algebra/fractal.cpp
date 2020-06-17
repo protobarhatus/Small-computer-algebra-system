@@ -933,7 +933,6 @@ std::unique_ptr<Polynomial> Fractal::turnIntoPolynomWithOpeningParentheses(bool 
     {
         polynom->addMonomial(*it * frac_without_polynom);
     }
-   // qDebug() << "RES_POL: " << polynom->makeStringOfExpression();
 
     return polynom;
 }
@@ -1045,14 +1044,42 @@ QString Fractal::makeStringOfExpression() const
     if (!this->coefficient.isOne())
         result += this->coefficient.makeStringOfExpression();
     for (auto &it : this->numerator)
-        result += "*" + it->makeStringOfExpression();
+        if (it->getId() != POLYNOMIAL)
+            result += "*" + it->makeStringOfExpression();
+        else
+            result += "(" + it->makeStringOfExpression() + ")";
     if (result.size() == 1)
         result += "1";
     for (auto &it : this->denominator)
-        result += "/" + it->makeStringOfExpression();
+        if (it->getId() != POLYNOMIAL)
+            result += "/" + it->makeStringOfExpression();
+        else
+            result += "/(" + it->makeStringOfExpression() + ")";
     result += ")";
     if (result[1] == "*")
         result = result.remove(1, 1);
+    return result;
+}
+
+QString Fractal::makeWolframString() const
+{
+    QString result ;
+    if (!this->coefficient.isOne())
+        result += this->coefficient.makeWolframString();
+    for (auto &it : this->numerator)
+        if (it->getId() != POLYNOMIAL)
+            result += "*" + it->makeWolframString();
+        else
+            result += "(" + it->makeWolframString() + ")";
+    if (result.size() == 0)
+        result += "1";
+    for (auto &it : this->denominator)
+        if (it->getId() != POLYNOMIAL)
+            result += "/" + it->makeWolframString();
+        else
+            result += "/(" + it->makeWolframString() + ")";
+    if (result[0] == "*")
+        result = result.remove(0, 1);
     return result;
 }
 //i need this prefix becouse for some reasons in definition of Fractal::findCommonPart this overloading is not seen
@@ -1838,7 +1865,7 @@ void Fractal::bringRationalFunctionIntoFormToDecay()
 
 std::list<abs_ex > Fractal::splitIntoSumOfElementaryFractals()
 {
-    qDebug() << this->makeStringOfExpression();
+  //  qDebug() << this->makeStringOfExpression();
     //это должна быть рациональная функция, но я не хочу вставлять assert
     abs_ex numerator_expression = copy(zero);
     std::vector<int> uknown_numerators_variables;
@@ -2915,6 +2942,14 @@ void Fractal::separatePolynomialsDegree()
 abs_ex Fractal::getPartWithVariable(int var) const
 {
     return copy(this)/this->getFractalWithoutVariable(var);
+}
+
+bool Fractal::hasTrigonometricalMultipliers() const
+{
+    for (auto &it : this->numerator)
+        if (isDegreeOfTrigonometricalFunction(it))
+            return true;
+    return false;
 }
 
 abs_ex Fractal::tryToFindLogarithmInNumerator() const

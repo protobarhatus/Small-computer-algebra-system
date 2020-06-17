@@ -51,6 +51,7 @@ public:
     Polynomial operator*(AbstractExpression * expr);
     Fractal operator/(AbstractExpression * expr);
     virtual QString makeStringOfExpression() const override;
+    virtual QString makeWolframString() const override;
     abs_ex reduceCommonPart();
     // if it is a sum like sqrt(3)+sqrt(5), it returns result on formula (a+b)(a-b)=a^2-b^2. returns result and multiplier
     std::pair<abs_ex, abs_ex> multiplyIrrationalSumOnAppropriateFormula();
@@ -90,7 +91,13 @@ public:
     virtual void setSimplified(bool simpl) override;
     virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
     bool hasLogarithmicMonoms() const;
+    void checkIfShouldOpenTrigonometricalSums();
+    bool hasTrigonometryMultipliers() const;
+    abs_ex tryToReturnPolynomOfOnlyTrigonometrical() const;
+    int amountOfMonoms() const;
+    void deleteAllTrigonometricalMonoms();
 private:
+    void checkIfCanSimplifyThisTrigonometryByTakingCommonPart();
     bool casted_trigonometry;
     void castTrigonometry();
     void castTrigonometryArguments();

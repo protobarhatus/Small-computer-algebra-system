@@ -82,6 +82,8 @@ SOURCES += \
     algebra/exception.cpp \
     algebra/factorization.cpp \
     algebra/fractal.cpp \
+    algebra/functionrange.cpp \
+    algebra/functionrangesegment.cpp \
     algebra/galuafield.cpp \
     algebra/logarithm.cpp \
     algebra/mathsets.cpp \
@@ -174,6 +176,8 @@ HEADERS += \
     algebra/exception.h \
     algebra/factorization.h \
     algebra/fractal.h \
+    algebra/functionrange.h \
+    algebra/functionrangesegment.h \
     algebra/galuafield.h \
     algebra/logarithm.h \
     algebra/mathsets.h \

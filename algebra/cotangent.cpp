@@ -27,11 +27,19 @@ Cotangent::Cotangent(abs_ex && arg)
 Cotangent::Cotangent(const Cotangent & copy)
 {
     this->argument = makeAbstractExpression(copy.argument->getId(), copy.argument.get());
+    this->simplified = copy.simplified;
+    if (copy.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*copy.pi_member));
+    this->is_pi_member_only = copy.is_pi_member_only;
     this->simplify();
 }
 Cotangent::Cotangent(Cotangent && mov)
 {
     this->argument = std::move(mov.argument);
+    this->simplified = mov.simplified;
+    if (mov.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*mov.pi_member));
+    this->is_pi_member_only = mov.is_pi_member_only;
     this->simplify();
 }
 
@@ -207,6 +215,11 @@ void Cotangent::_qDebugOut()
 QString Cotangent::makeStringOfExpression() const
 {
     return "cot(" + this->argument->makeStringOfExpression() + ")";
+}
+
+QString Cotangent::makeWolframString() const
+{
+    return "Cot[" + this->argument->makeWolframString() + "]";
 }
 
 double Cotangent::getApproximateValue()

@@ -110,10 +110,14 @@ bool Degree::canDowncastTo()
     if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->tryToFindLogarithmInNumerator() !=
             nullptr)
         return true;
+
     if (*this->argument == *getEuler() && this->degree->getId() == POLYNOMIAL &&
             static_cast<Polynomial*>(this->degree.get())->hasLogarithmicMonoms())
         return true;
     if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isZero())
+        return true;
+    if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->canTurnIntoPolynomWithOpeningParentheses(true) &&
+            static_cast<Fractal*>(this->degree.get())->turnIntoPolynomWithOpeningParentheses(true)->hasLogarithmicMonoms())
         return true;
    /* if (this->degree->getId() == FRACTAL && !static_cast<Fractal*>(this->degree.get())->getCoefficient().isOne() &&
             this->argument->getId() == NUMBER)
@@ -241,11 +245,17 @@ abs_ex Degree::downcastTo()
         return one/takeDegreeOf(std::move(argument), -degree);
     }
 
-    if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL)
+    if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->tryToFindLogarithmInNumerator() != nullptr)
     {
         auto log = static_cast<Fractal*>(this->degree.get())->tryToFindLogarithmInNumerator();
         assert(log != nullptr);
         return pow(static_cast<Logarithm*>(log.get())->getArgumentMoved(), degree/log);
+    }
+    if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL)
+    {
+        abs_ex cop = pow(argument, static_cast<Fractal*>(this->degree.get())->turnIntoPolynomWithOpeningParentheses(false));
+      //  qDebug() << cop->makeStringOfExpression();
+        return cop;
     }
     if (*this->argument == *getEuler() && this->degree->getId() == POLYNOMIAL)
     {
@@ -637,8 +647,14 @@ QString Degree::makeStringOfExpression() const
     QString result;
     if (this->degree->getId() != NUMBER || static_cast<Number*>(this->degree.get())->isInteger())
     {
-        result = this->argument->makeStringOfExpression() + "^";
-        result += this->degree->makeStringOfExpression();
+        if (this->argument->getId() != POLYNOMIAL)
+            result = this->argument->makeStringOfExpression() + "^";
+        else
+            result = "(" + this->argument->makeStringOfExpression() + ")^";
+        if (this->degree->getId() != POLYNOMIAL)
+            result += this->degree->makeStringOfExpression();
+        else
+            result += "(" + this->degree->makeStringOfExpression() + ")";
     }
     else
     {
@@ -649,9 +665,41 @@ QString Degree::makeStringOfExpression() const
             result += "root(" + denum + "," + this->argument->makeStringOfExpression();
         else
             result += "sqrt(" + this->argument->makeStringOfExpression();
+
+        result += ")";
         if (num != "1")
             result += "^" + num;
-        result += ")";
+    }
+    return result;
+}
+
+QString Degree::makeWolframString() const
+{
+    QString result;
+    if (this->degree->getId() != NUMBER || static_cast<Number*>(this->degree.get())->isInteger())
+    {
+        if (this->argument->getId() != POLYNOMIAL)
+            result = this->argument->makeWolframString() + "^";
+        else
+            result = "(" + this->argument->makeWolframString() + ")^";
+        if (this->degree->getId() != POLYNOMIAL)
+            result += this->degree->makeWolframString();
+        else
+            result += "(" + this->degree->makeWolframString() + ")";
+    }
+    else
+    {
+        if (*this->degree == *half)
+            result = "Sqrt[" + this->argument->makeWolframString() + "]";
+        else if (*this->degree == *(one/three))
+            result = "CubeRoot[" + this->argument->makeWolframString() + "]";
+        else
+        {
+            if (argument->getId() == POLYNOMIAL)
+                result = "(" + argument->makeWolframString() + ")^(" + this->degree->makeWolframString() + ")";
+            else
+                result = argument->makeWolframString() + "^(" + degree->makeWolframString() + ")";
+        }
     }
     return result;
 }

@@ -10,7 +10,8 @@ public:
         LESS_THAN_ZERO,
         BIGGER_THAN_ZERO,
         DONT_EQUAL_ZERO,
-        EQUAL_ZERO
+        EQUAL_ZERO,
+        EQUAL_TWO_PI_INTEGER
     };
     RootCondition();
     RootCondition(const RootCondition & cop);

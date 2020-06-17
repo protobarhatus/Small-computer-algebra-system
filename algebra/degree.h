@@ -39,6 +39,7 @@ public:
     virtual void  _qDebugOut() override;
     bool isDegreeOfNumberThatLessThanOne();
     virtual QString makeStringOfExpression() const override;
+    virtual QString makeWolframString() const override;
     bool isRootNumeric();
     long long int getRootValue();
 

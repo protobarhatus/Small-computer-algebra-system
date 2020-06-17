@@ -194,13 +194,13 @@ abs_ex fromTrippleArgument(abs_ex &&func_degree)
 }
 
 
-std::vector<TrigonometricalFunctionsArgumentsCastType> chooseInstructionsToCastTrigonometryArguments(Number its_degree, QString its_str, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number &, const Number &)> > &coefs)
+std::vector<TrigonometricalFunctionsArgumentsCastType> chooseInstructionsToCastTrigonometryArguments(Number its_degree, bool has_it_odd_deg, QString its_str, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number &, const Number &)> > &coefs)
 {
     auto comp = [](const Number & a, const Number & b)->bool { return a.less(b);};
     std::vector<TrigonometricalFunctionsArgumentsCastType> result(1 + coefs.size(), ARG_CAST_NONE);
     if (coefs.size() == 0)
         return result;
-    coefs.insert({1, {{its_degree, its_degree.getNumerator() % 2}, its_str}});
+    coefs.insert({1, {{its_degree, has_it_odd_deg}, its_str}});
     //иначе получается скорее переусложнение выражения, и вообще такие строить не надо
     if (coefs.size() > 5)
         return result;
@@ -279,6 +279,7 @@ void distributeTrigonometryArgumentsMultipliersRatios(std::vector<std::pair<std:
      auto comp = [](const Number & a, const Number & b)->bool { return a.less(b);};
     for (auto &it1 : arguments)
     {
+      //  qDebug() << it1.first->makeStringOfExpression();
         bool found_match = false;
         for (auto &it2 : arguments_multipliers)
         {
@@ -295,10 +296,20 @@ void distributeTrigonometryArgumentsMultipliersRatios(std::vector<std::pair<std:
                 else
                     fres->second.first = {max(fres->second.first.first, it1.second), fres->second.first.second || (it1.second.getNumerator() % 2)};
             }
-
+            else if (div_res->getId() == NUMBER)
+            {
+                found_match = true;
+                 /*auto fres = it2.second.find(*static_cast<Number*>(div_res.get()));
+                 if (fres != it2.second.end())
+                     fres->second.first.second = fres->second.first.second || (it1.second.getNumerator() % 2);*/
+                it2.first.second.second = it2.first.second.second || (it1.second.getNumerator() % 2);
+            }
         }
-        std::pair<abs_ex, std::pair<Number, bool>> p = {copy(it1.first), std::pair<Number, bool>{it1.second, it1.second.getNumerator() % 2}};
-        arguments_multipliers.push_back({std::move(p), std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>(comp)});
+        if (!found_match)
+        {
+            std::pair<abs_ex, std::pair<Number, bool>> p = {copy(it1.first), std::pair<Number, bool>{it1.second, it1.second.getNumerator() % 2}};
+            arguments_multipliers.push_back({std::move(p), std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>(comp)});
+        }
     }
 }
 //По аргументу: все степени здесь целые
@@ -315,7 +326,7 @@ std::pair<std::map<QString, TrigonometricalFunctionsArgumentsCastType>, bool> ch
     //    qDebug() << arguments_multipliers.begin()->first.second.makeStringOfExpression();
     for (auto &it : arguments_multipliers)
     {
-        auto vec_res = chooseInstructionsToCastTrigonometryArguments(it.first.second.first, it.first.first->makeStringOfExpression(), it.second);
+        auto vec_res = chooseInstructionsToCastTrigonometryArguments(it.first.second.first, it.first.second.second, it.first.first->makeStringOfExpression(), it.second);
         instructions.insert({it.first.first->makeStringOfExpression(), vec_res[0]});
         if (vec_res[0] != ARG_CAST_NONE)
             need_to_convert = true;

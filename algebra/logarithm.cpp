@@ -84,7 +84,7 @@ void Logarithm::simplify()
             this->argument = takeDegreeOf(root, rt);
         }
     }
-    if (this->argument->getId() == POLYNOMIAL)
+    if (this->argument->getId() == POLYNOMIAL && this->argument->getSetOfPolyVariables().size() > 0)
     {
         auto facts = factorizePolynom(this->argument);
         if (facts.first.size() > 1)
@@ -236,6 +236,11 @@ void Logarithm::_qDebugOut()
 QString Logarithm::makeStringOfExpression() const
 {
     return "ln(" + this->argument->makeStringOfExpression() + ")";
+}
+
+QString Logarithm::makeWolframString() const
+{
+    return "Log[" + argument->makeWolframString() + "]";
 }
 
 double Logarithm::getApproximateValue()

@@ -38,7 +38,7 @@ abs_ex tangentToCotangent(abs_ex && tangent_degree);
 abs_ex cotangentToTangent(abs_ex && cotangent_degree);
 
 
-std::vector<TrigonometricalFunctionsArgumentsCastType> chooseInstructionsToCastTrigonometryArguments (Number its_degree, QString its_str, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>> & coefs);
+std::vector<TrigonometricalFunctionsArgumentsCastType> chooseInstructionsToCastTrigonometryArguments (Number its_degree, bool has_it_odd_deg, QString its_str, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>> & coefs);
 void distributeTrigonometryArgumentsMultipliersRatios(std::vector<std::pair<std::pair<abs_ex, std::pair<Number, bool>>, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>>> &
                                                       arguments_multipliers,
                                                       std::vector<std::pair<abs_ex, Number>> & arguments);

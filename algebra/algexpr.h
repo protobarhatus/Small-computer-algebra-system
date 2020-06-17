@@ -48,6 +48,7 @@ public:
     friend AlgExpr operator/(long long int left, const AlgExpr & right);
     void out();
     QString toString();
+    QString toWolframString();
     friend void testAlgMod();
     friend void _neuLData();
     friend AlgExpr var();
@@ -171,4 +172,5 @@ AlgExpr atan(AlgExpr && arg);
 AlgExpr asin(const AlgExpr & arg);
 AlgExpr asin(AlgExpr && arg);
 std::list<AlgExpr> solveEquation(const AlgExpr & equation, const AlgExpr & var);
+std::list<AlgExpr> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
 #endif // ALGEXPR_H

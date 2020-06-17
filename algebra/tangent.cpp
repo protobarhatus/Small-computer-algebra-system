@@ -28,11 +28,19 @@ Tangent::Tangent(abs_ex && arg)
 Tangent::Tangent(const Tangent & copy)
 {
     this->argument = makeAbstractExpression(copy.argument->getId(), copy.argument.get());
+    this->simplified = copy.simplified;
+    if (copy.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*copy.pi_member));
+    this->is_pi_member_only = copy.is_pi_member_only;
     this->simplify();
 }
 Tangent::Tangent(Tangent && mov)
 {
     this->argument = std::move(mov.argument);
+    this->simplified = mov.simplified;
+    if (mov.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*mov.pi_member));
+    this->is_pi_member_only = mov.is_pi_member_only;
     this->simplify();
 }
 
@@ -249,6 +257,11 @@ int Tangent::getPositionRelativelyZeroIfHasVariables()
 QString Tangent::getStringArgument() const
 {
     return this->argument->makeStringOfExpression();
+}
+
+QString Tangent::makeWolframString() const
+{
+    return "Tan[" + this->argument->makeWolframString() + "]";
 }
 
 abs_ex Tangent::getArgumentMoved()

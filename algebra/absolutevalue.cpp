@@ -133,7 +133,12 @@ void AbsoluteValue::_qDebugOut()
 }
 QString AbsoluteValue::makeStringOfExpression() const
 {
-    return "abs(" + this->expression->makeStringOfExpression() + ")";
+    return "|" + this->expression->makeStringOfExpression() + "|";
+}
+
+QString AbsoluteValue::makeWolframString() const
+{
+    return "Abs[" + this->expression->makeWolframString() + "]";
 }
 double AbsoluteValue::getApproximateValue()
 {

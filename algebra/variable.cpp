@@ -104,6 +104,11 @@ QString Variable::makeStringOfExpression() const
 {
     return this->getName();
 }
+
+QString Variable::makeWolframString() const
+{
+    return this->makeStringOfExpression();
+}
 double Variable::getApproximateValue()
 {
     assert(false);

@@ -103,6 +103,11 @@ QString Differential::makeStringOfExpression() const
     return "d(" + this->argument->makeStringOfExpression() + ")";
 }
 
+QString Differential::makeWolframString() const
+{
+    return "D[" + argument->makeWolframString() + "]";
+}
+
 double Differential::getApproximateValue()
 {
     assert(false);

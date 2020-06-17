@@ -141,6 +141,7 @@ std::list<abs_ex> checkIfItsLogarithmicSumEquationAndTryToSolve(const abs_ex & e
     std::list<abs_ex> res;
     auto monoms = static_cast<Polynomial*>(equation.get())->getMonomialsPointers();
     abs_ex new_equation = copy(one);
+    EquationRootsConditions conditions;
     for (auto &it : monoms)
     {
         auto fr_without_var = toAbsEx(it->getFractalWithoutVariable(var));
@@ -152,8 +153,10 @@ std::list<abs_ex> checkIfItsLogarithmicSumEquationAndTryToSolve(const abs_ex & e
             new_equation = std::move(new_equation) * pow(getArgumentOfFunction(fr_with_var), fr_without_var);
         else
             new_equation = std::move(new_equation) / pow(getArgumentOfFunction(fr_with_var), -fr_without_var);
+        conditions.addCondition(RootCondition(var, RootCondition::BIGGER_THAN_ZERO, getArgumentOfFunction(fr_with_var)));
+        conditions.addCondition(RootCondition(var, RootCondition::DONT_EQUAL_ZERO, getArgumentOfFunction(fr_with_var)));
     }
-    return solveEquation(new_equation - pow(getEuler(), right), var);
+    return solveEquation(new_equation - pow(getEuler(), right), var, conditions);
 
 }
 //вещи по типу sqrt(x) = a, или sqrt(x) = f(x)
@@ -240,17 +243,18 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
                 res.splice(res.end(), solveEquation(var_arg - getPi() + right_arg - two*getPi()*systemVarExpr(), var));
                 return res;
             }
-            if (right_expr->getId() == COSINUS)
+            /*if (right_expr->getId() == COSINUS)
             {
                 auto var_arg = getArgumentOfFunction(var_expr);
                 auto right_arg = getArgumentOfFunction(right_expr);
                 auto int_var = systemVarExpr();
                 res.splice(res.end(), solveEquation(var_arg - right_arg - two*getPi()*int_var, var,
-                                                    RootCondition(var, RootCondition::EQUAL_ZERO, var_expr - getPi()/four - two*getPi()*int_var)));
+                                                    RootCondition(var, RootCondition::EQUAL_TWO_PI_INTEGER, var_arg - getPi()/four)));
                 res.splice(res.end(), solveEquation(var_arg - right_arg - two*getPi()*int_var, var,
-                                                    RootCondition(var, RootCondition::EQUAL_ZERO, var_expr + getPi()/four - two*getPi()*int_var)));
+                                                    RootCondition(var, RootCondition::EQUAL_TWO_PI_INTEGER, var_arg + getPi()/four)));
+
                 return res;
-            }
+            }*/
             //тангенсы и котангенсы должны были преобразоваться
             return res;
         }

@@ -26,6 +26,7 @@ public:
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> &choosing_value_rule) override;
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     QString getStringArgument() const;
+    virtual QString makeWolframString() const override;
 
     abs_ex getArgumentMoved();
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;

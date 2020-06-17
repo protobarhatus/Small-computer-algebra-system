@@ -25,40 +25,23 @@ bool isLogarithmicSum(Polynomial * pol, int x, int y)
     }
     return true;
 }
-abs_ex simplifyEquationExpression(const abs_ex & expr, int x, int y)
-{
-    if (expr->getId() > 0)
-        return copy(expr);
-    switch (expr->getId()) {
-    case NUMBER:
-        return copy(expr);
-        break;
-    //case POLYNOMIAL:
 
 
 
-
-    }
-}
-
-
-
-
-
-abs_ex tryToSolveDifurWithSeparableVariables(const std::unique_ptr<Polynomial> & difur, int x, int y)
+std::list<abs_ex>  tryToSolveDifurWithSeparableVariables(const std::unique_ptr<Polynomial> & difur, int x, int y)
 {
     std::unique_ptr<Polynomial> right(new Polynomial(zero.get()));
     std::unique_ptr<Polynomial> left(new Polynomial(zero.get()));
     for (auto &it : difur->getMonomialsPointers())
     {
         if (it->getFractal().first->size() == 0)
-            return nullptr;
+            return std::list<abs_ex> ();
         if (isDifferentialOf(it->getFractal().first->back(), x))
             *right = *right + it;
         else if (isDifferentialOf(it->getFractal().first->back(), y))
             *left = *left + it;
         else
-            return nullptr;
+            return std::list<abs_ex> ();
     }
     abs_ex right_common_part = right->reduceCommonPart();
     std::unique_ptr<Fractal> right_frac(new Fractal(right_common_part * copy(right.get())));
@@ -95,23 +78,48 @@ abs_ex tryToSolveDifurWithSeparableVariables(const std::unique_ptr<Polynomial> &
     left_frac->simplify();
     right_frac->simplify();
     if (left_frac->hasVariable(x) || right_frac->hasVariable(y))
-        return nullptr;
+        return std::list<abs_ex> ();
     auto left_integr = integrate(toAbsEx(left_frac));
     auto right_integr = integrate(toAbsEx(right_frac));
 
     if (left_integr == nullptr || right_integr == nullptr)
-        return nullptr;
+        return std::list<abs_ex> ();
     auto ic = integratingConstantExpr();
-    return left_integr - right_integr + ic;
+    std::list<abs_ex>  res;
+    res.push_back(left_integr - right_integr + ic);
+    return res;
 }
-abs_ex solveDifur(const abs_ex & difur, int x, int y)
+std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y)
 {
     if (difur->getId() == NUMBER || difur->getId() == DIFFERENTIAL)
-        return nullptr;
+        return std::list<abs_ex> ();
     auto dif_pol = toPolynomialPointer(difur);
     auto separable_vars_res = tryToSolveDifurWithSeparableVariables(dif_pol, x, y);
-    if (separable_vars_res != nullptr)
+    if (separable_vars_res.size() > 0)
         return separable_vars_res;
 
-    return nullptr;
+    return std::list<abs_ex> ();
+}
+
+std::list<abs_ex> solveDifur(const abs_ex &difur, int x, int y)
+{
+    auto res = solveDifurInCommonIntegral(difur, x, y);
+    for (auto it = res.begin(); it != res.end();)
+    {
+        std::list<abs_ex> equation_res;
+        if (has(it->get()->getSetOfVariables(), y))
+            equation_res = solveEquation(*it, y);
+        else if (has(it->get()->getSetOfVariables(), x))
+            equation_res = solveEquation(*it, x);
+        else
+            continue;
+        if (equation_res.size() > 0)
+        {
+            it = res.erase(it);
+            res.splice(res.begin(), std::move(equation_res));
+        }
+        else
+            ++it;
+    }
+    return res;
 }

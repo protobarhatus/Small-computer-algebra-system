@@ -1,5 +1,7 @@
 #include "equationrootsconditions.h"
 #include "some_algebra_expression_conversions.h"
+#include "constant.h"
+#include "number.h"
 EquationRootsConditions::EquationRootsConditions()
 {
 
@@ -121,8 +123,9 @@ RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, c
 {
     if (!condition_expression->hasVariable(var))
     {
-        is_expr_independent_of_var = true;
+
         res_of_independent_condition = check(nullptr);
+        is_expr_independent_of_var = true;
     }
 }
 
@@ -132,16 +135,16 @@ RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, a
 {
     if (!condition_expression->hasVariable(var))
     {
-        is_expr_independent_of_var = true;
+
         res_of_independent_condition = check(nullptr);
+        is_expr_independent_of_var = true;
     }
 }
 
 bool RootCondition::check(const abs_ex &root) const
 {
-    //qDebug() << "CHecking root";
-    //qDebug() << this->condition_expression->makeStringOfExpression();
-    //qDebug() << root->makeStringOfExpression();
+   // qDebug() << "CHecking root";
+
 
     if (is_expr_independent_of_var)
         return res_of_independent_condition;
@@ -149,7 +152,10 @@ bool RootCondition::check(const abs_ex &root) const
 
     if (root != nullptr)
         setUpExpressionIntoVariable(expr_with_root, root, var);
-    //qDebug () << expr_with_root->makeStringOfExpression();
+   // qDebug() << this->condition_expression->makeStringOfExpression();
+    //qDebug() << root->makeStringOfExpression();
+   // qDebug () << expr_with_root->makeStringOfExpression();
+    abs_ex div_res;
     switch(this->type)
     {
     case BIGGER_THAN_ZERO:
@@ -163,6 +169,11 @@ bool RootCondition::check(const abs_ex &root) const
         break;
     case EQUAL_ZERO:
         return isZero(expr_with_root);
+    case EQUAL_TWO_PI_INTEGER:
+        div_res = expr_with_root / (two * getPi());
+        qDebug() << div_res->makeStringOfExpression();
+        return div_res->getId() > 0 || (-div_res)->getId() > 0;
+        break;
     default:
         assert(false);
     }

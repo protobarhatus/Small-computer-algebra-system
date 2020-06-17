@@ -63,10 +63,14 @@ std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression typ
 }
 abs_ex copy(const AbstractExpression * arg)
 {
+    if (arg == nullptr)
+        return nullptr;
     return makeAbstractExpression(arg->getId(), arg);
 }
 abs_ex copy(const abs_ex & arg)
 {
+    if (arg == nullptr)
+        return nullptr;
     return makeAbstractExpression(arg->getId(), arg.get());
 }
 long long int gcd(long long int a, long long int b)
@@ -446,5 +450,5 @@ bool has(const std::set<int> &set, int el)
 
 bool isPiMemberOnAxis(Number coe)
 {
-    return coe == 1 || coe == -1 || coe == Number(1, 2) || coe == Number(-1, 2);
+    return coe == 1 || coe == -1 || coe == Number(1, 2) || coe == Number(-1, 2) || coe == Number(1, 4) || coe == Number(-1, 4);
 }

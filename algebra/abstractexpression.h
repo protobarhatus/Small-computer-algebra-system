@@ -81,6 +81,7 @@ public:
 
     virtual void _qDebugOut() = 0;
     virtual QString makeStringOfExpression() const = 0;
+    virtual QString makeWolframString() const = 0;
     virtual double getApproximateValue() = 0;
     //the difference between overload without argument is that this function choose a value for variable from definition by lambda, but other cannot be used with variables andjust throw assert()
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) = 0;
@@ -118,7 +119,8 @@ std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr, std::m
 void replaceSystemVariablesBackToFunctions(abs_ex &expr, std::map<int, abs_ex> & funcs);
 std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression * expr, std::map<QString, int> & funcs);
 void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
-
+//bool canOpenByTrigonometricalSum(abs_ex & expr);
+abs_ex tryToOpenByTrigonometricalSum(abs_ex &expr);
 void setUpExpressionIntoVariable(abs_ex & func, const abs_ex & expr, int var);
 void setUpExpressionIntoVariable(abs_ex & func, abs_ex && expr, int var);
 //отличие от ...BackToFunctions в том, что она снимает simplified с выражения и упрощает его.
@@ -130,7 +132,7 @@ void replaceSystemVariablesToExpressions(abs_ex &expr, std::map<int, abs_ex> & f
 abs_ex getArgumentOfFunction(abs_ex && expr);
 abs_ex getArgumentOfFunction(const abs_ex & expr);
 abs_ex getArgumentOfFunction(AbstractExpression * expr);
-bool isDegreeOfTrigonometricalFunction(abs_ex & expr);
+bool isDegreeOfTrigonometricalFunction(const abs_ex & expr);
 bool isDegreeOfArcTrigonometricalFunction(abs_ex & expr);
 //выражения a^f(x) считаются экспоненциальной ф-цией, а g(x)^f(x) - нет (x->getId() == var)
 bool isExponentialFunction(abs_ex& expr, int var);

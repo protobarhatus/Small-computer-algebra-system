@@ -68,6 +68,7 @@ public:
     static bool lessFrac(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
     virtual void _qDebugOut() override;
     virtual QString makeStringOfExpression() const override;
+    virtual QString makeWolframString() const override;
     abs_ex findCommonPart(Fractal * frac);
     void sortVariablesInIncreasingOfTheirId();
     void pushBackToNumerator(abs_ex && expr);
@@ -107,6 +108,7 @@ public:
     void separatePolynomialsDegree();
     abs_ex tryToFindLogarithmInNumerator() const;
     abs_ex getPartWithVariable(int var) const;
+    bool hasTrigonometricalMultipliers() const;
 private:
     std::pair<abs_ex, abs_ex> checkIfCanDoUniversalTrigonometricSubstitution(int var) const;
     bool isNumeratorsDegreeBiggerThanDenominatorsDegree(int var) const;

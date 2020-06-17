@@ -203,7 +203,7 @@ abs_ex getArgumentOfFunction(abs_ex && expr)
     }
 }
 
-bool isDegreeOfTrigonometricalFunction(abs_ex &expr)
+bool isDegreeOfTrigonometricalFunction(const abs_ex &expr)
 {
     auto arg = Degree::getArgumentOfDegree(expr.get())->getId();
     return arg == SINUS || arg == COSINUS || arg == TANGENT || arg == COTANGENT;
@@ -660,4 +660,52 @@ void setUpExpressionIntoVariable(abs_ex &func, abs_ex &&expr, int var)
     func->setSimplified(false);
     func->simplify();
     func = func->downcast();
+}
+
+/*bool canOpenByTrigonometricalSum(abs_ex &expr)
+{
+    if (!isDegreeOfTrigonometricalFunction(expr))
+        return false;
+    auto arg = getArgumentOfFunction(Degree::getArgumentOfDegree(expr.get()));
+
+    if (arg->getId() != POLYNOMIAL)
+        return false;
+    return static_cast<Polynomial*>(arg.get())->getMonomialsPointers().size() == 2;
+}*/
+
+abs_ex tryToOpenByTrigonometricalSum(abs_ex &expr)
+{
+    //assert(canOpenByTrigonometricalSum(expr));
+    if (!isDegreeOfTrigonometricalFunction(expr))
+        return nullptr;
+    auto arg = Degree::getArgumentOfDegree(expr.get());
+    auto deg = Degree::getDegreeOfExpression(expr.get());
+    auto trig_arg = getArgumentOfFunction(arg);
+    abs_ex polynom;
+    if (trig_arg->getId() == POLYNOMIAL)
+        polynom = std::move(trig_arg);
+    else if (trig_arg->getId() == FRACTAL)
+    {
+        Fractal * fr = static_cast<Fractal*>(trig_arg.get());
+        if (fr->canTurnIntoPolynomWithOpeningParentheses(true))
+            polynom = copy(fr->turnIntoPolynomWithOpeningParentheses(true).get());
+        else
+            return nullptr;
+    }
+    else
+        return nullptr;
+    auto left = copy(*static_cast<Polynomial*>(polynom.get())->getMonomialsPointers().begin());
+    auto right = polynom - left;
+    switch (arg->getId()) {
+    case SINUS:
+        return pow(sin(left)*cos(right) + cos(left)*sin(right), deg);
+    case COSINUS:
+        return pow(cos(left)*cos(right) - sin(left)*sin(right), deg);
+    case TANGENT:
+        return pow((tan(left) + tan(right))/(one - tan(left)*tan(right)), deg);
+    case COTANGENT:
+        return pow((cot(left)*cot(right) - one)/(cot(left) + cot(right)), deg);
+    default:
+        assert(false);
+    }
 }

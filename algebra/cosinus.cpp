@@ -23,11 +23,19 @@ Cosinus::Cosinus(abs_ex && arg)
 Cosinus::Cosinus(const Cosinus & copy)
 {
     this->argument = makeAbstractExpression(copy.argument->getId(), copy.argument.get());
+    this->simplified = copy.simplified;
+    if (copy.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*copy.pi_member));
+    this->is_pi_member_only = copy.is_pi_member_only;
     this->simplify();
 }
 Cosinus::Cosinus(Cosinus && mov)
 {
     this->argument = std::move(mov.argument);
+    this->simplified = mov.simplified;
+    if (mov.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*mov.pi_member));
+    this->is_pi_member_only = mov.is_pi_member_only;
     this->simplify();
 }
 void Cosinus::simplify()
@@ -178,6 +186,11 @@ void Cosinus::_qDebugOut()
 QString Cosinus::makeStringOfExpression() const
 {
     return "cos(" + this->argument->makeStringOfExpression() + ")";
+}
+
+QString Cosinus::makeWolframString() const
+{
+    return "Cos[" + this->argument->makeWolframString() + "]";
 }
 double Cosinus::getApproximateValue()
 {

@@ -23,11 +23,13 @@ ArcTangent::ArcTangent(abs_ex &&arg)
 ArcTangent::ArcTangent(const ArcTangent &cop)
 {
     this->argument = copy(cop.argument);
+    this->simplified = cop.simplified;
 }
 
 ArcTangent::ArcTangent(ArcTangent &&mov)
 {
     this->argument = std::move(mov.argument);
+    this->simplified = mov.simplified;
 }
 
 ArcTangent::~ArcTangent()
@@ -143,6 +145,11 @@ void ArcTangent::_qDebugOut()
 QString ArcTangent::makeStringOfExpression() const
 {
     return "atan(" + this->argument->makeStringOfExpression() + ")";
+}
+
+QString ArcTangent::makeWolframString() const
+{
+    return "ArcTan[" + this->argument->makeWolframString() + "]";
 }
 
 double ArcTangent::getApproximateValue()

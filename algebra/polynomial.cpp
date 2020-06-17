@@ -66,10 +66,10 @@ void Polynomial::simplify()
     this->removeZeroes();
     //да мы это повторяем
 
-    if (this->is_fractional_coefficients_allowed)
-        return;
-replaceSystemVariablesBackToFunctions(this, funcs);
 
+replaceSystemVariablesBackToFunctions(this, funcs);
+if (this->is_fractional_coefficients_allowed)
+    return;
 
     if (this->canBecameFractal())
     {
@@ -84,10 +84,16 @@ replaceSystemVariablesBackToFunctions(this, funcs);
         }
 
     }
-
+    if (!hasTrigonometryMultipliers())
+    {
+        this->simplified = true;
+        return;
+    }
     this->castTrigonometry();
     if (this->monomials.size() > 1)
         this->castTrigonometryArguments();
+    this->checkIfShouldOpenTrigonometricalSums();
+    this->checkIfCanSimplifyThisTrigonometryByTakingCommonPart();
    // qDebug() << "Finished#: " << randId;
     this->simplified = true;
 }
@@ -111,12 +117,14 @@ void Polynomial::castTrigonometryArguments()
     //а строка - строковое представление функции с этим аргументом
 
     std::vector<std::pair<std::pair<abs_ex, std::pair<Number, bool>>, std::map<Number, std::pair<std::pair<Number, bool>, QString>, std::function<bool (const Number & a, const Number & b)>>>>
-                                                                                                                                                            arguments_multipliers;
+                                                                                                                                                          arguments_multipliers;
+
     for (auto &it : this->monomials)
     {
         auto arguments = it->getTrigonometryMultipliersArgumentsCopyAndItsDegrees();
         distributeTrigonometryArgumentsMultipliersRatios(arguments_multipliers, arguments);
     }
+
 
    auto res = chooseInstructionsToCastTrigonometryArguments(arguments_multipliers);
    bool need_to_convert = res.second;
@@ -633,6 +641,7 @@ Polynomial::Polynomial(std::list<std::unique_ptr<Fractal>> & list)
 Polynomial::Polynomial(std::list<std::unique_ptr<Fractal>> && list)
 {
     this->monomials = std::move(list);
+    //не делать simplify
 }
 std::list<Fractal*> Polynomial::getMonomialsPointers() const
 {
@@ -710,7 +719,7 @@ Fractal Polynomial::operator/(AbstractExpression * expr)
 }
 QString Polynomial::makeStringOfExpression() const
 {
-    QString result = "(";
+    QString result ;
     for (auto &it : this->monomials)
     {
        //if (it->getCoefficient().compareWith(0) > 0)
@@ -718,9 +727,23 @@ QString Polynomial::makeStringOfExpression() const
 
         result += it->makeStringOfExpression();
     }
-    result += ")";
-    if (result[1] == '+')
-        result = result.remove(1, 1);
+
+    if (result[0] == '+')
+        result = result.remove(0, 1);
+    return result;
+}
+
+QString Polynomial::makeWolframString() const
+{
+    QString result;
+    for (auto &it : monomials)
+    {
+        if (it->getCoefficient().compareWith(0) > 0)
+            result += "+";
+        result += it->makeWolframString();
+    }
+    if (result[0] == '+')
+        result = result.remove(0, 1);
     return result;
 }
 abs_ex Polynomial::reduceCommonPart()
@@ -740,7 +763,11 @@ abs_ex Polynomial::reduceCommonPart()
     {
         it = *it / *static_cast<Fractal*>(common_part.get());
     }
-    this->simplify();
+    common_part = common_part->downcast();
+    if (*common_part != *one)
+        this->simplify();
+    else
+        this->simplified = true;
     return common_part->downcast();
 }
 bool Polynomial::isIrrationalSum()
@@ -1878,12 +1905,14 @@ int Polynomial::getPositionRelativelyZeroIfHasVariables()
     if (lin_res != 0)
         return lin_res;
     //довольно дорогая проверка на то, является ли этот полином полной степенью более простого полинома
-    if (isPolynomOfAllVariables(copy(this)))
+    auto pol_copy = copy(this);
+    if (isPolynomOfAllVariables(pol_copy))
     {
-        auto degr = this->tryToDistinguishFullDegree();
+        Number red_num = static_cast<Polynomial*>(pol_copy.get())->reduce();
+        auto degr = static_cast<Polynomial*>(pol_copy.get())->tryToDistinguishFullDegree();
         if (degr == nullptr)
             return 0;
-        return degr->getPositionRelativelyZero();
+        return degr->getPositionRelativelyZero() * (red_num.getNumerator() > 0 ? 1 : -1);
     }
     return 0;
 }
@@ -2362,11 +2391,96 @@ void Polynomial::setSimplified(bool simpl)
 
 bool Polynomial::hasLogarithmicMonoms() const
 {
+  //  qDebug() << this->makeStringOfExpression();
     for (auto &it : this->monomials)
         if (it->tryToFindLogarithmInNumerator() != nullptr)
             return true;
     return false;
 }
+
+void Polynomial::checkIfShouldOpenTrigonometricalSums()
+{
+  //  qDebug() << this->makeStringOfExpression();
+    std::list<std::unique_ptr<Fractal>> copy_of_this;
+    bool opened_something = false;
+    for (auto &it : this->monomials)
+    {
+        copy_of_this.push_back(std::unique_ptr<Fractal>(new Fractal(*it)));
+        auto fr = it->getFractal();
+        for (auto &it1 : *fr.first)
+        {
+            abs_ex res = tryToOpenByTrigonometricalSum(it1);
+            if (res != nullptr)
+            {
+                opened_something = true;
+                it1 = std::move(res);
+            }
+        }
+    }
+    if (!opened_something)
+        return;
+      //  qDebug() << this->makeStringOfExpression();
+    this->setSimplified(false);
+    this->simplify();
+        //    qDebug() << this->makeStringOfExpression();
+    if (this->monomials.size() > copy_of_this.size())
+        this->monomials = std::move(copy_of_this);
+
+}
+
+bool Polynomial::hasTrigonometryMultipliers() const
+{
+    for (auto &it : this->monomials)
+        if (it->hasTrigonometricalMultipliers())
+            return true;
+    return false;
+}
+
+abs_ex Polynomial::tryToReturnPolynomOfOnlyTrigonometrical() const
+{
+    std::list<std::unique_ptr<Fractal>> trig_monoms;
+    for (auto &it : this->monomials)
+        trig_monoms.push_back(std::unique_ptr<Fractal>(new Fractal(*it)));
+    if (trig_monoms.size() < 2)
+        return nullptr;
+    return abs_ex(new Polynomial(std::move(trig_monoms)));
+}
+
+int Polynomial::amountOfMonoms() const
+{
+    return this->monomials.size();
+}
+
+void Polynomial::deleteAllTrigonometricalMonoms()
+{
+    for (auto it =  this->monomials.begin(); it != this->monomials.end();)
+    {
+        if (it->get()->hasTrigonometricalMultipliers())
+            it = this->monomials.erase(it);
+        else
+            ++it;
+    }
+}
+
+void Polynomial::checkIfCanSimplifyThisTrigonometryByTakingCommonPart()
+{
+    auto only_trig_polynom = this->tryToReturnPolynomOfOnlyTrigonometrical();
+    if (only_trig_polynom == nullptr)
+        return;
+    int old_size = static_cast<Polynomial*>(only_trig_polynom.get())->amountOfMonoms();
+    auto common_part = static_cast<Polynomial*>(only_trig_polynom.get())->reduceCommonPart();
+    if (only_trig_polynom->getId() == POLYNOMIAL)
+    {
+        int new_size = static_cast<Polynomial*>(only_trig_polynom.get())->amountOfMonoms();
+        if (new_size >= old_size)
+            return;
+    }
+    this->deleteAllTrigonometricalMonoms();
+    this->pushBack(std::unique_ptr<Fractal>(new Fractal(common_part * only_trig_polynom)));
+    this->simplify();
+}
+
+
 
 std::set<abs_ex > Polynomial::getTrigonometricalFunctions() const
 {
