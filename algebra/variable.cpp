@@ -32,6 +32,13 @@ Variable::Variable(int id, QString iname)
     //if (this->id >= Variable::id_counter)
     //    Variable::id_counter = id;
 }
+
+Variable::Variable(int id, QString name, VariablesDefinition *def)
+{
+    this->id = id;
+    this->name = name;
+    this->definition = def;
+}
 Variable::Variable(const Variable & var)
 {
     this->id = var.id;
@@ -89,10 +96,13 @@ Number Variable::getMaxDegreeOfVariable(int _id)
 }
 bool Variable::canDowncastTo()
 {
+    if (this->definition->getRange().isPoint())
+        return true;
     return false;
 }
 abs_ex Variable::downcastTo()
 {
+    return this->definition->getRange().getPoint();
     assert(false);
     return abs_ex(nullptr);
 }
@@ -185,4 +195,14 @@ long long Variable::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 long long Variable::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return 1;
+}
+
+FunctionRange Variable::getRange() const
+{
+    return this->definition->getRange();
+}
+
+bool Variable::hasDifferential() const
+{
+    return false;
 }

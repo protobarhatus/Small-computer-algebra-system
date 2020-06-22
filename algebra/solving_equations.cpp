@@ -215,6 +215,7 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             return res;
         auto arg = copy(static_cast<AbsoluteValue*>(var_expr.get())->getExpression());
 
+
         res.splice(res.end(), solveEquation(arg - right_expr, var,
         {RootCondition(var, RootCondition::BIGGER_THAN_ZERO, arg),
          RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)}));
@@ -529,7 +530,8 @@ std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
         return res;
     if (equation->getId() == DEGREE)
     {
-        return _solveEquation(copy(Degree::getArgumentOfDegree(equation.get())), var);
+        return solveEquation(copy(Degree::getArgumentOfDegree(equation.get())), var,
+                              RootCondition(var, RootCondition::DONT_EQUAL_ZERO, Degree::getDegreeOfExpression(equation.get())));
     }
     if (equation->getId() == FRACTAL)
     {
@@ -679,6 +681,7 @@ std::list<abs_ex > solveEquation(const abs_ex &equation, int var)
             it = pow(it, one/numToAbs(gcd_of_nums));
         return res;
     }
+    //qDebug() << equation->makeStringOfExpression();
     return _solveEquation(equation, var);
 }
 
@@ -1057,4 +1060,11 @@ std::pair<abs_ex, int> tryToDistingushFullDegreeWithPrecisionOfCoefficientWithou
     }
     return {nullptr, 0};
 
+}
+bool isIntegratingConstantAddictive(const std::unique_ptr<Fractal> & it)
+{
+    if (it->getCoefficient() == 1 && it->getFractal().second->empty() &&
+            it->getFractal().first->size() == 1 && isIntegratingConstant(it->getFractal().first->begin()->get()->getId()))
+        return true;
+    return false;
 }

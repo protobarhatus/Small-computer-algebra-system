@@ -14,6 +14,7 @@ public:
     static int firstSystemNum();
     //не знаю насколько синглтону нужен деструктор, но да пусть будет
     ~VariablesDistributor();
+
 private:
     friend Variable getVariable(int id);
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
@@ -29,8 +30,14 @@ private:
     //после перевыделения указатели стали бы невалидными
     std::vector<VariablesDefinition*> variables;
     std::vector<VariablesDefinition*> system_variables;
+    std::vector<VariablesDefinition*> integrating_constants;
+    friend bool isIntegratingConstant(int index);
+    friend Variable integratingConstant();
+    friend Variable integratingConstant(const FunctionRange & range);
+    friend QString makeIntegratingConstantName(int id);
 };
-
+QString makeIntegratingConstantName(int id);
+bool isIntegratingConstant(int index);
 void deleteVariables();
 Variable getVariable(int id);
 abs_ex getVariableExpr(int id);
@@ -39,6 +46,8 @@ Variable systemVar();
 abs_ex systemVarExpr();
 Variable systemVar(int min, int max);
 Variable integratingConstant();
+Variable integratingConstant(const FunctionRange & range);
 abs_ex integratingConstantExpr();
+abs_ex integratingConstantExpr(const FunctionRange & range);
 QString makeVariablesName(int id);
 #endif // VARIABLESDISTRIBUTOR_H

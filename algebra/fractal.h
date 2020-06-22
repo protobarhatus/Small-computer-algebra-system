@@ -109,7 +109,16 @@ public:
     abs_ex tryToFindLogarithmInNumerator() const;
     abs_ex getPartWithVariable(int var) const;
     bool hasTrigonometricalMultipliers() const;
+    FunctionRange getRange() const override;
+    virtual bool hasDifferential() const override;
+    //отличие от hasIntegratingConstantMultiplier в том, что последний вызывается в simplify()
+    //и ищет константу по всей дроби, а этот вызывается извне на уже упрощенную дробь
+    bool hasIntegratingConstant() const;
+    abs_ex takeAwayConstantMultiplier();
 private:
+    void takeAwayAbsoluteValues();
+    bool hasIntegratingConstantMultiplier() const;
+    void pullSomeMultipliersIntoIntegratingConstant();
     std::pair<abs_ex, abs_ex> checkIfCanDoUniversalTrigonometricSubstitution(int var) const;
     bool isNumeratorsDegreeBiggerThanDenominatorsDegree(int var) const;
     abs_ex getAntiderivativeByParts(int var) const;

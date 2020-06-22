@@ -77,6 +77,7 @@ SOURCES += \
     algebra/cosinus.cpp \
     algebra/cotangent.cpp \
     algebra/degree.cpp \
+    algebra/difequationrootconditions.cpp \
     algebra/differential.cpp \
     algebra/equationrootsconditions.cpp \
     algebra/exception.cpp \
@@ -171,6 +172,7 @@ HEADERS += \
     algebra/cosinus.h \
     algebra/cotangent.h \
     algebra/degree.h \
+    algebra/difequationrootconditions.h \
     algebra/differential.h \
     algebra/equationrootsconditions.h \
     algebra/exception.h \

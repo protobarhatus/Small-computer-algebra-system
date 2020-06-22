@@ -142,6 +142,16 @@ long long Constant::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return 0;
 }
+
+FunctionRange Constant::getRange() const
+{
+    return FunctionRange(copy(this), copy(this), true, true);
+}
+
+bool Constant::hasDifferential() const
+{
+    return false;
+}
 bool Constant::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == CONSTANT);

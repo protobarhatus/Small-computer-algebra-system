@@ -69,7 +69,11 @@ void Polynomial::simplify()
 
 replaceSystemVariablesBackToFunctions(this, funcs);
 if (this->is_fractional_coefficients_allowed)
+{
+    if (this->hasIntegratingConstantAddictive())
+        this->pullSomeMembersIntoOneIntegratingConstant();
     return;
+}
 
     if (this->canBecameFractal())
     {
@@ -94,6 +98,9 @@ if (this->is_fractional_coefficients_allowed)
         this->castTrigonometryArguments();
     this->checkIfShouldOpenTrigonometricalSums();
     this->checkIfCanSimplifyThisTrigonometryByTakingCommonPart();
+
+    if (this->hasIntegratingConstantAddictive())
+        this->pullSomeMembersIntoOneIntegratingConstant();
    // qDebug() << "Finished#: " << randId;
     this->simplified = true;
 }
@@ -218,6 +225,7 @@ bool Polynomial::canBecameFractal()
         if (!it->isDenominatorEqualToOne())
             return true;
     }
+
     return false;
 }
 bool Polynomial::isZero()
@@ -228,6 +236,8 @@ bool Polynomial::canDowncastTo()
 {
     if (this->isZero())
         return true;
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return this->monomials.size() == 1;
 }
 abs_ex Polynomial::downcastTo()
@@ -235,6 +245,10 @@ abs_ex Polynomial::downcastTo()
     assert(canDowncastTo());
     if ( this->isZero())
         return abs_ex(new Number(0));
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
+    }
     return this->monomials.begin()->get()->downcast();
 }
 AlgebraExpression Polynomial::getId() const
@@ -2025,7 +2039,8 @@ abs_ex Polynomial::changeSomePartOnExpression(QString part, abs_ex &on_what)
 std::unique_ptr<Fractal> Polynomial::toCommonDenominator()
 {
     assert(this->canBecameFractal());
-  //  qDebug() << "To Common: " << this->makeStringOfExpression();
+
+//    qDebug() << "To Common: " << this->makeStringOfExpression();
    // qDebug();
     fractal_argument arg;
     abs_ex gcd(new Fractal(&arg, this->monomials.begin()->get()->getFractal().second, Number(1, this->monomials.begin()->get()->getCoefficient().getDenominator())));
@@ -2460,6 +2475,91 @@ void Polynomial::deleteAllTrigonometricalMonoms()
         else
             ++it;
     }
+}
+
+FunctionRange Polynomial::getRange() const
+{
+    FunctionRange range = this->monomials.begin()->get()->getRange();
+    std::set<int> vars = this->monomials.begin()->get()->getSetOfVariables();
+    for (auto it = next(this->monomials.begin()); it != this->monomials.end(); ++it)
+    {
+        std::set<int> it_vars = it->get()->getSetOfVariables();
+        if (hasIntersections(vars, it_vars))
+            return FunctionRange::getErrorRange();
+        auto add_range = it->get()->getRange();
+        if (add_range.isError())
+            return add_range;
+        range = rangeOfSum(range, add_range);
+    }
+    return range;
+}
+
+std::list<std::unique_ptr<Fractal> > *Polynomial::getMonoms()
+{
+    return &this->monomials;
+}
+
+bool Polynomial::hasDifferential() const
+{
+    for (auto &it : this->monomials)
+        if (it->hasDifferential())
+            return true;
+    return false;
+}
+
+bool Polynomial::hasIntegratingConstant() const
+{
+    return this->monomials.size() > 0 && isIntegratingConstantAddictive(this->monomials.back());
+}
+
+abs_ex Polynomial::takeAwayIntegragingConstant()
+{
+    assert(this->hasIntegratingConstant());
+    abs_ex constant = std::move(this->monomials.back());
+    this->monomials.erase(--this->monomials.end());
+    return constant;
+}
+
+bool Polynomial::hasIntegratingConstantAddictive() const
+{
+    for (auto &it : this->monomials)
+    {
+        if (isIntegratingConstantAddictive(it))
+            return true;
+    }
+    return false;
+}
+
+void Polynomial::pullSomeMembersIntoOneIntegratingConstant()
+{
+    std::set<int> used_vars;
+    FunctionRange range;
+    bool initialized = false;
+    for (auto it = this->monomials.begin(); it != this->monomials.end(); )
+    {
+        auto set = it->get()->getSetOfVariables();
+        bool skip = false;
+        if (!(set.empty() || isIntegratingConstantAddictive(*it)))
+            skip = true;
+        if (skip)
+        {
+            ++it;
+            continue;
+        }
+        for (auto &it1 : set)
+            used_vars.insert(it1);
+        auto it_range = it->get()->getRange();
+        if (initialized)
+            range = rangeOfSum(range, it_range);
+        else
+        {
+            range = std::move(it_range);
+            initialized = true;
+        }
+        it = this->monomials.erase(it);
+
+    }
+    this->monomials.push_back(toFrac(integratingConstantExpr(range)));
 }
 
 void Polynomial::checkIfCanSimplifyThisTrigonometryByTakingCommonPart()

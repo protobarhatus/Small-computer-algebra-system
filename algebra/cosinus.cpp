@@ -10,6 +10,7 @@
 #include "polynomial.h"
 #include "sinus.h"
 #include "variablesdistributor.h"
+#include "absolutevalue.h"
 Cosinus::Cosinus(const abs_ex & iargument)
 {
     this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
@@ -117,6 +118,8 @@ bool Cosinus::canDowncastTo()
     //    return true;
     if (this->argument->getPositionRelativelyZero() < 0)
         return true;
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return false;
 }
 abs_ex Cosinus::downcastTo()
@@ -155,6 +158,10 @@ abs_ex Cosinus::downcastTo()
 
     if (this->argument->getPositionRelativelyZero() < 0)
         return cos(-argument);
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
+    }
     return abs_ex(nullptr);
 }
 std::set<int> Cosinus::getSetOfPolyVariables() const
@@ -350,6 +357,83 @@ long long Cosinus::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 long long Cosinus::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
+}
+
+FunctionRange Cosinus::getRange() const
+{
+    FunctionRange arg_range = this->argument->getRange();
+    if (arg_range.isError())
+        return arg_range;
+    if (arg_range.getMin() == nullptr || arg_range.getMax() == nullptr)
+        return FunctionRange(FunctionRangeSegment(nullptr, nullptr, false, false));
+    FunctionRange result;
+    auto toFirstPeriod = [](const abs_ex & val)->abs_ex
+    {
+        auto div_res = val/two/getPi();
+        if (div_res->getId() == NUMBER)
+            return toAbsEx(Number((div_res->getPositionRelativelyZero() > 0 ? 1 : -1), static_cast<Number*>( div_res.get())->getDenominator())) * two*getPi();
+        int rat = val->getApproximateValue()/2/getPi()->getApproximateValue();
+        return val - numToAbs(rat)*two*getPi();
+    };
+    for (auto &it : arg_range.getSegments())
+    {
+        if (biggerOrEquall(it.max() - it.min(), two*getPi()))
+            return FunctionRange(FunctionRangeSegment(minus_one, one, true, true));
+        auto min = toFirstPeriod(it.min());
+        auto max = toFirstPeriod(it.max());
+        bool min_lower_zero = lowerOrEquall(min, zero);
+        if (min_lower_zero && lowerOrEquall(max, zero))
+        {
+            std::swap(min, max);
+            min = -min;
+            max = -max;
+            min_lower_zero = false;
+        }
+        if (bigger(min, max))
+        {
+            //не может быть чтобы min был меньше нуля тут
+            if (bigger(min, zero))
+            {
+                min = min - two*getPi();
+                min_lower_zero = true;
+            }
+        }
+        if (min_lower_zero)
+        {
+            if (lower(min, -getPi()))
+                return FunctionRange(FunctionRangeSegment(minus_one, one, true, true));
+            if (bigger(max, getPi()))
+                return FunctionRange(FunctionRangeSegment(minus_one, one, true, true));
+            bool min_take = bigger(abs(min), abs(max));
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment((min_take ?
+                                                                          cos(min) : cos(max)), one,
+                                                                     (min_take ? it.isMinIncluded() : it.isMaxIncluded()), true));
+        }
+        else
+        {
+            bool is_max_bigger_than_pi = bigger(max, getPi());
+            if (is_max_bigger_than_pi && bigger(min, getPi()))
+                result.addSegmentWithoutNormilizing(FunctionRangeSegment(cos(min), cos(max),
+                                                                         it.isMinIncluded(), it.isMaxIncluded()));
+            else if (is_max_bigger_than_pi)
+            {
+                bool min_take = bigger(cos(min), cos(max));
+                result.addSegmentWithoutNormilizing(FunctionRangeSegment(minus_one, (min_take ? cos(min) : cos(max)),
+                                                                         true, (min_take ? it.isMinIncluded() : it.isMaxIncluded())));
+            }
+            else
+                result.addSegmentWithoutNormilizing(FunctionRangeSegment(cos(max), cos(min), it.isMaxIncluded(),
+                                                                     it.isMinIncluded()));
+        }
+
+    }
+    result.normalize();
+    return result;
+}
+
+bool Cosinus::hasDifferential() const
+{
+    return this->argument->hasDifferential();
 }
 
 abs_ex cos(const abs_ex &expr)

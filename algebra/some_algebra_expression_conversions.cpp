@@ -452,3 +452,11 @@ bool isPiMemberOnAxis(Number coe)
 {
     return coe == 1 || coe == -1 || coe == Number(1, 2) || coe == Number(-1, 2) || coe == Number(1, 4) || coe == Number(-1, 4);
 }
+//используем примитивный алгоритм, т. к. работаем на маленьких размерах
+bool hasIntersections(const std::set<int> &a, const std::set<int> &b)
+{
+    for (auto &it :a)
+        if (has(b, it))
+            return true;
+    return false;
+}

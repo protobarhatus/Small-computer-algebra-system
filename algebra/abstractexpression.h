@@ -6,6 +6,7 @@
 #include <QString>
 #include <vector>
 #include <array>
+#include "functionrange.h"
 #define SIM_IF_NEED if (this->simplified) return; //else this->simplified = true;
 #define NONCONST this->simplified = false;
 class AbstractExpression;
@@ -102,6 +103,10 @@ public:
     virtual std::set<abs_ex> getTrigonometricalFunctions() const = 0;
     virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const = 0 ;
     virtual long long int getGcdOfNumeratorsOfDegrees(int var) const = 0;
+    //не считает область значений сложной функции
+    virtual FunctionRange getRange() const = 0;
+    bool isOnlyVarsIntegratingConstants() const;
+    virtual bool hasDifferential() const = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -110,7 +115,10 @@ protected:
     virtual int getPositionRelativelyZeroIfHasVariables() = 0;
 
 };
-
+bool lower(const abs_ex & left, const abs_ex & right);
+bool bigger(const abs_ex & left, const abs_ex & right);
+bool lowerOrEquall(const abs_ex & left, const abs_ex & right);
+bool biggerOrEquall(const abs_ex & left, const abs_ex & right);
 bool subCompare(const abs_ex & a, const abs_ex & b);
 QString getStringArgumentOfTrigonometricalFunction(abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);

@@ -4,6 +4,7 @@
 #include <QDebug>
 #include "fractal.h"
 #include "degree.h"
+#include "variablesdistributor.h"
 AbsoluteValue::AbsoluteValue(const abs_ex & expr)
 {
     this->expression = makeAbstractExpression(expr->getId(), expr.get());
@@ -72,6 +73,8 @@ bool AbsoluteValue::canDowncastTo()
         return true;
     if (this->expression->getId() == DEGREE)
         return true;
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return false;
 }
 abs_ex AbsoluteValue::downcastTo()
@@ -101,6 +104,10 @@ abs_ex AbsoluteValue::downcastTo()
     {
         auto arg = Degree::getArgumentOfDegree(this->expression.get());
         return pow(abs(copy(arg)), Degree::getDegreeOfExpression(this->expression.get()));
+    }
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
     }
     abs_ex minus(new Number(-1));
     return this->expression * minus;
@@ -222,6 +229,30 @@ long long AbsoluteValue::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 long long AbsoluteValue::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return this->expression->getGcdOfNumeratorsOfDegrees(var);
+}
+
+FunctionRange AbsoluteValue::getRange() const
+{
+    FunctionRange arg_range = this->expression->getRange();
+    if (arg_range.isError())
+        return arg_range;
+    FunctionRange result;
+    for (auto &it : arg_range.getSegments())
+    {
+        if (it.canBeBiggerThanZero())
+        {
+            if (it.canBeLowerThanZero())
+                result.addSegmentWithoutNormilizing(FunctionRangeSegment(copy(zero), it.max(), true, it.isMaxIncluded()));
+            else
+                result.addSegmentWithoutNormilizing(it);
+        }
+    }
+    return result;
+}
+
+bool AbsoluteValue::hasDifferential() const
+{
+    return this->expression->hasDifferential();
 }
 
 abs_ex abs(const abs_ex &expr)

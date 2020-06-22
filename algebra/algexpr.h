@@ -8,6 +8,7 @@
 #include "variable.h"
 #include "variablesdistributor.h"
 #include "absolutevalue.h"
+#include "solving_differential_equations.h"
 class AlgExpr
 {
 public:
@@ -121,7 +122,7 @@ AlgExpr operator/(AlgExpr && left, AlgExpr && right);
 AlgExpr var();
 AlgExpr positiveVar();
 AlgExpr var(VariablesDefinition );
-AlgExpr var(double min, double max);
+AlgExpr var(int min, int max);
 AlgExpr operator+(long long int left, const AlgExpr & expr);
 AlgExpr operator-(long long int left, const AlgExpr & right);
 AlgExpr operator*(long long int left, const AlgExpr & right);
@@ -172,5 +173,5 @@ AlgExpr atan(AlgExpr && arg);
 AlgExpr asin(const AlgExpr & arg);
 AlgExpr asin(AlgExpr && arg);
 std::list<AlgExpr> solveEquation(const AlgExpr & equation, const AlgExpr & var);
-std::list<AlgExpr> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
+std::list<DifurResult> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
 #endif // ALGEXPR_H

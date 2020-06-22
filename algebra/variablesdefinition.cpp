@@ -1,37 +1,47 @@
 #include "variablesdefinition.h"
 #include <cmath>
+#include "number.h"
 VariablesDefinition::VariablesDefinition()
 {
-    this->max = std::nan("0");
-    this->min = std::nan("0");
+    this->range = FunctionRange(nullptr, nullptr, false, false);
 }
 
-VariablesDefinition::VariablesDefinition(const VariablesDefinition &cop) :min(cop.min), max(cop.max),
-    has_min_border(cop.has_min_border), has_max_border(cop.has_max_border)
+VariablesDefinition::VariablesDefinition(const VariablesDefinition &cop) : range(cop.range)
 {
 
 }
-void VariablesDefinition::setMinValue(definition_area_type imin)
+
+VariablesDefinition::VariablesDefinition(const FunctionRange &def)
 {
-    this->min = imin;
-    this->has_min_border = true;
+    this->range = def;
 }
-void VariablesDefinition::setMaxValue(definition_area_type imax)
-{
-    this->max = imax;
-    this->has_max_border = true;
-}
+
+
 VariablesDefinition getPositiveDefinition()
 {
-    VariablesDefinition def;
-    def.setMinValue(0);
-    return def;
+    return VariablesDefinition(FunctionRange(FunctionRangeSegment(zero, nullptr, true, false)));
 }
-definition_area_type VariablesDefinition::getMinValue()
+double VariablesDefinition::getMinValue()
 {
-    return this->min;
+    auto expr = this->range.getMin();
+    if (expr == nullptr)
+        return std::nan("0");
+    return expr->getApproximateValue();
 }
-definition_area_type VariablesDefinition::getMaxValue()
+double VariablesDefinition::getMaxValue()
 {
-    return this->max;
+    auto expr = this->range.getMax();
+    if (expr == nullptr)
+        return std::nan("0");
+    return expr->getApproximateValue();
+}
+
+const FunctionRange &VariablesDefinition::getRange() const
+{
+    return range;
+}
+
+void VariablesDefinition::setRange(const FunctionRange &rang)
+{
+    this->range = rang;
 }

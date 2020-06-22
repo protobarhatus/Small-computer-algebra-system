@@ -307,7 +307,13 @@ bool operator!=(long long int left, const AlgExpr & right)
 }
 QString AlgExpr::toString()
 {
-    return this->expression->makeStringOfExpression();
+    QString res = this->expression->makeStringOfExpression();
+    auto set = this->expression->getSetOfVariables();
+    for (auto &it : set)
+        if (isIntegratingConstant(it))
+            res += "  and  " + makeIntegratingConstantName(it) + QString::fromWCharArray(L" ∈  ")
+                    + VariablesDistributor::getVariablesDefinition(it)->getRange().toString();
+    return res;
 }
 
 QString AlgExpr::toWolframString()
@@ -344,11 +350,11 @@ AlgExpr abs(AlgExpr && arg)
     expr.expression = abs(std::move(arg.expression));
     return expr;
 }
-AlgExpr var(double min, double max)
+AlgExpr var(int min, int max)
 {
-    VariablesDefinition definition;
-    definition.setMinValue(min);
-    definition.setMaxValue(max);
+    VariablesDefinition definition(FunctionRange(toAbsEx(min), toAbsEx(max), true, true));
+   // definition.setMinValue(min);
+   // definition.setMaxValue(max);
     return var(definition);
 }
 AlgExpr sqrt(int arg)
@@ -557,11 +563,7 @@ std::list<AlgExpr> solveEquation(const AlgExpr &equation, const AlgExpr &var)
     return res;
 }
 
-std::list<AlgExpr> solveDifur(const AlgExpr &difur, const AlgExpr &x, const AlgExpr &y)
+std::list<DifurResult> solveDifur(const AlgExpr &difur, const AlgExpr &x, const AlgExpr &y)
 {
-    std::list<abs_ex> eq_res = solveDifur(difur.getExpr(), x.getExpr()->getId(), y.getExpr()->getId());
-    std::list<AlgExpr> res;
-    for (auto &it : eq_res)
-        res.push_back(std::move(it));
-    return res;
+   return solveDifur(difur.getExpr(), x.getExpr()->getId(), y.getExpr()->getId());
 }

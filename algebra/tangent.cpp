@@ -138,6 +138,8 @@ bool Tangent::canDowncastTo()
      //   return true;
     if (this->argument->getPositionRelativelyZero() < 0)
         return true;
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return false;
 }
 
@@ -183,6 +185,10 @@ abs_ex Tangent::downcastTo()
     }*/
     if (this->argument->getPositionRelativelyZero() < 0)
         return -tan(-argument);
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
+    }
     return abs_ex(nullptr);
 }
 
@@ -334,6 +340,72 @@ long long Tangent::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 long long Tangent::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
+}
+
+FunctionRange Tangent::getRange() const
+{
+  FunctionRange arg_range = this->argument->getRange();
+  if (arg_range.isError())
+      return arg_range;
+  if (arg_range.getMin() == nullptr || arg_range.getMax() == nullptr)
+      return FunctionRange(nullptr, nullptr, false, false);
+  auto toFirstPeriod = [](const abs_ex & arg)->abs_ex
+  {
+      abs_ex div_res = arg / getPi();
+      if (div_res->getId() == NUMBER)
+          return getPi()*abs_ex(new Number(((static_cast<Number*>(div_res.get())->getNumerator() > 0 ? 1 : -1)), static_cast<Number*>(div_res.get())->getDenominator()));
+      int rat = div_res->getApproximateValue();
+      return arg - numToAbs(rat)*getPi();
+  };
+  FunctionRange result;
+  for (auto &it : arg_range.getSegments())
+  {
+      if (biggerOrEquall(it.max() - it.min(), getPi()))
+          return FunctionRange(nullptr, nullptr, false, false);
+      if (it.isPoint())
+      {
+          result.addSegmentWithoutNormilizing(it.min(), it.max(), true, true);
+          continue;
+      }
+      auto min = toFirstPeriod(it.min());
+      auto max = toFirstPeriod(it.max());
+      if (lower(max, zero))
+      {
+          max = max + getPi();
+          min = min + getPi();
+      }
+      if (bigger(min, max))
+      {
+          min = min - getPi();
+      }
+      if (lower(min, -getPi()/two))
+      {
+          result.addSegmentWithoutNormilizing(nullptr, tan(max), false, it.isMaxIncluded());
+          result.addSegmentWithoutNormilizing(tan(min), nullptr, it.isMinIncluded(), false);
+      }
+      else if (subCompare(min, -getPi()/two))
+          result.addSegmentWithoutNormilizing(nullptr, tan(max), false, it.isMaxIncluded());
+      else if (lower(max, getPi()/two))
+          result.addSegmentWithoutNormilizing(tan(min), tan(max), it.isMinIncluded(), it.isMaxIncluded());
+      else if (subCompare(max, getPi()/two))
+          result.addSegmentWithoutNormilizing(tan(min), nullptr, it.isMinIncluded(), false);
+      else if (lower(min, getPi()/two) && bigger(max, getPi()/two))
+      {
+          result.addSegmentWithoutNormilizing(nullptr, tan(max), false, it.isMaxIncluded());
+          result.addSegmentWithoutNormilizing(tan(min), nullptr, it.isMinIncluded(), false);
+      }
+      else if (subCompare(min, getPi()/two))
+          result.addSegmentWithoutNormilizing(nullptr, tan(max), false, it.isMaxIncluded());
+      else
+          result.addSegmentWithoutNormilizing(tan(min), tan(max), it.isMinIncluded(), it.isMaxIncluded());
+  }
+  result.normalize();
+  return result;
+}
+
+bool Tangent::hasDifferential() const
+{
+    return this->argument->hasDifferential();
 }
 
 bool Tangent::operator<(const AbstractExpression &right) const

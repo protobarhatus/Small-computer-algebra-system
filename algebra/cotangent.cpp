@@ -135,6 +135,8 @@ bool Cotangent::canDowncastTo()
     }
     if (this->argument->getPositionRelativelyZero() < 0)
         return true;
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return false;
 }
 
@@ -180,6 +182,10 @@ abs_ex Cotangent::downcastTo()
     }*/
     if (this->argument->getPositionRelativelyZero() < 0)
         return -cot(-argument);
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
+    }
     return abs_ex(nullptr);
 }
 
@@ -336,6 +342,53 @@ long long Cotangent::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 long long Cotangent::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
+}
+
+FunctionRange Cotangent::getRange() const
+{
+    FunctionRange arg_range = argument->getRange();
+
+
+    if (arg_range.isError())
+        return arg_range;
+    if (arg_range.getMin() == nullptr || arg_range.getMax() == nullptr)
+        return FunctionRange(FunctionRangeSegment(nullptr, nullptr, false, false));
+    FunctionRange result;
+    auto toFirstPeriod = [](const abs_ex & arg)->abs_ex
+    {
+        abs_ex div_res = arg / getPi();
+        if (div_res->getId() == NUMBER)
+            return getPi()*abs_ex(new Number(((static_cast<Number*>(div_res.get())->getNumerator() > 0 ? 1 : -1)), static_cast<Number*>(div_res.get())->getDenominator()));
+        int rat = div_res->getApproximateValue();
+        return arg - numToAbs(rat)*getPi();
+    };
+    for (auto &it : arg_range.getSegments())
+    {
+        if (biggerOrEquall(it.max() - it.min(), getPi()))
+            return FunctionRange(FunctionRangeSegment(nullptr, nullptr, false, false));
+
+        abs_ex max = toFirstPeriod(it.max());
+        abs_ex min = toFirstPeriod(it.min());
+        if (lower(max, zero))
+            max = max + getPi();
+        if (lower(min, zero))
+            min = min + getPi();
+        if (bigger(min, max))
+        {
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(nullptr, cot(min), false, it.isMinIncluded()));
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(cot(max), nullptr, it.isMaxIncluded(), false));
+        }
+        else
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(cot(max), cot(min), it.isMaxIncluded(), it.isMinIncluded()));
+
+    }
+    result.normalize();
+    return result;
+}
+
+bool Cotangent::hasDifferential() const
+{
+    return this->argument->hasDifferential();
 }
 
 bool Cotangent::operator<(const AbstractExpression &right) const

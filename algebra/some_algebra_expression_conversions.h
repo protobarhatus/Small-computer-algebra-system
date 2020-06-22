@@ -18,6 +18,7 @@ std::pair<long long int, std::pair<long long int, long long int>> xea(long long 
 long long int lcm(long long int a, long long int b);
 long long int root(long long int a, long long int n, bool & succesfully);
 long long int power(long long int a, long long int n, bool & succesfully);
+bool hasIntersections(const std::set<int> & a, const std::set<int> & b);
 
 std::multiset<int> findSubsetWithSum(const std::multiset<int> & set, int n);
 std::unique_ptr<AbstractExpression> getDegrCoefficientPtr(long long int degree, const std::vector<int> & members_degrees);

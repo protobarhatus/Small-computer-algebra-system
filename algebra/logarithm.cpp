@@ -13,6 +13,7 @@
 #include "sinus.h"
 #include "cosinus.h"
 #include "factorization.h"
+#include "variablesdistributor.h"
 Logarithm::Logarithm(const abs_ex &argument)
 {
     this->argument = copy(argument);
@@ -136,6 +137,8 @@ bool Logarithm::canDowncastTo()
         if (facts.size() > 1 || (facts.size() == 1 && facts.begin()->second > 1))
             return true;
     }
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return false;
 }
 
@@ -200,6 +203,10 @@ abs_ex Logarithm::downcastTo()
         for (auto &it : facts)
             res = std::move(res) + numToAbs(it.second) * ln(numToAbs(it.first));
         return res;
+    }
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
     }
     assert(false);
 }
@@ -348,6 +355,42 @@ long long Logarithm::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 long long Logarithm::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
+}
+
+FunctionRange Logarithm::getRange() const
+{
+    FunctionRange arg_range = this->argument->getRange();
+    if (arg_range.isError())
+        return arg_range;
+    if (!bigger(arg_range.getMax(), zero))
+        return FunctionRange();
+    FunctionRange result;
+    for (auto &it : arg_range.getSegments())
+    {
+        if (!bigger(it.max(), zero))
+            continue;
+        if (it.min() == nullptr || !bigger(it.min(), zero))
+        {
+            if (it.max() == nullptr)
+                return FunctionRange(nullptr, nullptr, false, false);
+            else
+                result.addSegmentWithoutNormilizing(nullptr, ln(it.max()), false, it.isMaxIncluded());
+        }
+        else
+        {
+            if (it.max() == nullptr)
+                result.addSegmentWithoutNormilizing(ln(it.min()), nullptr, it.isMinIncluded(), false);
+            else
+                result.addSegmentWithoutNormilizing(ln(it.min()), ln(it.max()), it.isMinIncluded(), it.isMaxIncluded());
+        }
+    }
+    return result;
+
+}
+
+bool Logarithm::hasDifferential() const
+{
+    return this->argument->hasDifferential();
 }
 
 bool Logarithm::operator<(const AbstractExpression &right) const

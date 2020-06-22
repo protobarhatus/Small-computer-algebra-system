@@ -94,6 +94,8 @@ bool ArcSinus::canDowncastTo()
     if (*arg == *minus_one || *arg == *(-sqrt(three)/two) || *arg == *-half || *arg == *zero || *arg == *(-sqrt(two)/two)||
              *arg == *half || *arg == *(-sqrt(two)/two) || *arg == *(sqrt(three)/two) || *arg == *one)
         return true;
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return false;
 }
 
@@ -122,6 +124,10 @@ abs_ex ArcSinus::downcastTo()
         return getPi()/three;
     if (*arg == *one)
         return getPi()/two;
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
+    }
     assert(false);
     return nullptr;
 
@@ -226,6 +232,7 @@ abs_ex ArcSinus::derivative(int var) const
 
 abs_ex ArcSinus::antiderivative(int var) const
 {
+
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
     if (isSqrt(argument))
@@ -274,6 +281,49 @@ long long ArcSinus::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 long long ArcSinus::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
+}
+
+FunctionRange ArcSinus::getRange() const
+{
+    FunctionRange arg_range = this->argument->getRange();
+    if (arg_range.isError())
+        return arg_range;
+    FunctionRange result;
+    for (auto &it : arg_range.getSegments())
+    {
+        if (lower(it.min(), minus_one))
+        {
+            if (*it.max() == *minus_one && it.isMaxIncluded())
+                result.addSegmentWithoutNormilizing(FunctionRangeSegment(-getPi()/two, -getPi()/two, true, true));
+            else if ((it.max() - minus_one)->getPositionRelativelyZero() > 0)
+            {
+                if (lowerOrEquall(it.max(), one))
+                    result.addSegmentWithoutNormilizing(FunctionRangeSegment(-getPi()/two, asin(it.max()), true, it.isMaxIncluded()));
+                else
+                    result.addSegmentWithoutNormilizing(FunctionRangeSegment(-getPi()/two, getPi()/two, true, true));
+            }
+
+        }
+        else if (lower(it.min(), one))
+        {
+            if (lowerOrEquall(it.max(), one))
+                result.addSegmentWithoutNormilizing(FunctionRangeSegment(asin(it.min()), asin(it.max()),
+                                                    it.isMinIncluded(), it.isMaxIncluded()));
+            else
+                result.addSegmentWithoutNormilizing(FunctionRangeSegment(asin(it.min()),  getPi()/two,
+                                                                         it.isMinIncluded(), true));
+        }
+        else if (*it.min() == *one && it.isMinIncluded())
+        {
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(getPi()/two, getPi()/two, true, true));
+        }
+    }
+    return result;
+}
+
+bool ArcSinus::hasDifferential() const
+{
+    return this->argument->hasDifferential();
 }
 
 bool ArcSinus::operator<(const AbstractExpression &right) const

@@ -122,6 +122,15 @@ bool Degree::canDowncastTo()
    /* if (this->degree->getId() == FRACTAL && !static_cast<Fractal*>(this->degree.get())->getCoefficient().isOne() &&
             this->argument->getId() == NUMBER)
         return true;*/
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
+    if (this->argument->getSetOfVariables().empty())
+    {
+        if (this->degree->getId() == FRACTAL && static_cast<Fractal*>(degree.get())->hasIntegratingConstant())
+            return true;
+        if (this->degree->getId() == POLYNOMIAL && static_cast<Polynomial*>(degree.get())->hasIntegratingConstant())
+            return true;
+    }
     return false;
 }
 abs_ex Degree::downcastTo()
@@ -251,9 +260,22 @@ abs_ex Degree::downcastTo()
         assert(log != nullptr);
         return pow(static_cast<Logarithm*>(log.get())->getArgumentMoved(), degree/log);
     }
+    if (this->argument->getSetOfVariables().empty())
+    {
+        if (this->degree->getId() == FRACTAL && static_cast<Fractal*>(degree.get())->hasIntegratingConstant())
+        {
+            abs_ex constant = static_cast<Fractal*>(degree.get())->takeAwayConstantMultiplier();
+            return pow(pow(argument, constant), degree);
+        }
+        if (this->degree->getId() == POLYNOMIAL && static_cast<Polynomial*>(degree.get())->hasIntegratingConstant())
+        {
+            abs_ex constant = static_cast<Polynomial*>(degree.get())->takeAwayIntegragingConstant();
+            return pow(argument, constant) * pow(argument, degree);
+        }
+    }
     if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL)
     {
-        abs_ex cop = pow(argument, static_cast<Fractal*>(this->degree.get())->turnIntoPolynomWithOpeningParentheses(false));
+        abs_ex cop = pow(argument, static_cast<Fractal*>(this->degree.get())->turnIntoPolynomWithOpeningParentheses(true));
       //  qDebug() << cop->makeStringOfExpression();
         return cop;
     }
@@ -277,6 +299,12 @@ abs_ex Degree::downcastTo()
         return pow(pow(argument, static_cast<Fractal*>(this->degree.get())->getCoefficient()),
                    degree/toAbsEx(static_cast<Fractal*>(this->degree.get())->getCoefficient()));
     }*/
+
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
+    }
+
     return copy( this->argument.get());
 
 }
@@ -1026,6 +1054,340 @@ long long Degree::getGcdOfNumeratorsOfDegrees(int var) const
     if (deg == 0)
         return arg;
     return gcd(arg, deg);
+}
+FunctionRange rangeOfEvenHyperbola(FunctionRange & arg_range, int deg)
+{
+    FunctionRange result;
+    for (auto &it : arg_range.getSegments())
+    {
+        if (it.min() == nullptr && (isZero(it.max()) || it.canBeBiggerThanZero()))
+            return FunctionRange(FunctionRangeSegment(zero, nullptr, false, false));
+        if (it.min() == nullptr)
+        {
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(zero, pow(it.max(), deg), false, it.isMaxIncluded()));
+        }
+        else if (it.canBeLowerThanZero() && (isZero(it.max()) || it.canBeBiggerThanZero()))
+        {    if (isZero(it.max()))
+                result.addSegmentWithoutNormilizing(FunctionRangeSegment(pow(it.min(), deg), nullptr, it.isMinIncluded(), false));
+            else
+            {
+                if (bigger(pow(it.min(), deg), pow(it.max(), deg)))
+                    result.addSegmentWithoutNormilizing(FunctionRangeSegment(pow(it.max(), deg), nullptr,
+                                                                             it.isMaxIncluded(), false));
+                else
+                    result.addSegmentWithoutNormilizing(FunctionRangeSegment(pow(it.min(), deg), nullptr, it.isMinIncluded(), false));
+            }
+        }
+        else if (it.canBeLowerThanZero())
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(pow(it.min(), deg), pow(it.max(), deg),
+                                                                     it.isMinIncluded(), it.isMaxIncluded()));
+        else if (isZero(it.min()) && it.max() != nullptr)
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(pow(it.max(), deg), nullptr,
+                                                                     it.isMaxIncluded(), false));
+        else if (isZero(it.min()))
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(zero, nullptr, false, false));
+        else if (it.max() != nullptr)
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(pow(it.max(), deg), pow(it.min(), deg),
+                                                                     it.isMaxIncluded(), it.isMinIncluded()));
+        else
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(zero, pow(it.min(), deg),
+                                                                     false, it.isMinIncluded()));
+    }
+    result.normalize();
+    return result;
+}
+FunctionRange getRangeOfOddHyperbola(FunctionRange & arg_range, int deg)
+{
+    FunctionRange result;
+    for (auto &it : arg_range.getSegments())
+    {
+        if (it.min() == nullptr && it.max() == nullptr)
+        {
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(nullptr, zero, false, false));
+            result.addSegmentWithoutNormilizing(FunctionRangeSegment(zero, nullptr, false, false));
+            return result;
+        }
+        if (it.min() == nullptr)
+        {
+            if (isZero(it.max()))
+                result.addSegmentWithoutNormilizing(FunctionRangeSegment(nullptr, zero, false, false));
+            else if (it.canBeBiggerThanZero())
+            {
+                result.addSegmentWithoutNormilizing(nullptr, zero, false, false);
+                result.addSegmentWithoutNormilizing( pow(it.max(), deg), nullptr, it.isMaxIncluded(), false);
+            }
+            else
+                result.addSegmentWithoutNormilizing(pow(it.max(), deg), zero, it.isMaxIncluded(), false);
+        }
+        else if (it.canBeLowerThanZero())
+        {
+            if (isZero(it.max()))
+                result.addSegmentWithoutNormilizing(nullptr, pow(it.min(), deg),false, it.isMinIncluded());
+            else if (it.max() == nullptr)
+            {
+                result.addSegmentWithoutNormilizing(nullptr, pow(it.min(), deg), false, it.isMinIncluded());
+                result.addSegmentWithoutNormilizing(zero, nullptr, false, false);
+            }
+            else if (it.canBeBiggerThanZero())
+            {
+                result.addSegmentWithoutNormilizing(nullptr, pow(it.min(), deg), false, it.isMinIncluded());
+                result.addSegmentWithoutNormilizing(pow(it.max(), deg), nullptr, it.isMaxIncluded(), false);
+            }
+            else
+                result.addSegmentWithoutNormilizing(pow(it.max(), deg), pow(it.min(), deg), it.isMaxIncluded(), it.isMinIncluded());
+        }
+        else if (isZero(it.min()))
+        {
+            if (isZero(it.max()))
+                continue;
+            else if (it.max() == nullptr)
+                result.addSegmentWithoutNormilizing(zero, nullptr, false, false);
+            else
+                result.addSegmentWithoutNormilizing(pow(it.max(), deg), nullptr, it.isMaxIncluded(), false);
+        }
+        else
+        {
+            if (it.max() == nullptr)
+                result.addSegmentWithoutNormilizing(zero, pow(it.min(), deg), false, it.isMinIncluded());
+            else
+                result.addSegmentWithoutNormilizing(pow(it.max(), deg), pow(it.min(), deg),
+                                                    it.isMaxIncluded(), it.isMinIncluded());
+        }
+    }
+    result.normalize();
+    return result;
+}
+FunctionRange getRangeOfOddParabola(FunctionRange& arg_range, int deg)
+{
+    FunctionRange result;
+    for (auto &it : arg_range.getSegments())
+    {
+        FunctionRangeSegment segm;
+        if (it.min() == nullptr)
+            segm.setMin(nullptr, false);
+        else
+            segm.setMin(pow(it.min(), deg), it.isMinIncluded());
+
+        if (it.max() == nullptr)
+            segm.setMax(nullptr, false);
+        else
+            segm.setMax(pow(it.max(), deg), it.isMaxIncluded());
+        result.addSegmentWithoutNormilizing(segm);
+    }
+    //тут не нужно нормализовывать
+    return result;
+}
+FunctionRange getRangeOfEvenParabola(FunctionRange& arg_range, int deg)
+{
+    FunctionRange result;
+    for (auto &it : arg_range.getSegments())
+    {
+        if (it.max() == nullptr && it.min() == nullptr)
+            return FunctionRange(FunctionRangeSegment(zero, nullptr, true, false));
+        if (it.min() == nullptr)
+        {
+            if (isZero(it.max()))
+                return FunctionRange(FunctionRangeSegment(zero, nullptr, it.isMaxIncluded(), false));
+            else if (it.canBeBiggerThanZero())
+                return FunctionRange(FunctionRangeSegment(zero, nullptr, true, false));
+            else
+                result.addSegmentWithoutNormilizing(pow(it.max(), deg), nullptr, it.isMaxIncluded(), false);
+        }
+        else if (it.canBeLowerThanZero())
+        {
+            if (isZero(it.max()))
+                result.addSegmentWithoutNormilizing(zero, pow(it.min(), deg), it.isMaxIncluded(), it.isMinIncluded());
+            else if (it.canBeBiggerThanZero())
+            {
+                if (it.max() == nullptr)
+                    return FunctionRange(FunctionRangeSegment(zero, nullptr, true, false));
+                if (bigger(it.max(), it.min()))
+                    result.addSegmentWithoutNormilizing(zero, pow(it.max(), deg), true, it.isMaxIncluded());
+                else
+                    result.addSegmentWithoutNormilizing(zero, pow(it.min(), deg), true, it.isMinIncluded());
+            }
+            else
+                result.addSegmentWithoutNormilizing(pow(it.max(), deg), pow(it.min(), deg), it.isMaxIncluded(),
+                                                    it.isMinIncluded());
+        }
+        else
+        {
+            if (it.max() == nullptr)
+                result.addSegmentWithoutNormilizing(pow(it.min(), deg), nullptr, it.isMinIncluded(), false);
+            else
+                result.addSegmentWithoutNormilizing(pow(it.min(), deg), pow(it.max(), deg), it.isMinIncluded(), it.isMaxIncluded());
+        }
+
+    }
+    result.normalize();
+    return result;
+}
+FunctionRange getRangeOfExponentialFunctionOfLowerOneArg(const abs_ex & arg, FunctionRange deg_range)
+{
+    FunctionRange result;
+    for (auto &it : deg_range.getSegments())
+    {
+        if (it.min() == nullptr && it.max() == nullptr)
+            return FunctionRange(zero, nullptr, false, false);
+        FunctionRangeSegment segm;
+        if (it.min() == nullptr)
+            segm.setMax(nullptr, false);
+        else
+            segm.setMax(pow(arg, it.min()), it.isMinIncluded());
+
+        if (it.max() == nullptr)
+            segm.setMin(zero, false);
+        else
+            segm.setMin(pow(arg, it.max()), it.isMaxIncluded());
+    }
+    result.normalize();
+    return result;
+}
+FunctionRange getRangeOfExponentialFunctionOfBiggerOneArg(const abs_ex & arg, FunctionRange deg_range)
+{
+    FunctionRange result;
+    for (auto &it : deg_range.getSegments())
+    {
+        FunctionRangeSegment segm;
+        if (it.min() == nullptr)
+            segm.setMin(zero, false);
+        else
+            segm.setMin(pow(arg, it.min()), it.isMinIncluded());
+
+        if (it.max() == nullptr)
+            segm.setMax(nullptr, false);
+        else
+            segm.setMax(pow(arg, it.max()), it.isMaxIncluded());
+        result.addSegmentWithoutNormilizing(segm);
+
+    }
+    //опять же normalize не нужен
+    return result;
+}
+FunctionRange Degree::getRange() const
+{
+    if (hasIntersections(this->argument->getSetOfVariables(), this->degree->getSetOfVariables()))
+        return FunctionRange::getErrorRange();
+    FunctionRange arg_range = this->argument->getRange();
+    if (arg_range.isError())
+        return arg_range;
+    FunctionRange deg_range = this->degree->getRange();
+    if (deg_range.isError())
+        return deg_range;
+    if (deg_range.isPoint() && arg_range.isPoint())
+        return FunctionRange(FunctionRangeSegment(pow(arg_range.getPoint(), deg_range.getPoint()),pow(arg_range.getPoint(), deg_range.getPoint()),
+                             true, true));
+    FunctionRange result;
+    if (deg_range.isPoint() && deg_range.getPoint()->getId() == NUMBER
+            && static_cast<Number*>(deg_range.getPoint().get())->isInteger())
+    {
+        int deg = static_cast<Number*>(deg_range.getPoint().get())->getNumerator();
+        if (deg == 0)
+            return FunctionRange(FunctionRangeSegment(one, one, true, true));
+        if (deg < 0 && (-deg) % 2 == 0)
+        {
+            return rangeOfEvenHyperbola(arg_range, deg);
+        }
+        else if (deg < 0)
+            return getRangeOfOddHyperbola(arg_range, deg);
+        else if (deg > 0 && deg % 2 == 0)
+            return getRangeOfOddParabola(arg_range, deg);
+        else
+            return getRangeOfEvenParabola(arg_range, deg);
+    }
+    if (arg_range.isPoint())
+    {
+        if (isZero(arg_range.getPoint()))
+            return FunctionRange(zero, zero, true, true);
+        if (*arg_range.getPoint() == *one)
+            return FunctionRange(one, one, true, true);
+        if (lower(arg_range.getPoint(), zero))
+            return FunctionRange::getErrorRange();
+        if (lower(arg_range.getPoint(), one))
+            return getRangeOfExponentialFunctionOfLowerOneArg(argument, deg_range);
+        return getRangeOfExponentialFunctionOfBiggerOneArg(argument, deg_range);
+    }
+    auto segmBetweenZeroAndOne = [](const FunctionRangeSegment & arg, const FunctionRangeSegment & deg)->FunctionRangeSegment
+    {
+        FunctionRangeSegment segm;
+        if (deg.min() == nullptr)
+            segm.setMax(nullptr, false);
+        else if (deg.canBeLowerThanZero())
+            segm.setMax(pow(arg.min(), deg.min()), arg.isMinIncluded() && deg.isMinIncluded());
+        else
+            segm.setMax(pow(arg.max(), deg.min()), arg.isMaxIncluded() && deg.isMinIncluded());
+
+        if (deg.max() == nullptr)
+            segm.setMin(zero, false);
+        else if (deg.canBeBiggerThanZero())
+            segm.setMin(pow(arg.min(), deg.max()), arg.isMinIncluded() && deg.isMaxIncluded());
+        else
+            segm.setMin(pow(arg.max(), deg.max()), arg.isMaxIncluded() && deg.isMaxIncluded());
+        return segm;
+    };
+    auto segmMoreThanOne = [](const FunctionRangeSegment & arg, const FunctionRangeSegment & deg)->FunctionRangeSegment
+    {
+        FunctionRangeSegment segm;
+        if (deg.min() == nullptr)
+            segm.setMin(zero, false);
+        else if (deg.canBeLowerThanZero())
+            segm.setMin(pow(arg.max(), deg.min()), arg.isMaxIncluded() && deg.isMinIncluded());
+        else
+            segm.setMin(pow(arg.min(), deg.min()), arg.isMinIncluded() && deg.isMinIncluded());
+
+        if (deg.max() == nullptr)
+            segm.setMax(nullptr, false);
+        else if (deg.canBeBiggerThanZero())
+            segm.setMax(pow(arg.max() , deg.max()), arg.isMaxIncluded() && deg.isMaxIncluded());
+        else
+            segm.setMax(pow(arg.min(), deg.max()), arg.isMinIncluded() && deg.isMaxIncluded());
+        return segm;
+    };
+    for (auto &it : arg_range.getSegments())
+    {
+        auto min = copy(it.min());
+        bool is_min_included = it.isMinIncluded();
+        if (isZero(it.max()))
+        {
+            result.addSegmentWithoutNormilizing(zero, zero, true, true);
+            continue;
+        }
+        if (it.max() != nullptr && lower(it.max(), zero))
+            continue;
+
+        if (min == nullptr || lower(min, zero))
+        {
+            min = copy(zero);
+            is_min_included = true;
+        }
+        bool max_lower_one = lower(it.max(), one);
+        bool min_lower_one = lower(it.min(), one);
+        for (auto &it1 : deg_range.getSegments())
+        {
+            if (max_lower_one)
+                result.addSegmentWithoutNormilizing(segmBetweenZeroAndOne(FunctionRangeSegment(min, it.max(),
+                                                                                               is_min_included, it.isMaxIncluded()), it1));
+            else if (min_lower_one)
+            {
+                result.addSegmentWithoutNormilizing(segmBetweenZeroAndOne(
+                                                        FunctionRangeSegment(min, one, is_min_included, false), it1));
+                result.addSegmentWithoutNormilizing(segmMoreThanOne(
+                                                        FunctionRangeSegment(one, it.max(), false, it.isMaxIncluded()), it1));
+                result.addSegmentWithoutNormilizing(one, one, true, true);
+            }
+            else
+                result.addSegmentWithoutNormilizing(segmMoreThanOne(FunctionRangeSegment(min, it.max(), is_min_included, it.isMaxIncluded()),
+                                                                    it1));
+        }
+    }
+    result.normalize();
+    return result;
+
+}
+
+bool Degree::hasDifferential() const
+{
+    return this->argument->hasDifferential() || this->degree->hasDifferential();
 }
 
 abs_ex takeDegreeOf(abs_ex &&argument, const abs_ex &degree)

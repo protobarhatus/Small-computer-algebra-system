@@ -96,7 +96,15 @@ public:
     abs_ex tryToReturnPolynomOfOnlyTrigonometrical() const;
     int amountOfMonoms() const;
     void deleteAllTrigonometricalMonoms();
+    virtual FunctionRange getRange() const override;
+    std::list<std::unique_ptr<Fractal>>* getMonoms();
+    bool hasDifferential() const override;
+    //отличие также в том, что hasIntegratingConstantAddictive() вызывается внутри simplify()
+    bool hasIntegratingConstant() const;
+    abs_ex takeAwayIntegragingConstant();
 private:
+    bool hasIntegratingConstantAddictive() const;
+    void pullSomeMembersIntoOneIntegratingConstant();
     void checkIfCanSimplifyThisTrigonometryByTakingCommonPart();
     bool casted_trigonometry;
     void castTrigonometry();

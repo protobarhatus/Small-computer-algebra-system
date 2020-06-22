@@ -1,7 +1,11 @@
 #ifndef FUNCTIONRANGESEGMENT_H
 #define FUNCTIONRANGESEGMENT_H
-#include "abstractexpression.h"
-
+//#include "abstractexpression.h"
+#include <memory>
+#include <list>
+#include <QString>
+class AbstractExpression;
+typedef std::unique_ptr<AbstractExpression> abs_ex;
 class FunctionRangeSegment
 {
 
@@ -30,6 +34,9 @@ public:
 
     bool canBeLowerThanZero() const;
     bool canBeBiggerThanZero() const;
+
+    QString toString() const;
+    bool isEmpty();
 private:
     abs_ex _min;
     abs_ex _max;
@@ -40,5 +47,5 @@ private:
 FunctionRangeSegment operator+(const FunctionRangeSegment& left, const FunctionRangeSegment & right);
 FunctionRangeSegment operator-(const FunctionRangeSegment& left, const FunctionRangeSegment & right);
 FunctionRangeSegment operator*(const FunctionRangeSegment& left, const FunctionRangeSegment& right);
-FunctionRangeSegment operator/(const FunctionRangeSegment& left, const FunctionRangeSegment& right);
+std::list<FunctionRangeSegment> operator/(const FunctionRangeSegment& left, const FunctionRangeSegment& right);
 #endif // FUNCTIONRANGESEGMENT_H

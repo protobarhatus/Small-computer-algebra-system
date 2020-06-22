@@ -1,7 +1,7 @@
 #include "functionrangesegment.h"
 #include "some_algebra_expression_conversions.h"
-
-
+#include "number.h"
+#include "abstractexpression.h"
 FunctionRangeSegment::FunctionRangeSegment()
 {
 
@@ -31,6 +31,7 @@ FunctionRangeSegment &FunctionRangeSegment::operator=(const FunctionRangeSegment
     _max = copy(segm.max());
     min_included = segm.min_included;
     max_included = segm.max_included;
+    return *this;
 }
 
 FunctionRangeSegment &FunctionRangeSegment::operator=(FunctionRangeSegment &&segm)
@@ -39,6 +40,7 @@ FunctionRangeSegment &FunctionRangeSegment::operator=(FunctionRangeSegment &&seg
     _max = std::move(segm._max);
     min_included =  segm.min_included;
     max_included = segm.max_included;
+    return *this;
 }
 
 void FunctionRangeSegment::setMin(const abs_ex &min, bool included)
@@ -89,15 +91,27 @@ FunctionRangeSegment &FunctionRangeSegment::operator*=(const abs_ex &mult)
         _min = std::move(_min) * mult;
     if (this->_max != nullptr)
         _max = std::move(_max) * mult;
+    if (mult->getPositionRelativelyZero() < 0)
+        std::swap(_min, _max);
     return *this;
 }
 
 FunctionRangeSegment &FunctionRangeSegment::operator/=(const abs_ex &div)
 {
+    if (isZero(div))
+    {
+        _min = copy(zero);
+        _max = copy(zero);
+        min_included = false;
+        max_included = false;
+        return *this;
+    }
     if (this->_min != nullptr)
         _min = std::move(_min) / div;
     if (this->_max != nullptr)
         _max = std::move(_max) / div;
+    if (div->getPositionRelativelyZero() < 0)
+        std::swap(_min, _max);
     return *this;
 }
 
@@ -116,11 +130,12 @@ FunctionRangeSegment &FunctionRangeSegment::operator-=(const abs_ex &sub)
         _min = std::move(_min) - sub;
     if (this->_max != nullptr)
         _max = std::move(_max) - sub;
+    return *this;
 }
 
 bool FunctionRangeSegment::isPoint() const
 {
-    return subCompare(min(), max());
+    return this->min() != nullptr && this->max() != nullptr && subCompare(min(), max());
 }
 
 bool FunctionRangeSegment::canBeLowerThanZero() const
@@ -130,7 +145,38 @@ bool FunctionRangeSegment::canBeLowerThanZero() const
 
 bool FunctionRangeSegment::canBeBiggerThanZero() const
 {
-    return  this->max() == nullptr || this->max()->getPositionRelativelyZero() > 0;
+    return  this->max() == nullptr || (!isZero(this->max()) &&this->max()->getPositionRelativelyZero() > 0);
+}
+
+QString FunctionRangeSegment::toString() const
+{
+    if (this->min() == nullptr && this->max() == nullptr)
+        return "R";
+    QString res;
+    if (this->isMinIncluded())
+        res += '[';
+    else
+        res += '(';
+    if (this->min() == nullptr)
+        res += QString::fromWCharArray(L"-inf");
+    else
+        res += this->min()->makeStringOfExpression();
+    res += "; ";
+    if (this->max() == nullptr)
+        res += QString::fromWCharArray(L"inf");
+    else
+        res += this->max()->makeStringOfExpression();
+    if (this->isMaxIncluded())
+        res += ']';
+    else
+        res += ')';
+    return res;
+}
+
+bool FunctionRangeSegment::isEmpty()
+{
+    return !(this->min() == nullptr || this->max() == nullptr) &&
+            subCompare(min(), max()) && !(this->isMinIncluded() && this->isMaxIncluded());
 }
 //нужен для уможнения и деления областей значений
 class RangeUnit
@@ -305,13 +351,95 @@ FunctionRangeSegment operator*(const FunctionRangeSegment &left, const FunctionR
     RangeUnit left_max (left.max(), false, left.isMaxIncluded());
     RangeUnit right_min(right.min(), true, right.isMinIncluded());
     RangeUnit right_max(right.max(), false, right.isMaxIncluded());
+
+    RangeUnit minmin = left_min * right_min;
+    RangeUnit minmax = left_min * right_max;
+    RangeUnit maxmin = left_max * right_min;
+    RangeUnit maxmax = left_max * right_max;
+
+    RangeUnit min_res = min(min(minmin, minmax), min(maxmin, maxmax));
+    RangeUnit max_res = max(max(minmin, minmax), max(maxmin, maxmax));
+    return FunctionRangeSegment(std::move(min_res.getValue()), std::move(max_res.getValue()), min_res.isIncluded(),
+                                max_res.isIncluded());
 }
-
-FunctionRangeSegment operator/(const FunctionRangeSegment &left, const FunctionRangeSegment &right)
+std::list<FunctionRangeSegment> toList(FunctionRangeSegment && segm)
 {
+    std::list<FunctionRangeSegment> res;
+    res.push_back(segm);
+    return res;
+}
+std::list<FunctionRangeSegment> toList(FunctionRangeSegment && segm1, FunctionRangeSegment && segm2)
+{
+    std::list<FunctionRangeSegment> res;
+    res.push_back(segm1);
+    res.push_back(segm2);
+    return res;
+}
+bool canBeZero(const FunctionRangeSegment & segm)
+{
+    return (isZero(segm.min()) && segm.isMinIncluded()) || (isZero(segm.max()) && segm.isMaxIncluded()) ||
+            (segm.canBeLowerThanZero() && segm.canBeBiggerThanZero());
+}
+std::list<FunctionRangeSegment> operator/(const FunctionRangeSegment &left, const FunctionRangeSegment &right)
+{
+    std::list<FunctionRangeSegment> res;
     if (left.min() == nullptr && left.max() == nullptr)
-        return FunctionRangeSegment(nullptr, nullptr, false, false);
-    if (right.min() == nullptr && right.max() == nullptr)
-        return FunctionRangeSegment(nullptr, nullptr, false, false);
+        return toList(FunctionRangeSegment(nullptr, nullptr, false, false));
+    if (right.isPoint() && isZero(right.max()))
+        return res;
+    if (left.isPoint() && isZero(left.min()))
+        return toList(FunctionRangeSegment(zero, zero, true, true));
+    if (right.min() == nullptr && right.max() == nullptr && canBeZero(left))
+        return toList(FunctionRangeSegment(nullptr, nullptr, false, false));
+        return toList(FunctionRangeSegment(nullptr, 0, false, false), FunctionRangeSegment(0, nullptr, false, false));
+    bool right_lower = right.canBeLowerThanZero();
+    bool right_bigger = right.canBeBiggerThanZero();
+    auto div_on_positive = [](const FunctionRangeSegment & left, const FunctionRangeSegment &right)->FunctionRangeSegment {
+        FunctionRangeSegment result;
+        if (left.canBeLowerThanZero())
+        {
+            if (isZero(right.min()))
+                result.setMin(nullptr, false);
+            else
+                result.setMin(left.min() / right.min(), left.isMinIncluded() && right.isMinIncluded());
+        }
+        else
+        {
+            if (right.max() == nullptr)
+                result.setMin(copy(zero), false);
+            else
+                result.setMin(left.min() / right.max(), left.isMinIncluded() && right.isMaxIncluded());
+        }
 
+        if (left.canBeBiggerThanZero())
+        {
+            if (isZero(right.min()))
+                result.setMax(nullptr, false);
+            else
+                result.setMax(left.max() / right.min(), left.isMaxIncluded() && right.isMinIncluded());
+        }
+        else
+        {
+            if (right.max() == nullptr)
+                result.setMax(copy(zero), false);
+            else
+                result.setMax(left.max() / right.max(), left.isMaxIncluded() && right.isMaxIncluded());
+        }
+        return result;
+    };
+
+    auto div_on_negative = [&div_on_positive](const FunctionRangeSegment & left, const FunctionRangeSegment &right)->FunctionRangeSegment
+    {
+        FunctionRangeSegment div = right;
+        div *= minus_one;
+        auto res= (div_on_positive(left, div));
+        res *= minus_one;
+        return res;
+    };
+    if (right_lower && right_bigger)
+        return toList(div_on_positive(left, FunctionRangeSegment(zero, right.max(), true, right.isMaxIncluded())),
+                      div_on_negative(left, FunctionRangeSegment(right.min(), zero, right.isMinIncluded(), true)));
+    if (right_bigger)
+        return toList(div_on_positive(left, right));
+    return toList(div_on_negative(left, right));
 }

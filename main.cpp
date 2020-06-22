@@ -41,9 +41,11 @@ void out(const Polynom & p)
             debug << " + " << p[i].toInt();
     }
 }
+
 int main(int argc, char *argv[])
 {
-  //  testAlgMod();
+
+   // testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -129,12 +131,12 @@ int main(int argc, char *argv[])
 
 
 
-  //  c = (pow(cos(x),3))+(pow(sin((2*x)),2))+(sin((2*x)));
+  //  c = ln(abs(x)) + ln(abs(y)) + c;
 
     // c = cos(2*x)*cos(2*x) - sin(x);
 //c = pow(euler(),-1*(x + ln(x)));
- auto res = solveDifur(dx*y + dy*x, x, y);
 
+    //auto res = solveEquation(ln(abs(x)) + ln(abs(y)) + c, y);
     //auto res = solveEquation((2*pow(x, 4) - 3*pow(x, 3) - x*x -3*x + 2), x);
     //auto res = solveEquation((2*x4 - 15*x3 + 35*x2 - 30* x + 8 ), x);
    // auto res = solveEquation(x + 2*sqrt(x)-15, x);
@@ -148,6 +150,13 @@ int main(int argc, char *argv[])
    // auto res = solveEquation(sin(2*x + 1) - sin(x - 3), x);
    // auto res = solveEquation(ln(x - 3) + ln(x + 3), x);
     //auto res = solveEquation(pow(euler(), a)/abs(x) - abs(y), y);
+
+
+
+   //  auto res = solveDifur(dx*y - dy*x, x, y);
+   // auto res = solveDifur(y - dy*x/dx, x, y);
+    //auto res = solveDifur(dy/dx + 2*y, x, y);
+    auto res = solveDifur(dy/dx + (2*y + 1)*cot(x), x, y);
     qDebug() << "RES: ";
     for (auto &it : res)
         qDebug() << it.toString();

@@ -74,10 +74,9 @@ VariablesDefinition * VariablesDistributor::getVariablesDefinition(int id)
     //if (id > ref.variables.size())
       //  return ref.system_var_def;
     if (id >= ref.first_integrate_constant)
-        return VariablesDistributor::get().system_var_def;
+        return VariablesDistributor::get().integrating_constants[id - ref.first_integrate_constant];
     if (id >= ref.first_system_num)
         return ref.system_variables[id - ref.first_system_num];
-    assert(id <= ref.variables.size());
     return ref.variables[id - 1];
 }
 Variable getVariable(int id)
@@ -112,16 +111,18 @@ Variable systemVar()
 
 Variable integratingConstant()
 {
+    VariablesDistributor::get().integrating_constants.push_back(new VariablesDefinition(FunctionRange(nullptr, nullptr, false, false)));
     ++Variable::integrating_constant_id_counter;
-    return Variable(Variable::integrating_constant_id_counter - 1, "C");
+    return Variable(Variable::integrating_constant_id_counter - 1,
+                    makeIntegratingConstantName(Variable::integrating_constant_id_counter - 1));
 }
 
 Variable systemVar(int min, int max)
 {
     ++Variable::system_id_counter;
-    VariablesDefinition * new_def = new VariablesDefinition;
-    new_def->setMaxValue(max);
-    new_def->setMinValue(min);
+    VariablesDefinition * new_def = new VariablesDefinition(FunctionRange(FunctionRangeSegment(numToAbs(min),
+                                                                                               numToAbs(max),
+                                                                                               true, true)));
     VariablesDistributor::get().system_variables.push_back(new_def);
 
     Variable new_var = Variable(Variable::system_id_counter - 1, makeVariablesName(Variable::system_id_counter - 1));
@@ -141,4 +142,33 @@ abs_ex systemVarExpr()
 abs_ex getVariableExpr(int id)
 {
     return abs_ex (new Variable(getVariable(id)));
+}
+
+bool isIntegratingConstant(int index)
+{
+    return index >= VariablesDistributor::get().first_integrate_constant;
+}
+
+Variable integratingConstant(const FunctionRange &range)
+{
+    VariablesDistributor::get().integrating_constants.push_back(new VariablesDefinition(range));
+    ++Variable::integrating_constant_id_counter;
+    return Variable(Variable::integrating_constant_id_counter - 1,
+                    makeIntegratingConstantName(Variable::integrating_constant_id_counter - 1),
+                    VariablesDistributor::get().integrating_constants.back());
+}
+
+QString makeIntegratingConstantName(int id)
+{
+    id -= VariablesDistributor::get().first_integrate_constant;
+    if (id == 0)
+        return "C";
+    QString num;
+    num.setNum(id);
+    return "C"+num;
+}
+
+abs_ex integratingConstantExpr(const FunctionRange &range)
+{
+    return abs_ex(new Variable(integratingConstant(range)));
 }

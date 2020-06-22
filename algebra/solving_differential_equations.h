@@ -2,7 +2,29 @@
 #define SOLVING_DIFFERENTIAL_EQUATIONS_H
 #include "abstractexpression.h"
 #include "list"
-std::list<abs_ex> solveDifur(const abs_ex & difur, int x, int y);
+class DifurResult
+{
+public:
+    enum Type {
+        COMMON_INTEGRAL,
+        SOLVED_FOR_X,
+        SOLVED_FOR_Y
+    };
+    DifurResult (abs_ex && expr, Type type);
+    DifurResult (const DifurResult & res);
+    DifurResult (DifurResult && res);
+    QString toString() const;
+    const abs_ex &expr() const;
+    Type getType() const;
+    abs_ex toCommonIntegral(int x, int y);
+    abs_ex & expr();
+private:
+    abs_ex result;
+    Type type;
+};
+FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(abs_ex & expr);
+FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(abs_ex & expr);
+std::list<DifurResult> solveDifur(const abs_ex & difur, int x, int y);
 
 
 #endif // SOLVING_DIFFERENTIAL_EQUATIONS_H

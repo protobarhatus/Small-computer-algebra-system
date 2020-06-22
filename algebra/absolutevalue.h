@@ -38,6 +38,8 @@ public:
     virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
     virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const override;
     virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
+    virtual FunctionRange getRange() const override;
+    virtual bool hasDifferential() const override;
 private:
     void checkIfNeedToCheckSignToLeadToTheAcceptedForm();
     virtual int getPositionRelativelyZeroIfHasVariables() override;

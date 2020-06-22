@@ -112,6 +112,8 @@ bool Sinus::canDowncastTo()
         return true;
    // if (this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
      //   return true;
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return false;
 }
 abs_ex Sinus::downcastTo()
@@ -151,6 +153,10 @@ abs_ex Sinus::downcastTo()
     if (this->argument->getPositionRelativelyZero() < 0)
     {
         return -sin(-argument);
+    }
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
     }
     return abs_ex(nullptr);
 }
@@ -340,6 +346,83 @@ long long Sinus::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 long long Sinus::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
+}
+
+FunctionRange Sinus::getRange() const
+{
+    FunctionRange arg_range = this->argument->getRange();
+    if (arg_range.isError())
+        return arg_range;
+    if (arg_range.getMin() == nullptr || arg_range.getMax() == nullptr)
+        return FunctionRange(minus_one, one, true, true);
+    auto toFirstPeriod = [](const abs_ex & val)->abs_ex
+    {
+        auto div_res = val/two/getPi();
+        if (div_res->getId() == NUMBER)
+            return toAbsEx(Number((div_res->getPositionRelativelyZero() > 0 ? 1 : -1), static_cast<Number*>( div_res.get())->getDenominator())) * two*getPi();
+        int rat = val->getApproximateValue()/2/getPi()->getApproximateValue();
+        return val - numToAbs(rat)*two*getPi();
+    };
+    FunctionRange result;
+    for (auto &it : arg_range.getSegments())
+    {
+        if (biggerOrEquall(it.max() - it.min(), two*getPi()))
+            return FunctionRange(minus_one, one, true, true);
+        if (it.isPoint())
+        {
+            result.addSegmentWithoutNormilizing(it.min(), it.max(), true, true);
+            continue;
+        }
+        auto min = toFirstPeriod(it.min());
+        auto max = toFirstPeriod(it.max());
+        bool changed_sign = false;
+        if (lower(min, zero) && lower(max, zero))
+        {
+            min = -min;
+            max = -max;
+            std::swap(min, max);
+            changed_sign = true;
+        }
+        FunctionRangeSegment segm;
+        if (bigger(min, max))
+            min = min - getPi() * two;
+        if (lowerOrEquall(min, -three/two * getPi()) && biggerOrEquall(max, -getPi()/two))
+            return FunctionRange(minus_one, one, (*min != *(-three/two * getPi())) || it.isMinIncluded(),
+                                 (*max != *(-getPi()/two)) || it.isMaxIncluded());
+
+        if (lowerOrEquall(min, -one/two * getPi()) && biggerOrEquall(max, getPi()/two))
+            return FunctionRange(minus_one, one, (*min != *(-one/two * getPi())) || it.isMinIncluded(),
+                                 (*max != *(getPi()/two)) || it.isMaxIncluded());
+        if (lowerOrEquall(min, getPi()/two) && biggerOrEquall(max, three*getPi()/two))
+            return FunctionRange(minus_one, one, (*min != *(one/two * getPi())) || it.isMinIncluded(),
+                                 (*max != *(three*getPi()/two)) || it.isMaxIncluded());
+        bool is_sin_min_lower = lower(sin(min), sin(max));
+        if ((lower(min, -three*getPi()/two) && bigger(max, -three*getPi()/two)) ||
+                (lower(min, getPi()/two) && bigger(max, getPi()/two)))
+            segm = FunctionRangeSegment((is_sin_min_lower ? sin(min) : sin(max)), one,
+                                                (is_sin_min_lower ? it.isMinIncluded() : it.isMaxIncluded()), true);
+        else if ((lower(min, -getPi()/two) && bigger(max, -getPi()/two)) ||
+                 (lower(min, three*getPi()/two) && bigger(max, three*getPi()/two)))
+            segm = FunctionRangeSegment(minus_one, (is_sin_min_lower ? sin(max) : sin(min)),
+                                                true, (is_sin_min_lower ? it.isMaxIncluded() : it.isMinIncluded()));
+        else
+        {
+            if (is_sin_min_lower)
+                segm = FunctionRangeSegment(sin(min), sin(max), it.isMinIncluded(), it.isMaxIncluded());
+            else
+                segm = FunctionRangeSegment(sin(max), sin(min), it.isMaxIncluded(), it.isMinIncluded());
+        }
+        if (changed_sign)
+            segm *= minus_one;
+        result.addSegmentWithoutNormilizing(std::move(segm));
+    }
+    result.normalize();
+    return result;
+}
+
+bool Sinus::hasDifferential() const
+{
+    return this->argument->hasDifferential();
 }
 
 abs_ex sin(const abs_ex &expr)

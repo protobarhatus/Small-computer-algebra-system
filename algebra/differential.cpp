@@ -139,12 +139,19 @@ abs_ex Differential::getArgumentMoved()
 abs_ex Differential::changeSomePartOn(QString part, abs_ex &on_what)
 {
    // NONCONST
+    if (this->argument->makeStringOfExpression() == part)
+        this->argument = copy(on_what);
     return this->argument->changeSomePartOn(part, on_what);
 }
 
 abs_ex Differential::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
+            if (this->argument->makeStringOfExpression() == part)
+    {
+        this->argument = copy(on_what);
+        return copy(on_what);
+    }
         return this->argument->changeSomePartOn(part, on_what);
 }
 
@@ -195,6 +202,16 @@ long long Differential::getGcdOfNumeratorsOfDegrees(int var) const
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
 }
 
+FunctionRange Differential::getRange() const
+{
+    return FunctionRange::getErrorRange();
+}
+
+bool Differential::hasDifferential() const
+{
+    return true;
+}
+
 bool Differential::operator<(const AbstractExpression &expr) const
 {
     assert(expr.getId() == DIFFERENTIAL);
@@ -203,6 +220,7 @@ bool Differential::operator<(const AbstractExpression &expr) const
 
 abs_ex fullDifferential(const abs_ex &expr)
 {
+    //qDebug() << expr->makeStringOfExpression();
     auto set = expr->getSetOfVariables();
     abs_ex res = copy(zero);
     for (auto &it : set)

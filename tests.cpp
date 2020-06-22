@@ -1277,6 +1277,10 @@ void testAlgMod()
 []()->bool { //270
     AlgExpr x = var();
     return integral(x*pow(euler(), pow(x, 2)), x) == pow(euler(), x*x)/2;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return pow(euler(),  (ln(x) + 3)/2) == sqrt(x)*pow(e(), 3/A(2));
 }
     };
 

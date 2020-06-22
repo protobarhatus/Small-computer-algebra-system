@@ -12,6 +12,7 @@
 #include "logarithm.h"
 #include "arcsinus.h"
 #include "arctangent.h"
+#include "absolutevalue.h"
 AbstractExpression::AbstractExpression()
 {
 
@@ -57,6 +58,10 @@ bool AbstractExpression::lessToSort(const abs_ex &left, const abs_ex &right)
         return true;
     if (left->getId() == DIFFERENTIAL && right->getId() != DIFFERENTIAL)
         return false;
+    if (isIntegratingConstant(left->getId()) && !isIntegratingConstant(right->getId()))
+        return false;
+    if (isIntegratingConstant(right->getId()) && !isIntegratingConstant(left->getId()))
+        return true;
     if (left->getId() != right->getId())
     {
         if ((left->getId() < 0 && right->getId() < 0) || (left->getId() > 0 && right->getId() > 0))
@@ -151,6 +156,14 @@ bool AbstractExpression::hasVariable(int var)
     auto s = this->getSetOfVariables();
     return s.find(var) != s.end();
 }
+
+bool AbstractExpression::isOnlyVarsIntegratingConstants() const
+{
+    auto set = this->getSetOfVariables();
+    return set.size() > 0 && isIntegratingConstant(*set.begin());
+}
+
+
 
 
 QString getStringArgumentOfTrigonometricalFunction(abs_ex &expr)
@@ -288,8 +301,11 @@ abs_ex getArgumentOfFunction(const abs_ex &expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
     assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT ||
-           arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS);
+           arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS ||
+           arg->getId() == ABSOLUTE_VALUE);
     switch (arg->getId()) {
+    case ABSOLUTE_VALUE:
+        return copy(static_cast<AbsoluteValue*>(arg)->getExpression());
     case SINUS:
         return static_cast<Sinus*>(arg)->getArgumentsCopy();
     case COSINUS:
@@ -458,6 +474,8 @@ std::array<abs_ex, 3> checkIfItsQuadraticFunction(const abs_ex &func, int var)
 
 bool isZero(const abs_ex &expr)
 {
+    if (expr == nullptr)
+        return false;
     return expr->getId() == NUMBER && static_cast<const Number*>(expr.get())->isZero();
 }
 
@@ -708,4 +726,26 @@ abs_ex tryToOpenByTrigonometricalSum(abs_ex &expr)
     default:
         assert(false);
     }
+}
+
+bool lower(const abs_ex &left, const abs_ex &right)
+{
+    //можем обойтись без прямого сравнения на равенство из-за того как ведет себя getPositionRelativelyZero
+    return (left - right)->getPositionRelativelyZero() < 0;
+}
+
+bool bigger(const abs_ex &left, const abs_ex &right)
+{
+    return *left != *right && (left - right)->getPositionRelativelyZero() > 0;
+}
+
+bool lowerOrEquall(const abs_ex &left, const abs_ex &right)
+{
+    return *left == *right || (left-right)->getPositionRelativelyZero() < 0;
+}
+
+bool biggerOrEquall(const abs_ex &left, const abs_ex &right)
+{
+    //можем обойтись без прямого сравнения на равенство из-за того как ведет себя getPositionRelativelyZero
+    return (left-right)->getPositionRelativelyZero() > 0;
 }

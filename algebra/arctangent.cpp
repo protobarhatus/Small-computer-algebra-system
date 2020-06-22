@@ -86,6 +86,8 @@ bool ArcTangent::canDowncastTo()
     if (*arg == *-sqrt(numToAbs(3)) || *arg == *numToAbs(-1) || *arg == *(-sqrt(numToAbs(3))/numToAbs(3)) || *arg == *zero || *arg == *(sqrt(three)/three) ||
             *arg == *one || *arg == *sqrt(three))
         return true;
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return false;
 }
 
@@ -110,6 +112,10 @@ abs_ex ArcTangent::downcastTo()
         return getPi()/four;
     if (*arg == *sqrt(three))
         return getPi()/three;
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
+    }
     assert(false);
     return nullptr;
 
@@ -265,6 +271,25 @@ long long ArcTangent::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 long long ArcTangent::getGcdOfNumeratorsOfDegrees(int var) const
 {
     return this->argument->getGcdOfNumeratorsOfDegrees(var);
+}
+
+FunctionRange ArcTangent::getRange() const
+{
+    FunctionRange arg_range = this->getRange();
+    if (arg_range.isError())
+        return arg_range;
+    FunctionRange result;
+    for (auto &it : arg_range.getSegments())
+    {
+        result.addSegmentWithoutNormilizing(FunctionRangeSegment(atan(it.min()), atan(it.max()),
+                                                                 it.isMinIncluded(), it.isMaxIncluded()));
+    }
+    return result;
+}
+
+bool ArcTangent::hasDifferential() const
+{
+    return this->argument->hasDifferential();
 }
 
 bool ArcTangent::operator<(const AbstractExpression &right) const

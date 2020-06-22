@@ -218,6 +218,8 @@ Number Fractal::getCoefficient()
 }
 bool Fractal::canDowncastTo()
 {
+    if (this->isOnlyVarsIntegratingConstants())
+        return true;
     return (this->denominator.empty() && this->coefficient.getDenominator() == 1 && this->coefficient.getNumerator() == 1 && this->numerator.size() == 1) ||
             (this->numerator.empty() && this->denominator.empty()) ||
             (this->coefficient.getNumerator() == 0);
@@ -231,6 +233,10 @@ abs_ex Fractal::downcastTo()
     }
     if (this->coefficient.isZero())
         return copy(zero);
+    if (this->isOnlyVarsIntegratingConstants())
+    {
+        return integratingConstantExpr(this->getRange());
+    }
     return copy( this->numerator.begin()->get());
 }
 bool Fractal::isZero() const
@@ -383,6 +389,13 @@ void Fractal::simplify()
     this->setSameMembersIntoDegree();
     this->castTrigonometry();
     this->castTrigonometryArguments();
+    if (this->hasIntegratingConstantMultiplier())
+    {
+        this->pullSomeMultipliersIntoIntegratingConstant();
+        if (this->numerator.size() > 0 && isIntegratingConstant(this->numerator.back()->getId()) &&
+                VariablesDistributor::get().getVariablesDefinition(this->numerator.back()->getId())->getRange().isSymmetricRelativelyZero())
+        this->takeAwayAbsoluteValues();
+    }
     this->simplified = true;
 }
 void Fractal::reduceDegrees()
@@ -2950,6 +2963,155 @@ bool Fractal::hasTrigonometricalMultipliers() const
         if (isDegreeOfTrigonometricalFunction(it))
             return true;
     return false;
+}
+
+FunctionRange Fractal::getRange() const
+{
+    FunctionRange range = this->coefficient.getRange();
+    std::set<int> vars_set;
+    for (auto &it : this->numerator)
+    {
+        auto v_set = it->getSetOfVariables();
+        if (hasIntersections(vars_set, v_set))
+            return FunctionRange::getErrorRange();
+        for (auto &it : v_set)
+            vars_set.insert(it);
+        auto mult_range = it->getRange();
+        if (mult_range.isError())
+            return mult_range;
+        range = rangeOfMultiplication(range, mult_range);
+    }
+    for (auto &it : this->denominator)
+    {
+        auto v_set = it->getSetOfVariables();
+        if (hasIntersections(vars_set, v_set))
+            return FunctionRange::getErrorRange();
+        for (auto &it : v_set)
+            vars_set.insert(it);
+        auto mult_range = it->getRange();
+        if (mult_range.isError())
+            return mult_range;
+        range = rangeOfDivision(range, mult_range);
+    }
+    return range;
+
+}
+
+bool Fractal::hasDifferential() const
+{
+    for (auto &it : this->numerator)
+        if (it->hasDifferential())
+            return true;
+    for (auto &it : this->denominator)
+        if (it->hasDifferential())
+            return true;
+    return false;
+}
+
+bool Fractal::hasIntegratingConstant() const
+{
+    return this->numerator.size() > 0 && isIntegratingConstant(this->numerator.back()->getId());
+}
+
+void Fractal::takeAwayAbsoluteValues()
+{
+    bool taken_something = false;
+    for (auto &it : this->numerator)
+        if (it->getId() == ABSOLUTE_VALUE)
+        {
+            it = copy(static_cast<AbsoluteValue*>(it.get())->getExpression());
+            taken_something = true;
+        }
+    for (auto &it : this->denominator)
+        if (it->getId() == ABSOLUTE_VALUE)
+        {
+            it = copy(static_cast<AbsoluteValue*>(it.get())->getExpression());
+            taken_something = true;
+        }
+    if (taken_something)
+        this->simplify();
+}
+
+bool Fractal::hasIntegratingConstantMultiplier() const
+{
+    for (auto &it : numerator)
+        if (isIntegratingConstant(it->getId()))
+            return true;
+    for (auto &it : denominator)
+        if (isIntegratingConstant(it->getId()))
+            return true;
+}
+
+abs_ex Fractal::takeAwayConstantMultiplier()
+{
+    assert(this->hasIntegratingConstant());
+    abs_ex constant = std::move(this->numerator.back());
+    this->numerator.erase(--this->numerator.end());
+    return constant;
+}
+
+void Fractal::pullSomeMultipliersIntoIntegratingConstant()
+{
+    FunctionRange range;
+    bool initialized = false;
+    if (this->coefficient != 1)
+    {
+        range = this->coefficient.getRange();
+        initialized = true;
+    }
+    this->coefficient = 1;
+    std::set<int> used_vars;
+    for (auto it = this->numerator.begin(); it != this->numerator.end();)
+    {
+        auto set = it->get()->getSetOfVariables();
+        bool skip = false;
+        if (!(set.empty() || isIntegratingConstant(it->get()->getId())))
+            skip = true;
+        if (skip)
+        {
+            ++it;
+            continue;
+        }
+        for (auto &it1 : set)
+            used_vars.insert(it1);
+        auto it_range = it->get()->getRange();
+        if (initialized)
+            range = rangeOfMultiplication(range, it_range);
+        else
+        {
+            range = std::move(it_range);
+            initialized = true;
+        }
+        it = this->numerator.erase(it);
+    }
+    for (auto it = this->denominator.begin(); it != this->denominator.end();)
+    {
+        auto set = it->get()->getSetOfVariables();
+        bool skip = false;
+        for (auto &it1 : set)
+            if (!isIntegratingConstant(it1) || has(used_vars, it1))
+            {
+                skip = true;
+                break;
+            }
+        if (skip)
+        {
+            ++it;
+            continue;
+        }
+        for (auto &it1 : set)
+            used_vars.insert(it1);
+        auto it_range = it->get()->getRange();
+        if (initialized)
+            range = rangeOfDivision(range, it_range);
+        else
+        {
+            range = std::move(it_range);
+            initialized = true;
+        }
+        it = this->denominator.erase(it);
+    }
+    this->numerator.push_back(integratingConstantExpr(range));
 }
 
 abs_ex Fractal::tryToFindLogarithmInNumerator() const

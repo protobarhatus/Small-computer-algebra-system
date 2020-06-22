@@ -369,6 +369,16 @@ long long Number::getGcdOfNumeratorsOfDegrees(int var) const
     return 0;
 }
 
+FunctionRange Number::getRange() const
+{
+    return FunctionRange(FunctionRangeSegment(toAbsEx(*this), toAbsEx(*this), true, true));
+}
+
+bool Number::hasDifferential() const
+{
+    return false;
+}
+
 Number abs(Number num)
 {
     if (num.compareWith(0) < 0)
