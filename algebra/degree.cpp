@@ -435,6 +435,12 @@ void Degree::simplify()
         if (this->argument->getId() == POLYNOMIAL)
             this->transformPolynomialDegree(has_vars);
     }
+    if (this->argument->getId() == POLYNOMIAL)
+    {
+        abs_ex common_part = static_cast<Polynomial*>(this->argument.get())->reduceCommonPart();
+        if (*common_part != *one)
+            argument = std::move(argument) * common_part;
+    }
     if (this->argument->getId() == ABSOLUTE_VALUE && this->degree->getId() == NUMBER)
     {
         if (static_cast<Number*>(this->degree.get())->getNumerator() % 2 == 0)
@@ -710,7 +716,7 @@ QString Degree::makeWolframString() const
             result = this->argument->makeWolframString() + "^";
         else
             result = "(" + this->argument->makeWolframString() + ")^";
-        if (this->degree->getId() != POLYNOMIAL)
+        if (this->degree->getId() != POLYNOMIAL && this->degree->getId() != FRACTAL)
             result += this->degree->makeWolframString();
         else
             result += "(" + this->degree->makeWolframString() + ")";
@@ -727,6 +733,37 @@ QString Degree::makeWolframString() const
                 result = "(" + argument->makeWolframString() + ")^(" + this->degree->makeWolframString() + ")";
             else
                 result = argument->makeWolframString() + "^(" + degree->makeWolframString() + ")";
+        }
+    }
+    return result;
+}
+
+QString Degree::toString() const
+{
+    QString result;
+    if (this->degree->getId() != NUMBER || static_cast<Number*>(this->degree.get())->isInteger())
+    {
+        if (this->argument->getId() != POLYNOMIAL)
+            result = this->argument->toString() + "^";
+        else
+            result = "(" + this->argument->toString() + ")^";
+        if (this->degree->getId() != POLYNOMIAL && this->degree->getId() != FRACTAL)
+            result += this->degree->toString();
+        else
+            result += "(" + this->degree->toString() + ")";
+    }
+    else
+    {
+        if (*this->degree == *half)
+            result = "sqrt(" + this->argument->toString() + ")";
+        else if (*this->degree == *(one/three))
+            result = "cbrt(" + this->argument->toString() + ")";
+        else
+        {
+            if (argument->getId() == POLYNOMIAL)
+                result = "(" + argument->toString() + ")^(" + this->degree->toString() + ")";
+            else
+                result = argument->toString() + "^(" + degree->toString() + ")";
         }
     }
     return result;
@@ -1388,6 +1425,33 @@ FunctionRange Degree::getRange() const
 bool Degree::hasDifferential() const
 {
     return this->argument->hasDifferential() || this->degree->hasDifferential();
+}
+
+bool Degree::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == DEGREE)
+    {
+        auto arg = Degree::getArgumentOfDegree(second.get());
+        auto deg = Degree::getDegreeOfExpression(second.get());
+        bool changed_arg = false;
+        bool changed_deg = false;
+        if (canBeConsideredAsConstant(this->argument) && canBeConsideredAsConstant(arg))
+        {
+            this->argument = integratingConstantExpr(unification(this->argument->getRange(), arg->getRange()));
+            changed_arg = true;
+        }
+        else
+            changed_arg = this->argument->tryToMergeIdenticalBehindConstantExpressions(copy(arg));
+        if (canBeConsideredAsConstant(this->degree) && canBeConsideredAsConstant(deg))
+        {
+            this->degree = integratingConstantExpr(unification(this->degree->getRange(), deg->getRange()));
+            changed_deg = true;
+        }
+        else
+            changed_deg = this->degree->tryToMergeIdenticalBehindConstantExpressions(deg);
+        return changed_arg || changed_deg;
+    }
+    return false;
 }
 
 abs_ex takeDegreeOf(abs_ex &&argument, const abs_ex &degree)

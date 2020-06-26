@@ -1281,6 +1281,45 @@ void testAlgMod()
 []()->bool {
     AlgExpr x = var();
     return pow(euler(),  (ln(x) + 3)/2) == sqrt(x)*pow(e(), 3/A(2));
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(1/x/ln(x), x) == ln(abs(ln(x)));
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(x*cbrt(2*x + 3) * D(x)) ==  (3*pow(root((2*x)+(3), 3),4)*((-9)+(8*x)))/112;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(sqrt(x - 2)/x/x, x) == (((-1*sqrt((-2)+(x))*sqrt(2))+(x*atan((sqrt((-2)+(x))/sqrt(2)))))/x/sqrt(2));
+},
+[]()->bool { //280
+    AlgExpr x = var();
+
+    return integral((2*x + 3)/pow(x*x + 2*x + 2, 3), x) == (((3*x*x*x)+(3*atan((1)+(x))*x*x*x*x)+(4)+(9*x*x)+(12*atan((1)+(x)))+(12*atan((1)+(x))*x*x*x)+(14*x)+(24*x*atan((1)+(x)))+(24*atan((1)+(x))*x*x))/pow((x*x)+(2)+(2*x), 2))/8;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral((sqrt(x) - 3)/(sqrt(x) + 3), x) == x - 12*sqrt(x) + 36*ln(sqrt(x) + 3);
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(x/(pow(x, 4) + 1), x) == atan(x*x)/2;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(x/(pow(x, 4) - pow(x, 2) + 1), x) == atan( (-1 + 2*x*x) /sqrt(3))/sqrt(3);
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(x*x*x/(pow(x, 4) - pow(x, 2) + 1), x) ==
+             (ln(-1*x*x + 1 + pow(x, 4))*sqrt(3) + 2*atan( (-1 + 2*x*x) /sqrt(3)))/4 /sqrt(3);
+},
+[]()->bool { //285
+    AlgExpr x = var();
+    return integral(x*x*x*x*x/(pow(x, 4) - pow(x, 2) + 1), x) ==
+             (-2*atan( (-1 + 2*x*x) /sqrt(3)) + ln(-1*x*x + 1 + x*x*x*x)*sqrt(3) + 2*sqrt(3)*x*x)/4 /sqrt(3);
 }
     };
 

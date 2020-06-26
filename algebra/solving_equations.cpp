@@ -136,6 +136,37 @@ std::list<abs_ex> checkIfItsExponentialSumEquationAndTryToSolve(abs_ex && equati
     return res;
 
 }
+bool hasRadicalMultiplier(abs_ex & expr)
+{
+    auto isRadical = [](abs_ex & expr)->bool {
+        if (expr->getId() == DEGREE)
+        {
+            auto deg = Degree::getDegreeOfExpression(expr.get());
+            if (deg->getId() == NUMBER)
+                if (static_cast<Number*>(deg.get())->getDenominator() > 1)
+                    return true;
+            if (deg->getId() == FRACTAL)
+                if (static_cast<Fractal*>(deg.get())->getCoefficient().getDenominator() > 1 ||
+                        !static_cast<Fractal*>(deg.get())->getFractal().second->empty())
+                    return true;
+            return false;
+        }
+        return false;
+    };
+    if (expr->getId() == FRACTAL)
+    {
+        auto fr = static_cast<Fractal*>(expr.get())->getFractal();
+        for (auto &it : *fr.first)
+            if (isRadical(it))
+                return true;
+        for (auto &it : *fr.second)
+            if (isRadical(it))
+                return true;
+        return false;
+    }
+    return isRadical(expr);
+
+}
 std::list<abs_ex> checkIfItsLogarithmicSumEquationAndTryToSolve(const abs_ex & equation, const abs_ex & right, int var)
 {
     std::list<abs_ex> res;
@@ -165,8 +196,11 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
     std::list<abs_ex> res;
     if (var_expr->getId() == DEGREE)
     {
+
         auto arg = Degree::getArgumentOfDegree(var_expr.get());
         auto deg = Degree::getDegreeOfExpression(var_expr.get());
+    //    qDebug() << var_expr->makeStringOfExpression();
+      //  qDebug() << right_expr->makeStringOfExpression();
         if (arg->hasVariable(var) && !deg->hasVariable(var)) //условия
         {
             if (deg->getId() == NUMBER || deg->getId() == FRACTAL)
@@ -180,9 +214,15 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
                 {
                     if (right_expr->getPositionRelativelyZero() < 0)
                         return res;
-                    res.splice(res.end(), solveEquation(copy(arg) - pow(right_expr, one/deg), var,
+                    auto right_pow = pow(right_expr, one/deg);
+                    //если с правой стороны появляется радикал, то такое преобразование
+                    //бессмысленно, ибо потом его опять будем возводить в степень
+                    //и в результате упадем в бесконечную рекурсию
+                    if (hasRadicalMultiplier(right_pow))
+                        return std::list<abs_ex>();
+                    res.splice(res.end(), solveEquation(copy(arg) - right_pow, var,
                                                         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)));
-                    res.splice(res.end(), solveEquation(copy(arg) + pow(right_expr, one/deg), var,
+                    res.splice(res.end(), solveEquation(copy(arg) + right_pow, var,
                                                         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)));
                     return res;
                 }
@@ -399,6 +439,8 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
 std::list<abs_ex> checkIfItsMultiplicationOfDegreesAndTryToSolve(const abs_ex & var_part, const abs_ex & right_part, int var)
 {
     assert(var_part->getId() == FRACTAL);
+ //   qDebug() << var_part->makeStringOfExpression();
+ //   qDebug() << right_part->makeStringOfExpression();
     Fractal * fr = static_cast<Fractal*>(var_part.get());
     assert(fr->getCoefficient().isOne() && fr->getFractal().second->empty());
     if (Degree::getDegreeOfExpression(fr->getFractal().first->begin()->get())->getId() != NUMBER)
@@ -412,6 +454,8 @@ std::list<abs_ex> checkIfItsMultiplicationOfDegreesAndTryToSolve(const abs_ex & 
         lcm_of_denominators = lcm(lcm_of_denominators, static_cast<Number*>(Degree::getDegreeOfExpression(it->get()).get())
                                   ->getDenominator());
     }
+    if (lcm_of_denominators == 1)
+        return std::list<abs_ex>();
     return solveEquation(pow(var_part, lcm_of_denominators) - right_part, var);
 }
 std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equation, int var)

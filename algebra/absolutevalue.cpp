@@ -147,6 +147,11 @@ QString AbsoluteValue::makeWolframString() const
 {
     return "Abs[" + this->expression->makeWolframString() + "]";
 }
+
+QString AbsoluteValue::toString() const
+{
+    return "|" + this->expression->toString() + "|";
+}
 double AbsoluteValue::getApproximateValue()
 {
     return abs(this->expression->getApproximateValue());
@@ -195,6 +200,7 @@ abs_ex AbsoluteValue::changeSomePartOnExpression(QString part, abs_ex &on_what)
 
 abs_ex AbsoluteValue::derivative(int var) const
 {
+    return this->expression->derivative(var);
     assert(false);
     return nullptr;
 }
@@ -253,6 +259,21 @@ FunctionRange AbsoluteValue::getRange() const
 bool AbsoluteValue::hasDifferential() const
 {
     return this->expression->hasDifferential();
+}
+
+bool AbsoluteValue::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == ABSOLUTE_VALUE)
+    {
+        auto arg = getArgumentOfFunction(second);
+        if (canBeConsideredAsConstant(expression) && canBeConsideredAsConstant(arg))
+        {
+            this->expression = integratingConstantExpr(unification(expression->getRange(), arg->getRange()));
+            return true;
+        }
+        return expression->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
+    }
+    return false;
 }
 
 abs_ex abs(const abs_ex &expr)

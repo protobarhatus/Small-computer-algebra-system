@@ -28,6 +28,7 @@ public:
     virtual void _qDebugOut() override;
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
+    QString toString() const override;
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
@@ -40,6 +41,7 @@ public:
     virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
     virtual FunctionRange getRange() const override;
     bool hasDifferential() const override;
+    bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
 private:
     friend Variable getVariable(int id);
     friend Variable integratingConstant();
@@ -58,5 +60,6 @@ private:
     VariablesDefinition * definition;
     friend VariablesDistributor;
     friend Variable systemVar();
+    friend Variable systemVar(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
 };
 #endif // VARIABLE_H

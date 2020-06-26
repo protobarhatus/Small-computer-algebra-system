@@ -170,6 +170,11 @@ QString ArcSinus::makeWolframString() const
     return "ArcSin[" + this->argument->makeWolframString() + "]";
 }
 
+QString ArcSinus::toString() const
+{
+    return "asin(" + this->argument->toString() + ")";
+}
+
 double ArcSinus::getApproximateValue()
 {
     return asin(this->argument->getApproximateValue());
@@ -324,6 +329,21 @@ FunctionRange ArcSinus::getRange() const
 bool ArcSinus::hasDifferential() const
 {
     return this->argument->hasDifferential();
+}
+
+bool ArcSinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == ARCSINUS)
+    {
+        auto arg = getArgumentOfFunction(second);
+        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        {
+            this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
+            return true;
+        }
+        return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
+    }
+    return false;
 }
 
 bool ArcSinus::operator<(const AbstractExpression &right) const

@@ -40,6 +40,7 @@ public:
     bool isDegreeOfNumberThatLessThanOne();
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
+    QString toString() const override;
     bool isRootNumeric();
     long long int getRootValue();
 
@@ -55,6 +56,7 @@ public:
     virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
     virtual FunctionRange getRange() const override;
     virtual bool hasDifferential() const override;
+    bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     void reducePolynomialArgument();

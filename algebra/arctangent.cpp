@@ -158,6 +158,11 @@ QString ArcTangent::makeWolframString() const
     return "ArcTan[" + this->argument->makeWolframString() + "]";
 }
 
+QString ArcTangent::toString() const
+{
+    return "atan(" + this->argument->toString() + ")";
+}
+
 double ArcTangent::getApproximateValue()
 {
     return atan(this->argument->getApproximateValue());
@@ -290,6 +295,21 @@ FunctionRange ArcTangent::getRange() const
 bool ArcTangent::hasDifferential() const
 {
     return this->argument->hasDifferential();
+}
+
+bool ArcTangent::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == ARCTANGENT)
+    {
+        auto arg = getArgumentOfFunction(second);
+        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        {
+            this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
+            return true;
+        }
+        return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
+    }
+    return false;
 }
 
 bool ArcTangent::operator<(const AbstractExpression &right) const

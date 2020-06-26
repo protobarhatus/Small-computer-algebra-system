@@ -24,6 +24,7 @@ public:
     virtual void _qDebugOut() override;
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
+    QString toString() const override;
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> &choosing_value_rule) override;
     virtual int getPositionRelativelyZeroIfHasVariables() override;
@@ -43,6 +44,7 @@ public:
 
     virtual FunctionRange getRange() const override;
     virtual bool hasDifferential() const override;
+    bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
 private:
     abs_ex argument;
     //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может

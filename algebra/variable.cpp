@@ -119,6 +119,11 @@ QString Variable::makeWolframString() const
 {
     return this->makeStringOfExpression();
 }
+
+QString Variable::toString() const
+{
+    return this->makeStringOfExpression();
+}
 double Variable::getApproximateValue()
 {
     assert(false);
@@ -205,4 +210,9 @@ FunctionRange Variable::getRange() const
 bool Variable::hasDifferential() const
 {
     return false;
+}
+
+bool Variable::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    return *this == *second;
 }

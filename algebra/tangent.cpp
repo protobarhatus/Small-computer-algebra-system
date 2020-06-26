@@ -226,6 +226,11 @@ QString Tangent::makeStringOfExpression() const
     return "tan(" + this->argument->makeStringOfExpression() + ")";
 }
 
+QString Tangent::toString() const
+{
+    return "tan(" + this->argument->toString() + ")";
+}
+
 double Tangent::getApproximateValue()
 {
     return tan(this->argument->getApproximateValue());
@@ -406,6 +411,21 @@ FunctionRange Tangent::getRange() const
 bool Tangent::hasDifferential() const
 {
     return this->argument->hasDifferential();
+}
+
+bool Tangent::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == this->getId())
+    {
+        auto arg = getArgumentOfFunction(second);
+        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        {
+            this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
+            return true;
+        }
+        return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
+    }
+    return false;
 }
 
 bool Tangent::operator<(const AbstractExpression &right) const

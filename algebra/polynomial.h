@@ -52,6 +52,7 @@ public:
     Fractal operator/(AbstractExpression * expr);
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
+    QString toString() const override;
     abs_ex reduceCommonPart();
     // if it is a sum like sqrt(3)+sqrt(5), it returns result on formula (a+b)(a-b)=a^2-b^2. returns result and multiplier
     std::pair<abs_ex, abs_ex> multiplyIrrationalSumOnAppropriateFormula();
@@ -102,6 +103,7 @@ public:
     //отличие также в том, что hasIntegratingConstantAddictive() вызывается внутри simplify()
     bool hasIntegratingConstant() const;
     abs_ex takeAwayIntegragingConstant();
+    bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
 private:
     bool hasIntegratingConstantAddictive() const;
     void pullSomeMembersIntoOneIntegratingConstant();

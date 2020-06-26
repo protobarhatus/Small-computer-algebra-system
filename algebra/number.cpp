@@ -280,6 +280,11 @@ QString Number::makeWolframString() const
 {
     return makeStringOfExpression();
 }
+
+QString Number::toString() const
+{
+    return makeStringOfExpression();
+}
 Number Number::operator+=(const Number &number)
 {
     *this = *this + number;
@@ -377,6 +382,11 @@ FunctionRange Number::getRange() const
 bool Number::hasDifferential() const
 {
     return false;
+}
+
+bool Number::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    return *this == *second;
 }
 
 Number abs(Number num)

@@ -14,7 +14,8 @@ VariablesDistributor& VariablesDistributor::get()
 }
 QString makeVariablesName(int id)
 {
-    //функция создавалась с расчетом на то, что нумерация идет с 0, но я забыл, что она должна идти с 1. поэтому мне проще сделать так
+    if (id >= VariablesDistributor::firstIntegrateConstant())
+        return makeIntegratingConstantName(id);
     if (id >= VariablesDistributor::firstSystemNum())
     {
         id = id - VariablesDistributor::firstSystemNum();
@@ -26,6 +27,7 @@ QString makeVariablesName(int id)
         }
         return name;
     }
+    //функция создавалась с расчетом на то, что нумерация идет с 0, но я забыл, что она должна идти с 1. поэтому мне проще сделать так
     id -= 1;
     if (id == 0)
         return "x";
@@ -94,6 +96,11 @@ VariablesDistributor::~VariablesDistributor()
 {
     for (auto &it : this->variables)
         delete it;
+}
+
+int VariablesDistributor::firstIntegrateConstant()
+{
+    return VariablesDistributor::get().first_integrate_constant;
 }
 Variable systemVar(int num)
 {
@@ -171,4 +178,20 @@ QString makeIntegratingConstantName(int id)
 abs_ex integratingConstantExpr(const FunctionRange &range)
 {
     return abs_ex(new Variable(integratingConstant(range)));
+}
+
+Variable systemVar(const abs_ex &min, const abs_ex &max, bool min_included, bool max_included)
+{
+    ++Variable::system_id_counter;
+    VariablesDefinition * new_def = new VariablesDefinition(FunctionRange(FunctionRangeSegment(min, max,
+                                                                                               min_included, max_included)));
+    VariablesDistributor::get().system_variables.push_back(new_def);
+
+    Variable new_var = Variable(Variable::system_id_counter - 1, makeVariablesName(Variable::system_id_counter - 1));
+    return new_var;
+}
+
+abs_ex systemVarExpr(const abs_ex &min, const abs_ex &max, bool min_included, bool max_included)
+{
+    return abs_ex(new Variable(systemVar(min, max, min_included, max_included)));
 }

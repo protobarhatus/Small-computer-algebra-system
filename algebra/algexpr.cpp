@@ -307,7 +307,7 @@ bool operator!=(long long int left, const AlgExpr & right)
 }
 QString AlgExpr::toString()
 {
-    QString res = this->expression->makeStringOfExpression();
+    QString res = this->expression->toString();
     auto set = this->expression->getSetOfVariables();
     for (auto &it : set)
         if (isIntegratingConstant(it))
@@ -566,4 +566,19 @@ std::list<AlgExpr> solveEquation(const AlgExpr &equation, const AlgExpr &var)
 std::list<DifurResult> solveDifur(const AlgExpr &difur, const AlgExpr &x, const AlgExpr &y)
 {
    return solveDifur(difur.getExpr(), x.getExpr()->getId(), y.getExpr()->getId());
+}
+
+AlgExpr cbrt(const AlgExpr &arg)
+{
+    return pow(arg, 1/AlgExpr(3));
+}
+
+AlgExpr cbrt(AlgExpr &&arg)
+{
+    return pow(std::move(arg), 1/AlgExpr(3));
+}
+
+AlgExpr root(const AlgExpr &arg, int deg)
+{
+    return root(arg, AlgExpr(deg));
 }

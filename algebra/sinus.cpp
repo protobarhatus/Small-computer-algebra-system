@@ -195,6 +195,11 @@ QString Sinus::makeWolframString() const
 {
     return "Sin[" + argument->makeWolframString() + "]";
 }
+
+QString Sinus::toString() const
+{
+    return "sin(" + this->argument->toString() + ")";
+}
 double Sinus::getApproximateValue()
 {
     return sin(this->argument->getApproximateValue());
@@ -423,6 +428,21 @@ FunctionRange Sinus::getRange() const
 bool Sinus::hasDifferential() const
 {
     return this->argument->hasDifferential();
+}
+
+bool Sinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == this->getId())
+    {
+        auto arg = getArgumentOfFunction(second);
+        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        {
+            this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
+            return true;
+        }
+        return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
+    }
+    return false;
 }
 
 abs_ex sin(const abs_ex &expr)

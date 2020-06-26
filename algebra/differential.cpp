@@ -108,6 +108,13 @@ QString Differential::makeWolframString() const
     return "D[" + argument->makeWolframString() + "]";
 }
 
+QString Differential::toString() const
+{
+    if (this->argument->getId() > 0)
+        return "d" + this->argument->makeStringOfExpression();
+    return "d(" + this->argument->makeStringOfExpression() + ")";
+}
+
 double Differential::getApproximateValue()
 {
     assert(false);
@@ -210,6 +217,12 @@ FunctionRange Differential::getRange() const
 bool Differential::hasDifferential() const
 {
     return true;
+}
+
+bool Differential::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+
+    return false;
 }
 
 bool Differential::operator<(const AbstractExpression &expr) const

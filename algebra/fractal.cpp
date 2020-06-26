@@ -20,6 +20,8 @@
 #include "constant.h"
 #include "solving_equations.h"
 #include "differential.h"
+#include "solving_differential_equations.h"
+#include "factorization.h"
 Fractal::Fractal() : coefficient(1)
 {
 
@@ -396,6 +398,8 @@ void Fractal::simplify()
                 VariablesDistributor::get().getVariablesDefinition(this->numerator.back()->getId())->getRange().isSymmetricRelativelyZero())
         this->takeAwayAbsoluteValues();
     }
+    this->numerator.sort(&AbstractExpression::lessToSort);
+    this->denominator.sort(&AbstractExpression::lessToSort);
     this->simplified = true;
 }
 void Fractal::reduceDegrees()
@@ -1095,6 +1099,30 @@ QString Fractal::makeWolframString() const
         result = result.remove(0, 1);
     return result;
 }
+
+QString Fractal::toString() const
+{
+    QString result ;
+    if (!this->coefficient.isOne())
+        result += this->coefficient.toString();
+    for (auto &it : this->numerator)
+        if (it->getId() != POLYNOMIAL)
+            result += "*" + it->toString();
+        else
+            result += " (" + it->toString() + ") ";
+    if (result.size() == 0)
+        result += "1";
+   // else if (numerator.size() > 0 && numerator.back()->getId() == POLYNOMIAL)
+     //   result += ' ';
+    for (auto &it : this->denominator)
+        if (it->getId() != POLYNOMIAL)
+            result += "/" + it->toString();
+        else
+            result += "/(" + it->toString() + ")";
+    if (result[0] == "*")
+        result = result.remove(0, 1);
+    return result;
+}
 //i need this prefix becouse for some reasons in definition of Fractal::findCommonPart this overloading is not seen
 fractal_argument _findCommonPart(fractal_argument & first, fractal_argument & second)
 {
@@ -1643,6 +1671,7 @@ abs_ex Fractal::getAntiderivativeByParts(int var) const
     Fractal* cop = new Fractal(*this);
     abs_ex cop_p(cop);
     //произведение логарифма на остальное
+    //qDebug() << this->makeStringOfExpression();
     for (auto it = cop->numerator.begin(); it != cop->numerator.end(); ++it)
     {
         if (Degree::getArgumentOfDegree(it->get())->getId() == LOGARITHM)
@@ -1652,6 +1681,7 @@ abs_ex Fractal::getAntiderivativeByParts(int var) const
             return integrateByParts(u, cop_p->downcast(), var);
         }
     }
+
     //произведение многочлена на экспоненциальную/тригонометрическую/арктригонометрическую функцию
     bool has_expon_or_trig_or_arc = false;
     abs_ex full_polynom = copy(one);
@@ -1671,9 +1701,222 @@ abs_ex Fractal::getAntiderivativeByParts(int var) const
             ++it;
         }
     }
+    //интеграл многочлена деленного на тригонометрию/обратную тригонометрию в элементарных
+    //функциях не выражается, а вот экспоненциальная спокойно берется
+    for (auto &it : cop->denominator)
+        if (isExponentialFunction(it, var))
+        {
+            has_expon_or_trig_or_arc = true;
+            break;
+        }
     if (has_expon_or_trig_or_arc && full_polynom->getId() != NUMBER)
         return integrateByParts(full_polynom, cop_p->downcast(), var);
     return nullptr;
+}
+
+abs_ex Fractal::getAntiderivativeOfLogarithmFunctionDividedOnX(int var) const
+{
+    abs_ex linear_function = nullptr;
+    std::pair<abs_ex, abs_ex> ln_f;
+    for (auto &it : this->denominator)
+    {
+        ln_f = ::checkIfItsLinearFunction(it, var);
+        if (ln_f.first != nullptr)
+        {
+            linear_function = copy(it);
+            break;
+        }
+    }
+    if (linear_function == nullptr)
+        return nullptr;
+    abs_ex rest_of_frac = copy(this) * linear_function;
+    abs_ex t = systemVarExpr();
+   // qDebug() << linear_function->makeStringOfExpression();
+    //qDebug() << rest_of_frac->makeStringOfExpression();
+    setUpExpressionIntoVariable(rest_of_frac, (pow(getEuler(), t) - ln_f.second)/ln_f.first,var);
+   // qDebug() << rest_of_frac->makeStringOfExpression();
+    auto integr = rest_of_frac->antiderivative(t->getId());
+    if (integr == nullptr)
+        return nullptr;
+   // qDebug() << integr->makeStringOfExpression();
+    setUpExpressionIntoVariable(integr, ln(linear_function), t->getId());
+   // qDebug() << integr->makeStringOfExpression();
+    return integr/ln_f.first;
+}
+
+abs_ex Fractal::getAntiderivativeOfFunctionWithNonOneGcdOfVarExceptVarMultiplier(int var) const
+{
+    abs_ex var_multiplier = nullptr;
+    Fractal cop = *this;
+    for (auto it = cop.numerator.begin(); it != cop.numerator.end(); ++it)
+    {
+        if (Degree::getArgumentOfDegree(it->get())->getId() == var)
+        {
+            if (Degree::getDegreeOfExpression(it->get())->getId() != NUMBER ||
+                    !static_cast<Number*>(Degree::getDegreeOfExpression(it->get()).get())->isInteger())
+                return nullptr;
+            var_multiplier = std::move(*it);
+            cop.numerator.erase(it);
+            break;
+        }
+    }
+    if (var_multiplier == nullptr)
+        return nullptr;
+ //   qDebug() << cop.toString();
+    int gcd_of_nums = cop.getGcdOfNumeratorsOfDegrees(var);
+    if (gcd_of_nums == 1)
+        return nullptr;
+    int deg = static_cast<Number*>(Degree::getDegreeOfExpression(var_multiplier.get()).get())->getNumerator();
+    if (gcd_of_nums > deg + 1)
+    {
+        auto facts = factorize(gcd_of_nums);
+        int deg_of_change = 0;
+        for (auto rit = facts.rbegin(); rit != facts.rend(); ++rit)
+            if (rit->first <= deg + 1)
+            {
+                deg_of_change = rit->first;
+                break;
+            }
+        if (deg_of_change <= 1)
+            return nullptr;
+        abs_ex frac_to_integr = copy(&cop);
+        abs_ex t = systemVarExpr();
+        setUpExpressionIntoVariable(frac_to_integr, pow(t, one/numToAbs(deg_of_change)), var);
+        abs_ex integr = frac_to_integr->antiderivative(t->getId());
+        if (integr == nullptr)
+            return nullptr;
+        setUpExpressionIntoVariable(integr, pow(getVariableExpr(var), numToAbs(deg_of_change)), t->getId());
+        return integr/numToAbs(deg_of_change);
+    }
+    if (gcd_of_nums == deg + 1)
+    {
+        abs_ex frac_to_integr = copy(&cop);
+        abs_ex t = systemVarExpr();
+        setUpExpressionIntoVariable(frac_to_integr, pow(t, one/numToAbs(deg + 1)), var);
+        abs_ex integr = frac_to_integr->antiderivative(t->getId());
+        if (integr == nullptr)
+            return nullptr;
+        setUpExpressionIntoVariable(integr, pow(getVariableExpr(var), numToAbs(deg + 1)), t->getId());
+        return integr/numToAbs(deg + 1);
+    }
+    if ((deg - (gcd_of_nums - 1)) % gcd_of_nums == 0)
+    {
+        abs_ex frac_to_integr = copy(&cop);
+        abs_ex t = systemVarExpr();
+        setUpExpressionIntoVariable(frac_to_integr, pow(t, one/numToAbs(gcd_of_nums )), var);
+        frac_to_integr = std::move(frac_to_integr) * pow(t, (deg - (gcd_of_nums - 1))/gcd_of_nums);
+        abs_ex integr = frac_to_integr->antiderivative(t->getId());
+        if (integr == nullptr)
+            return nullptr;
+        setUpExpressionIntoVariable(integr, pow(getVariableExpr(var), numToAbs(gcd_of_nums )), t->getId());
+        return integr/numToAbs(gcd_of_nums);
+    }
+    auto facts = factorize(gcd_of_nums);
+    for (auto rit = facts.rbegin(); rit != facts.rend(); ++rit)
+    {
+        if ((deg - (rit->first - 1)) % rit->first == 0)
+        {
+            abs_ex frac_to_integr = copy(&cop);
+            abs_ex t = systemVarExpr();
+            setUpExpressionIntoVariable(frac_to_integr, pow(t, one/numToAbs(rit->first )), var);
+            frac_to_integr = std::move(frac_to_integr) * pow(t, (deg - (rit->first - 1))/rit->first);
+            abs_ex integr = frac_to_integr->antiderivative(t->getId());
+            if (integr == nullptr)
+                return nullptr;
+            setUpExpressionIntoVariable(integr, pow(getVariableExpr(var), numToAbs(rit->first )), t->getId());
+            return integr/numToAbs(rit->first );
+        }
+    }
+    return nullptr;
+}
+
+abs_ex Fractal::getAntiderivariveByBriningFunctionIntoDifferential(int var) const
+{
+    //сейчас рассматриваем ситуацию 1/(ax+b) * f(ln(ax+b)) либо 1/x * f(ln(x))
+    abs_ex res = getAntiderivativeOfLogarithmFunctionDividedOnX(var);
+    if (res != nullptr)
+        return res;
+    //рассмотрим функцию по типу x/(x^4 + x^2 + 1)
+    res = getAntiderivativeOfFunctionWithNonOneGcdOfVarExceptVarMultiplier(var);
+    if (res != nullptr)
+        return res;
+    return nullptr;
+}
+
+abs_ex Fractal::getAntiderivativeOfIrrationalFunction(int var) const
+{
+    //сначала чекаем на корень какой-либо степени от линейной функции
+    abs_ex res = getAntiderivativeOfFunctionWithRootOfLinearFunction(var);
+    if (res != nullptr)
+        return res;
+
+    return nullptr;
+}
+
+abs_ex Fractal::getAntiderivativeOfFunctionWithRootOfLinearFunction(int var) const
+{
+    std::pair<abs_ex, abs_ex> ln_f;
+    abs_ex linear_func;
+    int root;
+    for (auto &it : this->numerator)
+    {
+        if (it->getId() == DEGREE)
+        {
+            auto deg = Degree::getDegreeOfExpression(it.get());
+            if (deg->getId() == NUMBER)
+            {
+                Number num = *static_cast<Number*>(deg.get());
+                if (num.getDenominator() == 1)
+                    continue;
+                ln_f = ::checkIfItsLinearFunction(Degree::getArgumentOfDegree(it.get()), var);
+                if (ln_f.first == nullptr)
+                    continue;
+                linear_func = copy(Degree::getArgumentOfDegree(it.get()));
+                root = num.getDenominator();
+                break;
+            }
+        }
+    }
+    if (linear_func != nullptr)
+        for (auto &it : this->denominator)
+        {
+            if (it->getId() == DEGREE)
+            {
+                auto deg = Degree::getDegreeOfExpression(it.get());
+                if (deg->getId() == NUMBER)
+                {
+                    Number num = *static_cast<Number*>(deg.get());
+                    if (num.getDenominator() == 1)
+                        continue;
+                    ln_f = ::checkIfItsLinearFunction(Degree::getArgumentOfDegree(it.get()), var);
+                    if (ln_f.first == nullptr)
+                        continue;
+                    linear_func = copy(Degree::getArgumentOfDegree(it.get()));
+                    root = num.getDenominator();
+                    break;
+                }
+            }
+        }
+    if (linear_func == nullptr)
+        return nullptr;
+    abs_ex t;
+    if (root % 2 == 0)
+        t = systemVarExpr(zero, nullptr, true, false);
+    else
+        t = systemVarExpr();
+    abs_ex new_x = (pow(t, root) - ln_f.second)/ln_f.first;
+    abs_ex new_frac = copy(this);
+   // qDebug() << new_frac->makeStringOfExpression();
+   // qDebug() << new_x->makeStringOfExpression();
+    setUpExpressionIntoVariable(new_frac, new_x, var);
+    new_frac = new_frac * new_x->derivative(t->getId());
+   // qDebug() << new_frac->makeStringOfExpression();
+    abs_ex integr = new_frac->antiderivative(t->getId());
+    if (integr == nullptr)
+        return nullptr;
+   // qDebug() << integr->makeStringOfExpression();
+    setUpExpressionIntoVariable(integr, pow(linear_func, Number(1, root)), t->getId());
+    return integr;
 }
 
 //да, это будет очередная большая функция. Здесь нет сложного поведения, только проверка на различные табличные интегралы
@@ -1723,9 +1966,15 @@ abs_ex Fractal::antiderivative(int var) const
         int prev_num_size = cop.numerator.size();
         cop.bringRationalFunctionIntoFormToDecay();
         int current_num_size = cop.numerator.size();
-        if (cop.denominator.size() > 1)
+        if (cop.denominator.size() > 1 || (cop.denominator.size() == 1 && cop.denominator.begin()->get()->getId() ==
+                                           DEGREE && cop.numerator.size() == 1 &&
+                                           cop.numerator.begin()->get()->getMaxDegreeOfVariable(var).compareWith(
+                                               Degree::getArgumentOfDegree(cop.denominator.begin()->get())
+                                               ->getMaxDegreeOfVariable(var)) >= 0 &&
+                                          Degree::getArgumentOfDegree(cop.denominator.begin()->get())->getMaxDegreeOfVariable(var) != 1))
         {
-            auto split_res = cop.splitIntoSumOfElementaryFractals();
+           // qDebug() << cop.toString();
+            auto split_res = cop.splitIntoSumOfElementaryFractals(var);
             auto integral_res = copy(zero);
             for (auto &it : split_res)
             {
@@ -1744,6 +1993,12 @@ abs_ex Fractal::antiderivative(int var) const
     auto p_int = this->getAntiderivativeByParts(var);
     if (p_int != nullptr)
         return p_int;
+    auto ds_int = this->getAntiderivariveByBriningFunctionIntoDifferential(var);
+    if (ds_int != nullptr)
+        return ds_int;
+    auto irrat_arg = this->getAntiderivativeOfIrrationalFunction(var);
+    if (irrat_arg != nullptr)
+        return irrat_arg;
     auto trig_arg = this->checkIfCanDoUniversalTrigonometricSubstitution(var);
     if (trig_arg.first != nullptr)
     {
@@ -1774,6 +2029,25 @@ abs_ex Fractal::antiderivative(int var) const
                 return res;
             }
         }
+    }
+    int lcm_of_denoms = this->getLcmOfDenominatorsOfDegreesOfVariable(var);
+    if (lcm_of_denoms > 1)
+    {
+        abs_ex t;
+        if (lcm_of_denoms % 2 == 0)
+            t = systemVarExpr(zero, nullptr, true, false);
+        else
+            t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, pow(t, lcm_of_denoms), var);
+        cop = std::move(cop) * pow(t, lcm_of_denoms)->derivative(t->getId());
+        auto integr = cop->antiderivative(t->getId());
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, pow(x, one/numToAbs(lcm_of_denoms)), t->getId());
+            return integr;
+        }
+
     }
     return nullptr;
 }
@@ -1876,7 +2150,7 @@ void Fractal::bringRationalFunctionIntoFormToDecay()
     this->setSameMembersIntoDegree();
 }
 
-std::list<abs_ex > Fractal::splitIntoSumOfElementaryFractals()
+std::list<abs_ex > Fractal::splitIntoSumOfElementaryFractals(int var)
 {
   //  qDebug() << this->makeStringOfExpression();
     //это должна быть рациональная функция, но я не хочу вставлять assert
@@ -1888,8 +2162,8 @@ std::list<abs_ex > Fractal::splitIntoSumOfElementaryFractals()
     {
         int deg = static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->getNumerator();
         int denum_deg = Degree::getArgumentOfDegree(it.get())
-                ->getMaxDegreeOfVariable(*it->getSetOfVariables().begin()).getNumerator();
-        abs_ex x(new Variable(getVariable(*it->getSetOfVariables().begin())));
+                ->getMaxDegreeOfVariable(var).getNumerator();
+        abs_ex x(new Variable(getVariable(var)));
         for (int i = 1; i <= deg; ++i)
         {
             abs_ex its_num = copy(zero);
@@ -1903,12 +2177,12 @@ std::list<abs_ex > Fractal::splitIntoSumOfElementaryFractals()
             numerator_expression = numerator_expression + its_num * (denominator_expression / pow(copy(Degree::getArgumentOfDegree(it.get())), i));
         }
     }
+   // qDebug() << this->numerator.begin()->get()->makeStringOfExpression();
+    auto numerator_coefs = checkIfItsPolynom(*this->numerator.begin(), var);
 
-    auto numerator_coefs = checkIfItsPolynom(*this->numerator.begin(), *this->denominator.begin()->get()->getSetOfVariables().begin());
 
 
-
-    auto equation_vectors = checkIfItsPolynom(numerator_expression, *this->denominator.begin()->get()->getSetOfVariables().begin());
+    auto equation_vectors = checkIfItsPolynom(numerator_expression, var);
 
 
 
@@ -1927,8 +2201,8 @@ std::list<abs_ex > Fractal::splitIntoSumOfElementaryFractals()
     {
         int deg = static_cast<Number*>(Degree::getDegreeOfExpression(it.get()).get())->getNumerator();
         int denum_deg = Degree::getArgumentOfDegree(it.get())
-                ->getMaxDegreeOfVariable(*it->getSetOfVariables().begin()).getNumerator();
-        abs_ex x(new Variable(getVariable(*it->getSetOfVariables().begin())));
+                ->getMaxDegreeOfVariable(var).getNumerator();
+        abs_ex x(new Variable(getVariable(var)));
         for (int i = 1; i <= deg; ++i)
         {
             abs_ex its_num = copy(zero);
@@ -1976,6 +2250,8 @@ long long int Fractal::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
             else
                 return 0;
         }
+        else
+            res = lcm(res, it->getLcmOfDenominatorsOfDegreesOfVariable(var));
     }
     for (auto &it : this->denominator)
     {
@@ -1987,6 +2263,8 @@ long long int Fractal::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
             else
                 return 0;
         }
+        else
+            res = lcm(res, it->getLcmOfDenominatorsOfDegreesOfVariable(var));
     }
     return res;
 }
@@ -2214,7 +2492,7 @@ abs_ex Fractal::tableAntiderivative(int var) const
                     if (*qc_f[0] == *one && *qc_f[1] == *zero)
                     {
                         if (qc_f[2]->getPositionRelativelyZero() >= 0)
-                            return x/(two*qc_f[2] * (k - one) * pow(copy(arg), k - one)) + (two*k - three)/(two*qc_f[2]*(k - one)) * pow(copy(arg), k - one)->antiderivative(var);
+                            return x/(two*qc_f[2] * (k - one) * pow(copy(arg), k - one)) + (two*k - three)/(two*qc_f[2]*(k - one)) * (one/pow(copy(arg), k - one))->antiderivative(var);
                         else
                             return nullptr;
                     }
@@ -2579,6 +2857,105 @@ abs_ex Fractal::tableAntiderivative(int var) const
                 return pow(ln(ln_f.first * x + ln_f.second), 2)/two/ln_f.first;
             }
         }
+        if (denom->getId() == DEGREE)
+        {
+            //https://portal.tpu.ru/SHARED/r/ROZHKOVA/page-13/page-14/Tab2/RSV-HM_Lecture-37.pdf
+            auto deg = Degree::getDegreeOfExpression(denom);
+            if (isIntegerNumber(deg))
+            {
+                auto arg = Degree::getArgumentOfDegree(denom);
+                auto ln_f = ::checkIfItsLinearFunction(arg, var);
+                if (ln_f.first != nullptr)
+                {
+                    if (has(num->getSetOfVariables(), var))
+                        return nullptr;
+                    auto A = copy(num);
+                    auto a = std::move(ln_f.first);
+                    auto b = std::move(ln_f.second);
+                    return A/a/(one - deg)/pow(copy(arg), deg - one);
+                }
+                auto qc_f = ::checkIfItsQuadraticFunction(arg, var);
+                if (qc_f[0] != nullptr)
+                {
+                    auto pol = ::checkIfItsPolynom(num, var);
+                    if (pol.size() > 2 || pol.size() == 0)
+                        return nullptr;
+                    if (pol.size() == 1)
+                        pol.push_back(copy(zero));
+                    if (*qc_f[0] != *one)
+                    {
+                        auto p = systemVarExpr();
+                        auto q = systemVarExpr();
+                        auto integr = (copy(num)/pow((x*x + p*x + q), deg));
+                        if (integr == nullptr)
+                            return nullptr;
+                        integr = integr / qc_f[0];
+                        setUpExpressionIntoVariable(integr, qc_f[1]/qc_f[0], p->getId());
+                        setUpExpressionIntoVariable(integr, qc_f[2]/qc_f[0], q->getId());
+                        return integr;
+                    }
+                    if (*qc_f[0] == *one && *qc_f[1] == *zero && qc_f[2]->getPositionRelativelyZero() > 0)
+                    {
+                        return pol[1] / two / pow(copy(arg), deg - one) / (one - deg) +
+                                pol[0] * (one/copy(denom))->antiderivative(var);
+                    }
+                    if ((qc_f[2] - pow(qc_f[1], 2)/four)->getPositionRelativelyZero() <= 0)
+                        return nullptr;
+                    auto t = systemVarExpr();
+                    auto q = systemVarExpr(zero, nullptr, true, false);
+                    auto integr = ((pol[1] * t - pol[1] * qc_f[1]/two + pol[0])/pow(t*t + q, deg))->antiderivative(t->getId());
+                    if (integr == nullptr)
+                        return nullptr;
+                    setUpExpressionIntoVariable(integr, x + qc_f[1]/two, t->getId());
+                    setUpExpressionIntoVariable(integr, qc_f[2] - pow(qc_f[1], 2)/four, q->getId());
+                    return integr;
+
+                }
+            }
+        }
+       /* auto pol = checkIfItsPolynom(num, var);
+        if (pol.size() > 0 && denom->getId() == DEGREE)
+        {
+            auto deg_p = Degree::getDegreeOfExpression(denom);
+            if (deg_p->getId() != NUMBER)
+                return nullptr;
+            if (static_cast<Number*>(deg_p.get())->isInteger())
+            {
+                int deg = static_cast<Number*>(deg_p.get())->getNumerator();
+                auto arg = copy(Degree::getArgumentOfDegree(denom));
+                auto ln_f = ::checkIfItsLinearFunction(arg, var);
+                if (ln_f.first != nullptr)
+                {
+                    if (pol.size() > deg)
+                        return nullptr;
+                    if (pol.size() < deg)
+                        while (pol.size() != deg)
+                            pol.push_back(copy(zero));
+                    if (deg == 3)
+                    {
+                        auto a = std::move(pol[2]);
+                        auto b = std::move(pol[1]);
+                        auto c = std::move(pol[0]);
+                        auto w = std::move(ln_f.first);
+                        auto f = std::move(ln_f.second);
+                        return (a *f *(three* f + four*w*x) - w*(b*f + c*w + two*b*w*x) + two*a*sqr(f + w*x)*ln(f + w*x))/
+                                (two*w*w*w*sqr(f + w*x));
+                    }
+                    if (deg == 4)
+                    {
+                        auto a = std::move(pol[3]);
+                        auto b = std::move(pol[2]);
+                        auto c = std::move(pol[1]);
+                        auto u = std::move(pol[0]);
+                        auto w = std::move(ln_f.first);
+                        auto f = std::move(ln_f.second);
+                        return (a*f*(numToAbs(11)*f*f + numToAbs(27)*f*w*x + numToAbs(18)*w*w*x*x) - w*(w*(c*f + two*u*w + three*c*w*x) +
+                                two*b*(f*f + three*f*w*x + three*w*w*x*x))+ numToAbs(6)*a*pow(f + w*x,3)* ln(f + w*x))
+                                /(numToAbs(6)*pow(w, 4)*pow(f + w*x, 3));
+                    }
+                }
+            }
+        }*/
 
     }
     if (numerator.size() == 0 && denominator.size() == 2)
@@ -2928,7 +3305,8 @@ void Fractal::separatePolynomialsDegree()
         if (it->get()->getId() == DEGREE && Degree::getDegreeOfExpression(it->get())->getId() == POLYNOMIAL)
         {
             auto arg = copy(Degree::getArgumentOfDegree(it->get()));
-            auto degs = static_cast<Polynomial*>(Degree::getDegreeOfExpression(it->get()).get())->getMonomialsPointers();
+            auto deg = Degree::getDegreeOfExpression(it->get());
+            auto degs = static_cast<Polynomial*>(deg.get())->getMonomialsPointers();
             for (auto &it : degs)
                 this->numerator.push_front(pow(arg, copy(it)));
             it = this->numerator.erase(it);
@@ -3048,6 +3426,105 @@ abs_ex Fractal::takeAwayConstantMultiplier()
     abs_ex constant = std::move(this->numerator.back());
     this->numerator.erase(--this->numerator.end());
     return constant;
+}
+
+bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == FRACTAL)
+    {
+        bool merged = false;
+        abs_ex its_second =  copy(second);
+        auto fr = static_cast<Fractal*>(its_second.get())->getFractal();
+        std::list<std::pair<fractal_argument::iterator, abs_ex>> originals;
+        for (auto it1 = this->numerator.begin(), it2 = fr.first->begin();
+             it1 != this->numerator.end() && it2 != fr.first->end();)
+        {
+            if (canBeConsideredAsConstant(*it1) && canBeConsideredAsConstant(*it2))
+            {
+                ++it1;
+                ++it2;
+            }
+            else if (canBeConsideredAsConstant(*it1))
+                ++it1;
+            else if (canBeConsideredAsConstant(*it2))
+                ++it2;
+            if (it1 == this->numerator.end() && it2 != fr.first->end())
+                return false;
+            if (it2 == fr.first->end() && it1 != this->numerator.end())
+                return false;
+            if (it1 == this->numerator.end())
+            {
+                break;
+            }
+            if (subCompare(*it1, *it2))
+            {
+                ++it1;
+                ++it2;
+                continue;
+            }
+            originals.push_back({it1, copy(*it1)});
+            if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(*it2))
+            {
+                for (auto &it : originals)
+                    *it.first = std::move(it.second);
+                return false;
+            }
+            ++it1;
+            ++it2;
+            merged = true;
+        }
+        for (auto it1 = this->denominator.begin(), it2 = fr.second->begin();
+             it1 != this->denominator.end() && it2 != fr.second->end();)
+        {
+            if (canBeConsideredAsConstant(*it1) && canBeConsideredAsConstant(*it2))
+            {
+                ++it1;
+                ++it2;
+            }
+            else if (canBeConsideredAsConstant(*it1))
+                ++it1;
+            else if (canBeConsideredAsConstant(*it2))
+                ++it2;
+            if (it1 == this->denominator.end() && it2 != fr.second->end())
+                return false;
+            if (it2 == fr.second->end() && it1 != this->denominator.end())
+                return false;
+            if (it1 == this->denominator.end())
+            {
+                break;
+            }
+            if (subCompare(*it1, *it2))
+            {
+                ++it1;
+                ++it2;
+                continue;
+            }
+            originals.push_back({it1, copy(*it1)});
+            if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(*it2))
+            {
+                for (auto &it : originals)
+                    *it.first = std::move(it.second);
+                return false;
+            }
+            ++it1;
+            ++it2;
+            merged = true;
+        }
+        FunctionRange second_range = getRangeOfConstantMultipliersAndTakeThemAway(its_second);
+        if (!(second_range.isPoint() && *second_range.getPoint() == *one))
+        {
+            merged = true;
+            FunctionRange this_range = getRangeOfConstantMultipliersAndTakeThemAway(dynamic_cast<AbstractExpression*>(this));
+            this->pushBackToNumerator(integratingConstantExpr(unification(this_range, second_range)));
+
+        }
+
+        return merged;
+
+
+
+    }
+    return false;
 }
 
 void Fractal::pullSomeMultipliersIntoIntegratingConstant()

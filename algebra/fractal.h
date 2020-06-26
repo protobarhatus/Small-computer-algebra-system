@@ -69,6 +69,7 @@ public:
     virtual void _qDebugOut() override;
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
+    QString toString() const override;
     abs_ex findCommonPart(Fractal * frac);
     void sortVariablesInIncreasingOfTheirId();
     void pushBackToNumerator(abs_ex && expr);
@@ -98,7 +99,7 @@ public:
     void expandDenominator();
     void factorizeDenominator();
     void bringRationalFunctionIntoFormToDecay();
-    std::list<abs_ex> splitIntoSumOfElementaryFractals();
+    std::list<abs_ex> splitIntoSumOfElementaryFractals(int var);
     std::unique_ptr<Polynomial> toPolynomWithFractionalCoefficients();
     virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const override;
     virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
@@ -115,6 +116,7 @@ public:
     //и ищет константу по всей дроби, а этот вызывается извне на уже упрощенную дробь
     bool hasIntegratingConstant() const;
     abs_ex takeAwayConstantMultiplier();
+    bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
 private:
     void takeAwayAbsoluteValues();
     bool hasIntegratingConstantMultiplier() const;
@@ -122,6 +124,12 @@ private:
     std::pair<abs_ex, abs_ex> checkIfCanDoUniversalTrigonometricSubstitution(int var) const;
     bool isNumeratorsDegreeBiggerThanDenominatorsDegree(int var) const;
     abs_ex getAntiderivativeByParts(int var) const;
+    abs_ex getAntiderivativeOfLogarithmFunctionDividedOnX(int var) const;
+    abs_ex getAntiderivativeOfFunctionWithNonOneGcdOfVarExceptVarMultiplier(int var) const;
+    abs_ex getAntiderivariveByBriningFunctionIntoDifferential(int var) const;
+    abs_ex getAntiderivativeOfIrrationalFunction(int var) const;
+    abs_ex getAntiderivativeOfFunctionWithRootOfLinearFunction(int var) const;
+
     bool casted_trigonometry;
     void castTrigonometry();
     void castTrigonometryArguments();

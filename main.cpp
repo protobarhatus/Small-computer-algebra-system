@@ -129,9 +129,7 @@ int main(int argc, char *argv[])
     //возможности взять интегралы вида 1/sin(ax+b),  1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
     //это надо исправить
 
-
-
-  //  c = ln(abs(x)) + ln(abs(y)) + c;
+    c = integral(x*x*x*x*x/(pow(x, 4) - pow(x, 2) + 1), x);
 
     // c = cos(2*x)*cos(2*x) - sin(x);
 //c = pow(euler(),-1*(x + ln(x)));
@@ -153,10 +151,14 @@ int main(int argc, char *argv[])
 
 
 
-   //  auto res = solveDifur(dx*y - dy*x, x, y);
+     //auto res = solveDifur(dx*y - dy*x, x, y);
    // auto res = solveDifur(y - dy*x/dx, x, y);
     //auto res = solveDifur(dy/dx + 2*y, x, y);
-    auto res = solveDifur(dy/dx + (2*y + 1)*cot(x), x, y);
+   // auto res = solveDifur(dy/dx + (2*y + 1)*cot(x), x, y);
+ //   auto res = solveDifur(y*ln(y) + x*dy/dx, x, y);
+    //auto res = solveDifur(pow(euler(),(y - x*x))*dy -2*x*dx, x, y);
+   // auto res = solveDifur(sqrt(x*y - 2*x)*dy/dx + x*y*y + 5*y*y, x, y);
+    auto res = solveDifur(2*(x*y + y)*dy/dx + x*(pow(y, 4) + 1), x, y);
     qDebug() << "RES: ";
     for (auto &it : res)
         qDebug() << it.toString();

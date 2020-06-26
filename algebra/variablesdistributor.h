@@ -14,7 +14,7 @@ public:
     static int firstSystemNum();
     //не знаю насколько синглтону нужен деструктор, но да пусть будет
     ~VariablesDistributor();
-
+    static int firstIntegrateConstant();
 private:
     friend Variable getVariable(int id);
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
@@ -35,6 +35,7 @@ private:
     friend Variable integratingConstant();
     friend Variable integratingConstant(const FunctionRange & range);
     friend QString makeIntegratingConstantName(int id);
+    friend Variable systemVar(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
 };
 QString makeIntegratingConstantName(int id);
 bool isIntegratingConstant(int index);
@@ -45,6 +46,8 @@ Variable systemVar(int num);
 Variable systemVar();
 abs_ex systemVarExpr();
 Variable systemVar(int min, int max);
+Variable systemVar(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
+abs_ex systemVarExpr(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
 Variable integratingConstant();
 Variable integratingConstant(const FunctionRange & range);
 abs_ex integratingConstantExpr();

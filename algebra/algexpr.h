@@ -135,6 +135,7 @@ bool operator==(long long int left, const AlgExpr & right);
 bool operator!=(long long int left, const AlgExpr & right);
 AlgExpr pow(const AlgExpr & arg, const AlgExpr & degree);
 AlgExpr root(const AlgExpr & arg, const AlgExpr & degree);
+AlgExpr root(const AlgExpr & arg, int deg);
 AlgExpr sqrt(const AlgExpr & arg);
 AlgExpr sqrt(int arg);
 AlgExpr abs(AlgExpr & arg);
@@ -172,6 +173,8 @@ AlgExpr atan(const AlgExpr & arg);
 AlgExpr atan(AlgExpr && arg);
 AlgExpr asin(const AlgExpr & arg);
 AlgExpr asin(AlgExpr && arg);
+AlgExpr cbrt(const AlgExpr & arg);
+AlgExpr cbrt(AlgExpr && arg);
 std::list<AlgExpr> solveEquation(const AlgExpr & equation, const AlgExpr & var);
 std::list<DifurResult> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
 #endif // ALGEXPR_H

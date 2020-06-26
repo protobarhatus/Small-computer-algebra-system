@@ -250,6 +250,11 @@ QString Logarithm::makeWolframString() const
     return "Log[" + argument->makeWolframString() + "]";
 }
 
+QString Logarithm::toString() const
+{
+    return "ln(" + this->argument->toString() + ")";
+}
+
 double Logarithm::getApproximateValue()
 {
     return log(this->argument->getApproximateValue());
@@ -362,12 +367,12 @@ FunctionRange Logarithm::getRange() const
     FunctionRange arg_range = this->argument->getRange();
     if (arg_range.isError())
         return arg_range;
-    if (!bigger(arg_range.getMax(), zero))
+    if (arg_range.getMax() != nullptr && !bigger(arg_range.getMax(), zero))
         return FunctionRange();
     FunctionRange result;
     for (auto &it : arg_range.getSegments())
     {
-        if (!bigger(it.max(), zero))
+        if (it.max() != nullptr && !bigger(it.max(), zero))
             continue;
         if (it.min() == nullptr || !bigger(it.min(), zero))
         {
@@ -391,6 +396,21 @@ FunctionRange Logarithm::getRange() const
 bool Logarithm::hasDifferential() const
 {
     return this->argument->hasDifferential();
+}
+
+bool Logarithm::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == this->getId())
+    {
+        auto arg = getArgumentOfFunction(second);
+        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        {
+            this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
+            return true;
+        }
+        return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
+    }
+    return false;
 }
 
 bool Logarithm::operator<(const AbstractExpression &right) const

@@ -199,6 +199,11 @@ QString Cosinus::makeWolframString() const
 {
     return "Cos[" + this->argument->makeWolframString() + "]";
 }
+
+QString Cosinus::toString() const
+{
+    return "cos(" + this->argument->makeStringOfExpression() + ")";
+}
 double Cosinus::getApproximateValue()
 {
     return cos(this->argument->getApproximateValue());
@@ -434,6 +439,21 @@ FunctionRange Cosinus::getRange() const
 bool Cosinus::hasDifferential() const
 {
     return this->argument->hasDifferential();
+}
+
+bool Cosinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == this->getId())
+    {
+        auto arg = getArgumentOfFunction(second);
+        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        {
+            this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
+            return true;
+        }
+        return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
+    }
+    return false;
 }
 
 abs_ex cos(const abs_ex &expr)

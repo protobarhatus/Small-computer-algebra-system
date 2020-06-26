@@ -24,6 +24,8 @@ private:
 };
 FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(abs_ex & expr);
 FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(abs_ex & expr);
+FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(AbstractExpression * expr);
+FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(AbstractExpression * expr);
 std::list<DifurResult> solveDifur(const abs_ex & difur, int x, int y);
 
 

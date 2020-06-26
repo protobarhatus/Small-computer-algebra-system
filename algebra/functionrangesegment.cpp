@@ -160,12 +160,12 @@ QString FunctionRangeSegment::toString() const
     if (this->min() == nullptr)
         res += QString::fromWCharArray(L"-inf");
     else
-        res += this->min()->makeStringOfExpression();
+        res += this->min()->toString();
     res += "; ";
     if (this->max() == nullptr)
         res += QString::fromWCharArray(L"inf");
     else
-        res += this->max()->makeStringOfExpression();
+        res += this->max()->toString();
     if (this->isMaxIncluded())
         res += ']';
     else

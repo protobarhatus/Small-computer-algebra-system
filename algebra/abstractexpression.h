@@ -83,6 +83,9 @@ public:
     virtual void _qDebugOut() = 0;
     virtual QString makeStringOfExpression() const = 0;
     virtual QString makeWolframString() const = 0;
+    //отличия от makeStringOfExpression() в том, что makeStringOfExpression расставляет кучу лишних скобочек,
+    //а если попытаться это изменить, то полетит часть с заменой переменных на выражения и я хз почему
+    virtual QString toString() const = 0;
     virtual double getApproximateValue() = 0;
     //the difference between overload without argument is that this function choose a value for variable from definition by lambda, but other cannot be used with variables andjust throw assert()
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) = 0;
@@ -107,6 +110,7 @@ public:
     virtual FunctionRange getRange() const = 0;
     bool isOnlyVarsIntegratingConstants() const;
     virtual bool hasDifferential() const = 0;
+    virtual bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex & second) = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -115,6 +119,8 @@ protected:
     virtual int getPositionRelativelyZeroIfHasVariables() = 0;
 
 };
+bool canBeConsideredAsConstant(const AbstractExpression * expr);
+bool canBeConsideredAsConstant(const abs_ex & expr);
 bool lower(const abs_ex & left, const abs_ex & right);
 bool bigger(const abs_ex & left, const abs_ex & right);
 bool lowerOrEquall(const abs_ex & left, const abs_ex & right);

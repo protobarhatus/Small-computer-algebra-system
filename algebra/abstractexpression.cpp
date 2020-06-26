@@ -388,7 +388,8 @@ std::array<abs_ex, 3> checkIfItsQuadraticFunction(const AbstractExpression *func
         if (func->getId() == DEGREE && *Degree::getDegreeOfExpression(const_cast<AbstractExpression*>(func)) == *two)
         {
             auto ln_f = checkIfItsLinearFunction(Degree::getArgumentOfDegree(const_cast<AbstractExpression*>(func)), var);
-            return {pow(ln_f.first, 2), two*ln_f.first * ln_f.second, pow(ln_f.second, 2)};
+            if (ln_f.first != nullptr)
+                return {pow(ln_f.first, 2), two*ln_f.first * ln_f.second, pow(ln_f.second, 2)};
         }
     if (func->getId() == FRACTAL)
     {
@@ -558,7 +559,10 @@ std::vector<abs_ex > checkIfItsPolynom(const AbstractExpression *func, int var)
         int deg = monom.first.getNumerator();
         if (deg >= res.size())
         {
+            int old_size = res.size();
             res.resize(deg + 1);
+            for (int i = old_size; i < deg; ++i)
+                res[i] = copy(zero);
             res[deg] = std::move(monom.second);
         }
         else
@@ -664,7 +668,9 @@ void setUpExpressionIntoVariable(abs_ex & func, const abs_ex &expr, int var)
 {
     std::map<int, abs_ex> repl_vars;
     repl_vars.insert({var, copy(expr)});
+   // qDebug() << func->makeStringOfExpression();
     replaceSystemVariablesToExpressions(func, repl_vars);
+    //qDebug() << func->makeStringOfExpression();
     func->setSimplified(false);
     func->simplify();
     func = func->downcast();
@@ -748,4 +754,14 @@ bool biggerOrEquall(const abs_ex &left, const abs_ex &right)
 {
     //можем обойтись без прямого сравнения на равенство из-за того как ведет себя getPositionRelativelyZero
     return (left-right)->getPositionRelativelyZero() > 0;
+}
+
+bool canBeConsideredAsConstant(const abs_ex &expr)
+{
+    return canBeConsideredAsConstant(expr.get());
+}
+
+bool canBeConsideredAsConstant(const AbstractExpression *expr)
+{
+    return isIntegratingConstant(expr->getId()) || expr->getSetOfVariables().empty();
 }

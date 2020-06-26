@@ -24,6 +24,7 @@ public:
     virtual void _qDebugOut() override;
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
+    QString toString() const override;
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> &choosing_value_rule) override;
     virtual int getPositionRelativelyZeroIfHasVariables() override;
@@ -42,6 +43,7 @@ public:
     virtual long long int getGcdOfNumeratorsOfDegrees(int var) const override;
     virtual FunctionRange getRange() const override;
     virtual bool hasDifferential() const override;
+    bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
 private:
     virtual bool operator<(const AbstractExpression & expr) const override;
 };

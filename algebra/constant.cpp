@@ -87,6 +87,11 @@ QString Constant::makeWolframString() const
     return this->makeStringOfExpression();
 }
 
+QString Constant::toString() const
+{
+    return this->name;
+}
+
 double Constant::getApproximateValue()
 {
     return this->value;
@@ -151,6 +156,11 @@ FunctionRange Constant::getRange() const
 bool Constant::hasDifferential() const
 {
     return false;
+}
+
+bool Constant::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    return *this == *second;
 }
 bool Constant::operator<(const AbstractExpression &right) const
 {

@@ -13,6 +13,7 @@
 #include "number.h"
 #include "random"
 #include "solving_equations.h"
+#include "solving_differential_equations.h"
 Polynomial::Polynomial()
 {
 
@@ -755,6 +756,32 @@ QString Polynomial::makeWolframString() const
         if (it->getCoefficient().compareWith(0) > 0)
             result += "+";
         result += it->makeWolframString();
+    }
+    if (result[0] == '+')
+        result = result.remove(0, 1);
+    return result;
+}
+
+QString Polynomial::toString() const
+{
+    QString result;
+    bool first = true;
+    for (auto &it : monomials)
+    {
+        if (it->getCoefficient().compareWith(0) > 0 && !first)
+        {
+            result += " + ";
+            result += it->toString();
+        }
+        else if (!first)
+        {
+            result += " - ";
+            auto cop = copy(it.get());
+            result += (-cop)->toString();
+        }
+        else
+            result += it->toString();
+        first = false;
     }
     if (result[0] == '+')
         result = result.remove(0, 1);
@@ -1948,9 +1975,9 @@ bool Polynomial::isNeedToChangeSignToLeadTheAcceptedForm()
 {
     int min_id = std::numeric_limits<int>::max();
     Number max_degree = -1;
-#define monoms this->monomials
+//#define monoms this->monomials
     bool is_max_negative = false;
-    for (auto &it : monoms)
+    for (auto &it : this->monomials)
     {
         auto num = it->getFractal().first;
         for (auto &it1 : *num)
@@ -2173,7 +2200,7 @@ abs_ex Polynomial::tryToDistinguishFullDegree() const
         {
             abs_ex new_var;
             if (lcm_of_dens % 2 == 0)
-                new_var = abs_ex(new Variable(systemVar(0, std::numeric_limits<int>::max())));
+                new_var = systemVarExpr(zero, nullptr, true, false);
             else
                 new_var = systemVarExpr();
             replaced_variables.insert({it, pow(new_var, lcm_of_dens)});
@@ -2391,7 +2418,7 @@ long long Polynomial::getGcdOfNumeratorsOfDegrees(int var) const
     };
     for (auto &it : monomials)
     {
-        long long int mon_res = it->getLcmOfDenominatorsOfDegreesOfVariable(var);
+        long long int mon_res = it->getGcdOfNumeratorsOfDegrees(var);
         res = zgcd(res, mon_res);
     }
     return res;
@@ -2518,6 +2545,66 @@ abs_ex Polynomial::takeAwayIntegragingConstant()
     abs_ex constant = std::move(this->monomials.back());
     this->monomials.erase(--this->monomials.end());
     return constant;
+}
+
+bool Polynomial::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == POLYNOMIAL)
+    {
+        bool merged = false;
+        abs_ex its_second =  copy(second);
+        auto monoms = static_cast<Polynomial*>(second.get())->getMonoms();
+        std::list<std::pair<std::list<std::unique_ptr<Fractal>>::iterator, std::unique_ptr<Fractal>>> originals;
+        for (auto it1 = this->monomials.begin(), it2 = monoms->begin();
+             it1 != this->monomials.end() && it2 != monoms->end();)
+        {
+            if (canBeConsideredAsConstant(it1->get()) && canBeConsideredAsConstant(it2->get()))
+            {
+                ++it1;
+                ++it2;
+            }
+            else if (canBeConsideredAsConstant(it1->get()))
+                ++it1;
+            else if (canBeConsideredAsConstant(it2->get()))
+                ++it2;
+            if (it1 == this->monomials.end() && it2 != monoms->end())
+                return false;
+            if (it2 == monoms->end() && it1 != this->monomials.end())
+                return false;
+            if (it1 == this->monomials.end())
+            {
+                break;
+            }
+            if (**it1 == **it2)
+            {
+                ++it1;
+                ++it2;
+                continue;
+            }
+            originals.push_back({it1, toFrac(copy(it1->get()))});
+            if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(copy(it2->get())))
+            {
+                for (auto &it : originals)
+                    *it.first = std::move(it.second);
+                return false;
+            }
+            ++it1;
+            ++it2;
+            merged = true;
+        }
+
+        FunctionRange second_range = getRangeOfConstantAddictivesAndTakeThemAway(its_second);
+        if (!(second_range.isPoint() && *second_range.getPoint() == *zero))
+        {
+            merged = true;
+            FunctionRange this_range = getRangeOfConstantAddictivesAndTakeThemAway(dynamic_cast<AbstractExpression*>(this));
+            this->addMonomial(toFrac(integratingConstantExpr(unification(this_range, second_range))));
+
+        }
+
+        return merged;
+    }
+    return false;
 }
 
 bool Polynomial::hasIntegratingConstantAddictive() const

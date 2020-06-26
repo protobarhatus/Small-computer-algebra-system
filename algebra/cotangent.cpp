@@ -228,6 +228,11 @@ QString Cotangent::makeWolframString() const
     return "Cot[" + this->argument->makeWolframString() + "]";
 }
 
+QString Cotangent::toString() const
+{
+    return "cot(" + this->argument->toString() + ")";
+}
+
 double Cotangent::getApproximateValue()
 {
     return tan(this->argument->getApproximateValue());
@@ -389,6 +394,21 @@ FunctionRange Cotangent::getRange() const
 bool Cotangent::hasDifferential() const
 {
     return this->argument->hasDifferential();
+}
+
+bool Cotangent::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
+{
+    if (second->getId() == this->getId())
+    {
+        auto arg = getArgumentOfFunction(second);
+        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        {
+            this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
+            return true;
+        }
+        return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
+    }
+    return false;
 }
 
 bool Cotangent::operator<(const AbstractExpression &right) const

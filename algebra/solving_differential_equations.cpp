@@ -17,15 +17,16 @@ bool isDifferentialOf(abs_ex & expr, int x)
 
 bool isRootOfEquation(abs_ex && equation, const abs_ex & root, int var)
 {
-    qDebug() << root->makeStringOfExpression();
-    qDebug() << equation->makeStringOfExpression();
+  //  qDebug() << root->makeStringOfExpression();
+  //  qDebug() << equation->makeStringOfExpression();
     setUpExpressionIntoVariable(equation, root, var);
-    qDebug() << equation->makeStringOfExpression();
+  //  qDebug() << equation->makeStringOfExpression();
     return isZero(equation);
 }
 
 std::list<abs_ex>  tryToSolveDifurWithSeparableVariables(const std::unique_ptr<Polynomial> & difur, int x, int y)
 {
+   // qDebug() << difur->makeStringOfExpression();
     std::unique_ptr<Polynomial> right(new Polynomial(zero.get()));
     std::unique_ptr<Polynomial> left(new Polynomial(zero.get()));
     for (auto &it : difur->getMonomialsPointers())
@@ -71,7 +72,8 @@ std::list<abs_ex>  tryToSolveDifurWithSeparableVariables(const std::unique_ptr<P
                 ++it;
         }
     };
-
+  //  qDebug() << left_frac->makeStringOfExpression();
+  //  qDebug() << right_frac->makeStringOfExpression();
     takeMultipliersWithVariablesAwayToOtherFractal(right_frac->getFractal().first, left_frac->getFractal().second,
                                                    y, x, true);
     takeMultipliersWithVariablesAwayToOtherFractal(right_frac->getFractal().second, left_frac->getFractal().first,
@@ -82,6 +84,8 @@ std::list<abs_ex>  tryToSolveDifurWithSeparableVariables(const std::unique_ptr<P
                                                    x, y, false);
     left_frac->simplify();
     right_frac->simplify();
+  //  qDebug() << left_frac->makeStringOfExpression();
+  //  qDebug() << right_frac->makeStringOfExpression();
     if (left_frac->hasVariable(x) || right_frac->hasVariable(y))
         return std::list<abs_ex> ();
     auto left_integr = integrate(toAbsEx(left_frac));
@@ -168,6 +172,47 @@ std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y,
     }
     return res;
 }
+FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(AbstractExpression * expr)
+{
+    assert(expr->getId() == POLYNOMIAL);
+    if (expr->getId() == POLYNOMIAL)
+    {
+        auto monoms = static_cast<Polynomial*>(expr)->getMonomialsPointers();
+
+        if (isIntegratingConstant(monoms.back()->getId()))
+        {
+            auto res = monoms.back()->getRange();
+            static_cast<Polynomial*>(expr)->getMonoms()->erase(--static_cast<Polynomial*>(expr)->getMonoms()->end());
+            return res;
+
+        }
+        FunctionRange range;
+        bool initialized = false;
+        auto monoms_p = static_cast<Polynomial*>(expr)->getMonoms();
+        for (auto it = monoms_p->begin(); it != monoms_p->end();)
+        {
+            if (it->get()->getSetOfVariables().empty())
+            {
+                if (initialized)
+                    range = rangeOfSum(range, it->get()->getRange());
+                else
+                {
+                    range = it->get()->getRange();
+                    initialized = true;
+                }
+                it = monoms_p->erase(it);
+            }
+            else
+                ++it;
+        }
+        if (initialized)
+            return range;
+        else
+            return FunctionRangeSegment(zero, zero, true, true);
+
+    }
+    return FunctionRangeSegment(zero, zero, true, true);
+}
 FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(abs_ex & expr)
 {
     if (isIntegratingConstant(expr->getId()) || expr->getSetOfVariables().empty())
@@ -214,6 +259,60 @@ FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(abs_ex & expr)
 
     }
     return FunctionRangeSegment(zero, zero, true, true);
+}
+FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(AbstractExpression * expr)
+{
+    assert(expr->getId() == FRACTAL);
+
+    if (expr->getId() == FRACTAL)
+    {
+        auto fr = static_cast<Fractal*>(expr)->getFractal();
+        if (isIntegratingConstant(fr.first->back()->getId()))
+        {
+            auto res = fr.first->back()->getRange();
+            fr.first->erase(--fr.first->end());
+            return res;
+        }
+        bool initialized = false;
+        FunctionRange range;
+        for (auto it = fr.first->begin(); it != fr.first->end();)
+        {
+            if (it->get()->getSetOfVariables().empty())
+            {
+                if (initialized)
+                    range = rangeOfMultiplication(range, it->get()->getRange());
+                else
+                {
+                    range = it->get()->getRange();
+                    initialized = true;
+                }
+                it = fr.first->erase(it);
+            }
+            else
+                ++it;
+        }
+        for (auto it = fr.second->begin(); it != fr.second->end();)
+        {
+            if (it->get()->getSetOfVariables().empty())
+            {
+                if (initialized)
+                    range = rangeOfDivision(range, it->get()->getRange());
+                else
+                {
+                    range = it->get()->getRange();
+                    initialized = true;
+                }
+                it = fr.second->erase(it);
+            }
+            else
+                ++it;
+        }
+        if (initialized)
+            return range;
+        else
+            return FunctionRange(one, one, true, true);
+    }
+    return FunctionRange(one, one, true, true);
 }
 FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(abs_ex & expr)
 {
@@ -318,6 +417,52 @@ void uniteSameResults(std::list<abs_ex> & list)
                 *it = *it * integratingConstantExpr(unification(range1, range2));
                 it1 = list.erase(it1);
             }
+            else if (it->get()->tryToMergeIdenticalBehindConstantExpressions(*it1))
+                it1 = list.erase(it1);
+            else if (it->get()->getSetOfVariables().empty() || it1->get()->getSetOfVariables().empty())
+            {
+                if (it->get()->getSetOfVariables().empty())
+                    std::swap(*it, *it1);
+              //  qDebug() << it->get()->makeStringOfExpression();
+                auto it_set = it->get()->getSetOfVariables();
+                int var = -1;
+                for (auto &it : it_set)
+                    if (isIntegratingConstant(it))
+                    {
+                        var = it;
+                        break;
+                    }
+                if (var == -1)
+                {
+                    ++it1;
+                    continue;
+                }
+                auto system_var = systemVarExpr();
+              //  qDebug() << it->get()->makeStringOfExpression();
+                setUpExpressionIntoVariable(*it, system_var, var);
+           //     qDebug() << it->get()->makeStringOfExpression();
+            //    qDebug() << (*it - *it1)->makeStringOfExpression();
+                auto res = solveEquation(*it - *it1, system_var->getId());
+                std::map<int, abs_ex> funcs;
+                funcs.insert({system_var->getId(), getVariableExpr(var)});
+                replaceSystemVariablesBackToFunctions(*it, funcs);
+                bool found_point = false;
+                for (auto &it2 : res)
+                {
+                    if (it2->getSetOfVariables().empty())
+                    {
+                        VariablesDistributor::getVariablesDefinition(var)->setRange(
+                                    unification(VariablesDistributor::getVariablesDefinition(var)->getRange(),
+                                                FunctionRange(it2, it2, true, true)));
+                        found_point = true;
+                        break;
+                    }
+                }
+                if (found_point)
+                    it1 = list.erase(it1);
+                else
+                    ++it1;
+            }
             else
                 ++it1;
         }
@@ -387,11 +532,11 @@ QString DifurResult::toString() const
 {
     QString res;
     if (this->type == COMMON_INTEGRAL)
-        res = this->result->makeStringOfExpression() + "  = 0";
+        res = this->result->toString() + "  = 0";
     else if (this->type == SOLVED_FOR_X)
-        res = "x = " + this->result->makeStringOfExpression();
+        res = "x = " + this->result->toString();
     else
-        res = "y = " + this->result->makeStringOfExpression();
+        res = "y = " + this->result->toString();
     auto set = this->result->getSetOfVariables();
     for (auto &it : set)
         if (isIntegratingConstant(it))
