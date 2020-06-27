@@ -135,7 +135,7 @@ bool Cotangent::canDowncastTo()
     }
     if (this->argument->getPositionRelativelyZero() < 0)
         return true;
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
     return false;
 }
@@ -182,9 +182,9 @@ abs_ex Cotangent::downcastTo()
     }*/
     if (this->argument->getPositionRelativelyZero() < 0)
         return -cot(-argument);
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
     {
-        return integratingConstantExpr(this->getRange());
+        return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
     return abs_ex(nullptr);
 }
@@ -401,7 +401,7 @@ bool Cotangent::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &secon
     if (second->getId() == this->getId())
     {
         auto arg = getArgumentOfFunction(second);
-        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        if (canBeConsideredAsConstantThatCanBeChanged(argument) && canBeConsideredAsConstantThatCanBeChanged(arg))
         {
             this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
             return true;
@@ -409,6 +409,11 @@ bool Cotangent::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &secon
         return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
     }
     return false;
+}
+
+abs_ex Cotangent::tryToFindExponentialFunction(int var) const
+{
+    return this->argument->tryToFindExponentialFunction(var);
 }
 
 bool Cotangent::operator<(const AbstractExpression &right) const

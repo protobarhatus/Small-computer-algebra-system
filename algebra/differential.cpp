@@ -82,7 +82,7 @@ std::set<QString> Differential::getSetOfFunctions() const
 {
     //считать ли его функцией? Вряд ли это что-то сломает, но если не считать, то может и что-то полететь
     std::set<QString> s;
-    s.insert(this->makeStringOfExpression());
+    //s.insert(this->makeStringOfExpression());
     return s;
 }
 
@@ -223,6 +223,11 @@ bool Differential::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &se
 {
 
     return false;
+}
+
+abs_ex Differential::tryToFindExponentialFunction(int var) const
+{
+    return nullptr;
 }
 
 bool Differential::operator<(const AbstractExpression &expr) const

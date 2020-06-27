@@ -7,6 +7,16 @@ VariablesDistributor::VariablesDistributor()
     Variable::system_id_counter = this->first_system_num;
     Variable::integrating_constant_id_counter = this->first_integrate_constant;
 }
+
+void VariablesDistributor::increaseIntegratingConstant(int id)
+{
+    VariablesDistributor::get().amount_of_integrating_constants[id - VariablesDistributor::get().first_integrate_constant]++;
+}
+
+void VariablesDistributor::decreaseIntegratingConstant(int id)
+{
+    VariablesDistributor::get().amount_of_integrating_constants[id - VariablesDistributor::get().first_integrate_constant]--;
+}
 VariablesDistributor& VariablesDistributor::get()
 {
     static VariablesDistributor inst;
@@ -118,7 +128,9 @@ Variable systemVar()
 
 Variable integratingConstant()
 {
-    VariablesDistributor::get().integrating_constants.push_back(new VariablesDefinition(FunctionRange(nullptr, nullptr, false, false)));
+    VariablesDistributor& ref = VariablesDistributor::get();
+    ref.integrating_constants.push_back(new VariablesDefinition(FunctionRange(nullptr, nullptr, false, false)));
+    VariablesDistributor::get().amount_of_integrating_constants.push_back(0);
     ++Variable::integrating_constant_id_counter;
     return Variable(Variable::integrating_constant_id_counter - 1,
                     makeIntegratingConstantName(Variable::integrating_constant_id_counter - 1));
@@ -159,6 +171,7 @@ bool isIntegratingConstant(int index)
 Variable integratingConstant(const FunctionRange &range)
 {
     VariablesDistributor::get().integrating_constants.push_back(new VariablesDefinition(range));
+    VariablesDistributor::get().amount_of_integrating_constants.push_back(0);
     ++Variable::integrating_constant_id_counter;
     return Variable(Variable::integrating_constant_id_counter - 1,
                     makeIntegratingConstantName(Variable::integrating_constant_id_counter - 1),
@@ -194,4 +207,21 @@ Variable systemVar(const abs_ex &min, const abs_ex &max, bool min_included, bool
 abs_ex systemVarExpr(const abs_ex &min, const abs_ex &max, bool min_included, bool max_included)
 {
     return abs_ex(new Variable(systemVar(min, max, min_included, max_included)));
+}
+
+abs_ex integratingConstantExpr(int index)
+{
+    return abs_ex(new Variable(index));
+}
+
+abs_ex integratingConstantExpr(int index, const FunctionRange &range)
+{
+    VariablesDistributor::get().integrating_constants[index - VariablesDistributor::get().first_integrate_constant]->setRange(range);
+    return abs_ex(new Variable(index));
+}
+
+bool isIntegratingConstantAndCanChangeIt(int id)
+{
+    return isIntegratingConstant(id) &&
+            VariablesDistributor::get().amount_of_integrating_constants[id - VariablesDistributor::get().first_integrate_constant] == 1;
 }

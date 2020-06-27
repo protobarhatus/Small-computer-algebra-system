@@ -8,6 +8,7 @@
 #include "some_algebra_expression_conversions.h"
 #include "constant.h"
 #include "difequationrootconditions.h"
+#include "differential.h"
 std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y,
                                              const DifursRootConditions & conditions);
 bool isDifferentialOf(abs_ex & expr, int x)
@@ -23,22 +24,23 @@ bool isRootOfEquation(abs_ex && equation, const abs_ex & root, int var)
   //  qDebug() << equation->makeStringOfExpression();
     return isZero(equation);
 }
-
-std::list<abs_ex>  tryToSolveDifurWithSeparableVariables(const std::unique_ptr<Polynomial> & difur, int x, int y)
+//true значит что это дифур с разделяющимися переменными, который по какой-то причине не удалось решить
+//(не удалось взять интеграл) и в таком случае программа не будет проверять дифур на других методах
+std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const std::unique_ptr<Polynomial> & difur, int x, int y)
 {
-   // qDebug() << difur->makeStringOfExpression();
+    //qDebug() << difur->makeStringOfExpression();
     std::unique_ptr<Polynomial> right(new Polynomial(zero.get()));
     std::unique_ptr<Polynomial> left(new Polynomial(zero.get()));
     for (auto &it : difur->getMonomialsPointers())
     {
         if (it->getFractal().first->size() == 0)
-            return std::list<abs_ex> ();
+            return {std::list<abs_ex> (), false};
         if (isDifferentialOf(it->getFractal().first->back(), x))
             *right = *right - it;
         else if (isDifferentialOf(it->getFractal().first->back(), y))
             *left = *left + it;
         else
-            return std::list<abs_ex> ();
+            return {std::list<abs_ex> (), false};
     }
     abs_ex right_common_part = right->reduceCommonPart();
     std::unique_ptr<Fractal> right_frac(new Fractal(right_common_part * copy(right.get())));
@@ -85,26 +87,74 @@ std::list<abs_ex>  tryToSolveDifurWithSeparableVariables(const std::unique_ptr<P
     left_frac->simplify();
     right_frac->simplify();
   //  qDebug() << left_frac->makeStringOfExpression();
-  //  qDebug() << right_frac->makeStringOfExpression();
+   // qDebug() << right_frac->makeStringOfExpression();
     if (left_frac->hasVariable(x) || right_frac->hasVariable(y))
-        return std::list<abs_ex> ();
+        return {std::list<abs_ex> (), false};
     auto left_integr = integrate(toAbsEx(left_frac));
     auto right_integr = integrate(toAbsEx(right_frac));
-
+   // qDebug() << left_integr->toString();
+   // qDebug() << right_integr->toString();
     if (left_integr == nullptr || right_integr == nullptr)
-        return std::list<abs_ex> ();
+        return {std::list<abs_ex> (), true};
     auto ic = integratingConstantExpr();
 
     res.push_back(left_integr - right_integr + ic);
-    return res;
+    return {std::move(res), true};
 }
+std::pair<std::list<abs_ex>, bool> tryToSolveHomoheneousDifur(abs_ex && difur, int x, int y)
+{
+    assert(difur->getId() == POLYNOMIAL);
+    auto alpha = systemVarExpr(zero, nullptr, true, false);
+    auto dx = systemVarExpr();
+    difur->changeSomePartOn(D(getVariableExpr(x))->makeStringOfExpression(), dx);
+    auto dy = systemVarExpr();
+    difur->changeSomePartOn(D(getVariableExpr(y))->makeStringOfExpression(), dy);
+    setUpExpressionIntoVariable(difur, alpha*getVariableExpr(x), x);
+    setUpExpressionIntoVariable(difur, alpha*getVariableExpr(y), y);
+
+
+    setUpExpressionIntoVariable(difur, D(getVariableExpr(x)), dx->getId());
+
+    if (difur->getId() != POLYNOMIAL)
+        return {std::list<abs_ex>(), false};
+    static_cast<Polynomial*>(difur.get())->reduceCommonPart();
+    if (difur->hasVariable(alpha->getId()))
+        return {std::list<abs_ex>(), false};
+
+    abs_ex t = systemVarExpr();
+    setUpExpressionIntoVariable(difur, t*getVariableExpr(x), y);
+    //qDebug() << dy->toString();
+    //qDebug() << t->toString();
+   // qDebug() << difur->toString();
+    setUpExpressionIntoVariable(difur, (D(t)/D(getVariableExpr(x)) * getVariableExpr(x) + t)*D(getVariableExpr(x)), dy->getId());
+
+    //это нужно для того, чтобы убрать появившиеся модули
+    abs_ex var_to_open_abs = systemVarExpr(zero, nullptr, true, false);
+    setUpExpressionIntoVariable(difur, var_to_open_abs, x);
+    setUpExpressionIntoVariable(difur, getVariableExpr(x), var_to_open_abs->getId());
+      qDebug() << difur->toString();
+    auto res = solveDifur(difur, x, t->getId());
+    if (res.empty())
+        return {std::list<abs_ex>(), true};
+    std::list<abs_ex> actual_res;
+    for (auto &it : res)
+        actual_res.push_back(it.toCommonIntegral(x, t->getId()));
+    for (auto &it : actual_res)
+        setUpExpressionIntoVariable(it, getVariableExpr(y)/getVariableExpr(x), t->getId());
+
+
+    return {std::move(actual_res), true};
+}
+
 std::list<abs_ex> solveDifurByMethods(const abs_ex & difur, int x, int y)
 {
     auto dif_pol = toPolynomialPointer(difur);
-    auto separable_vars_res = tryToSolveDifurWithSeparableVariables(dif_pol, x, y);
-    if (separable_vars_res.size() > 0)
-        return separable_vars_res;
-
+    auto res = tryToSolveDifurWithSeparableVariables(dif_pol, x, y);
+    if (res.second)
+        return std::move(res.first);
+    res = tryToSolveHomoheneousDifur(copy(difur), x, y);
+    if (res.second)
+        return std::move(res.first);
     return std::list<abs_ex> ();
 }
 std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y)
@@ -172,14 +222,14 @@ std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y,
     }
     return res;
 }
-FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(AbstractExpression * expr)
+FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(AbstractExpression * expr)
 {
     assert(expr->getId() == POLYNOMIAL);
     if (expr->getId() == POLYNOMIAL)
     {
         auto monoms = static_cast<Polynomial*>(expr)->getMonomialsPointers();
 
-        if (isIntegratingConstant(monoms.back()->getId()))
+        if (isIntegratingConstantAndCanChangeIt(monoms.back()->getId()))
         {
             auto res = monoms.back()->getRange();
             static_cast<Polynomial*>(expr)->getMonoms()->erase(--static_cast<Polynomial*>(expr)->getMonoms()->end());
@@ -213,9 +263,9 @@ FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(AbstractExpression * e
     }
     return FunctionRangeSegment(zero, zero, true, true);
 }
-FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(abs_ex & expr)
+FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(abs_ex & expr)
 {
-    if (isIntegratingConstant(expr->getId()) || expr->getSetOfVariables().empty())
+    if (isIntegratingConstantAndCanChangeIt(expr->getId()) || expr->getSetOfVariables().empty())
     {
         auto res = expr->getRange();
         expr = copy(zero);
@@ -226,7 +276,7 @@ FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(abs_ex & expr)
     {
         auto monoms = static_cast<Polynomial*>(expr.get())->getMonomialsPointers();
 
-        if (isIntegratingConstant(monoms.back()->getId()))
+        if (isIntegratingConstantAndCanChangeIt(monoms.back()->getId()))
         {
             auto res = monoms.back()->getRange();
             static_cast<Polynomial*>(expr.get())->getMonoms()->erase(--static_cast<Polynomial*>(expr.get())->getMonoms()->end());
@@ -260,14 +310,14 @@ FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(abs_ex & expr)
     }
     return FunctionRangeSegment(zero, zero, true, true);
 }
-FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(AbstractExpression * expr)
+FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(AbstractExpression * expr)
 {
     assert(expr->getId() == FRACTAL);
 
     if (expr->getId() == FRACTAL)
     {
         auto fr = static_cast<Fractal*>(expr)->getFractal();
-        if (isIntegratingConstant(fr.first->back()->getId()))
+        if (isIntegratingConstantAndCanChangeIt(fr.first->back()->getId()))
         {
             auto res = fr.first->back()->getRange();
             fr.first->erase(--fr.first->end());
@@ -314,9 +364,9 @@ FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(AbstractExpression * 
     }
     return FunctionRange(one, one, true, true);
 }
-FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(abs_ex & expr)
+FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(abs_ex & expr)
 {
-    if (isIntegratingConstant(expr->getId()) || expr->getSetOfVariables().empty())
+    if (isIntegratingConstantAndCanChangeIt(expr->getId()) || expr->getSetOfVariables().empty())
     {
         auto res = expr->getRange();
         expr = copy(zero);
@@ -325,7 +375,7 @@ FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(abs_ex & expr)
     if (expr->getId() == FRACTAL)
     {
         auto fr = static_cast<Fractal*>(expr.get())->getFractal();
-        if (isIntegratingConstant(fr.first->back()->getId()))
+        if (isIntegratingConstantAndCanChangeIt(fr.first->back()->getId()))
         {
             auto res = fr.first->back()->getRange();
             fr.first->erase(--fr.first->end());
@@ -385,10 +435,10 @@ void uniteSameResults(std::list<abs_ex> & list)
                 it1 = list.erase(it1);
                 continue;
             }
-            if (isIntegratingConstant(sub->getId()))
+            if (isIntegratingConstantAndCanChangeIt(sub->getId()))
             {
-                FunctionRange range1 = getRangeOfConstantAddictivesAndTakeThemAway(*it);
-                FunctionRange range2 = getRangeOfConstantAddictivesAndTakeThemAway(*it1);
+                FunctionRange range1 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(*it);
+                FunctionRange range2 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(*it1);
                 *it = *it + integratingConstantExpr(unification(range1, range2));
                 it1 = list.erase(it1);
             }//они не могут быть одновременно нулями, это сверху раскрывается
@@ -397,7 +447,7 @@ void uniteSameResults(std::list<abs_ex> & list)
                 if (isZero(*it))
                     std::swap(*it, *it1);
                 if (it->get()->getId() == FRACTAL && !static_cast<Fractal*>(it->get())->getFractal().first->empty() &&
-                        isIntegratingConstant(static_cast<Fractal*>(it->get())->getFractal().first->back()->getId()))
+                        isIntegratingConstantAndCanChangeIt(static_cast<Fractal*>(it->get())->getFractal().first->back()->getId()))
                 {
                     VariablesDefinition * def = VariablesDistributor::get().getVariablesDefinition(
                                 static_cast<Variable*>(static_cast<Fractal*>(it->get())->getFractal().first->back().get())->getId());
@@ -410,10 +460,10 @@ void uniteSameResults(std::list<abs_ex> & list)
                 else
                     ++it1;
             }
-            else if (isIntegratingConstant((*it / *it1)->getId()))
+            else if (isIntegratingConstantAndCanChangeIt((*it / *it1)->getId()))
             {
-                FunctionRange range1 = getRangeOfConstantMultipliersAndTakeThemAway(*it);
-                FunctionRange range2 = getRangeOfConstantMultipliersAndTakeThemAway(*it1);
+                FunctionRange range1 = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(*it);
+                FunctionRange range2 = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(*it1);
                 *it = *it * integratingConstantExpr(unification(range1, range2));
                 it1 = list.erase(it1);
             }
@@ -427,7 +477,7 @@ void uniteSameResults(std::list<abs_ex> & list)
                 auto it_set = it->get()->getSetOfVariables();
                 int var = -1;
                 for (auto &it : it_set)
-                    if (isIntegratingConstant(it))
+                    if (isIntegratingConstantAndCanChangeIt(it))
                     {
                         var = it;
                         break;
@@ -467,6 +517,10 @@ void uniteSameResults(std::list<abs_ex> & list)
                 ++it1;
         }
     }
+}
+void setDifferentIntegratingConstantInDifferentExpressions(std::list<abs_ex> & exprs)
+{
+    lkjhgfds
 }
 std::list<DifurResult> solveDifur(const abs_ex &difur, int x, int y)
 {

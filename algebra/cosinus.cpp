@@ -118,7 +118,7 @@ bool Cosinus::canDowncastTo()
     //    return true;
     if (this->argument->getPositionRelativelyZero() < 0)
         return true;
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(argument->getId()))
         return true;
     return false;
 }
@@ -158,9 +158,9 @@ abs_ex Cosinus::downcastTo()
 
     if (this->argument->getPositionRelativelyZero() < 0)
         return cos(-argument);
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(argument->getId()))
     {
-        return integratingConstantExpr(this->getRange());
+        return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
     return abs_ex(nullptr);
 }
@@ -446,7 +446,7 @@ bool Cosinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
     if (second->getId() == this->getId())
     {
         auto arg = getArgumentOfFunction(second);
-        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        if (canBeConsideredAsConstantThatCanBeChanged(argument) && canBeConsideredAsConstantThatCanBeChanged(arg))
         {
             this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
             return true;
@@ -454,6 +454,11 @@ bool Cosinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
         return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
     }
     return false;
+}
+
+abs_ex Cosinus::tryToFindExponentialFunction(int var) const
+{
+    return this->argument->tryToFindExponentialFunction(var);
 }
 
 abs_ex cos(const abs_ex &expr)

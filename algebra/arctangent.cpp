@@ -86,7 +86,7 @@ bool ArcTangent::canDowncastTo()
     if (*arg == *-sqrt(numToAbs(3)) || *arg == *numToAbs(-1) || *arg == *(-sqrt(numToAbs(3))/numToAbs(3)) || *arg == *zero || *arg == *(sqrt(three)/three) ||
             *arg == *one || *arg == *sqrt(three))
         return true;
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
     return false;
 }
@@ -112,9 +112,9 @@ abs_ex ArcTangent::downcastTo()
         return getPi()/four;
     if (*arg == *sqrt(three))
         return getPi()/three;
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(argument->getId()))
     {
-        return integratingConstantExpr(this->getRange());
+        return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
     assert(false);
     return nullptr;
@@ -302,7 +302,7 @@ bool ArcTangent::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &seco
     if (second->getId() == ARCTANGENT)
     {
         auto arg = getArgumentOfFunction(second);
-        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        if (canBeConsideredAsConstantThatCanBeChanged(argument) && canBeConsideredAsConstantThatCanBeChanged(arg))
         {
             this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
             return true;
@@ -310,6 +310,11 @@ bool ArcTangent::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &seco
         return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
     }
     return false;
+}
+
+abs_ex ArcTangent::tryToFindExponentialFunction(int var) const
+{
+    return this->argument->tryToFindExponentialFunction(var);
 }
 
 bool ArcTangent::operator<(const AbstractExpression &right) const

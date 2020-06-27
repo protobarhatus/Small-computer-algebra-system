@@ -79,9 +79,9 @@ bool DifEquationRootCondition::checkRootAndCorrectConstant(DifurResult &result) 
                 return false;
             if (isIntegratingConstant(cond->getId()))
             {
-                auto range1 = getRangeOfConstantAddictivesAndTakeThemAway(result.expr());
+                auto range1 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(result.expr());
                 auto copy_cond = copy(cond);
-                auto range2 = getRangeOfConstantAddictivesAndTakeThemAway(copy_cond);
+                auto range2 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(copy_cond);
                 FunctionRange new_range = range1.subtract(range2);
                 if (new_range.isEmpty())
                     return false;

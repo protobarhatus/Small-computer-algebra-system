@@ -71,7 +71,7 @@ void Polynomial::simplify()
 replaceSystemVariablesBackToFunctions(this, funcs);
 if (this->is_fractional_coefficients_allowed)
 {
-    if (this->hasIntegratingConstantAddictive())
+    if (this->hasIntegratingConstantAddictiveThatCanBeChanged())
         this->pullSomeMembersIntoOneIntegratingConstant();
     return;
 }
@@ -100,7 +100,7 @@ if (this->is_fractional_coefficients_allowed)
     this->checkIfShouldOpenTrigonometricalSums();
     this->checkIfCanSimplifyThisTrigonometryByTakingCommonPart();
 
-    if (this->hasIntegratingConstantAddictive())
+    if (this->hasIntegratingConstantAddictiveThatCanBeChanged())
         this->pullSomeMembersIntoOneIntegratingConstant();
    // qDebug() << "Finished#: " << randId;
     this->simplified = true;
@@ -237,7 +237,7 @@ bool Polynomial::canDowncastTo()
 {
     if (this->isZero())
         return true;
-    if (this->isOnlyVarsIntegratingConstants())
+    if (this->isOnlyVarsIntegratingConstantsThatCanBeChanged())
         return true;
     return this->monomials.size() == 1;
 }
@@ -246,7 +246,13 @@ abs_ex Polynomial::downcastTo()
     assert(canDowncastTo());
     if ( this->isZero())
         return abs_ex(new Number(0));
-    if (this->isOnlyVarsIntegratingConstants())
+    if (this->monomials.size() == 1 && this->monomials.begin()->get()->getCoefficient() == 1 &&
+            this->monomials.begin()->get()->getFractal().second->empty() &&
+            this->monomials.begin()->get()->getFractal().first->size() == 1 &&
+            isIntegratingConstantAndCanChangeIt(this->monomials.begin()->get()->getFractal().first->begin()->get()->getId()))
+        return integratingConstantExpr(this->monomials.begin()->get()->getFractal().first->begin()->get()->getId(),
+                                       this->getRange());
+    if (this->isOnlyVarsIntegratingConstantsThatCanBeChanged())
     {
         return integratingConstantExpr(this->getRange());
     }
@@ -371,6 +377,13 @@ Polynomial::Polynomial(AbstractExpression * fsum, AbstractExpression * secsum)
 {
     this->pushBack(std::make_unique<Fractal>((fsum)));
     this->pushBack(std::make_unique<Fractal>((secsum)));
+    this->simplify();
+}
+
+Polynomial::Polynomial(std::unique_ptr<Fractal> &&first, std::unique_ptr<Fractal> &&second)
+{
+    this->monomials.push_back(std::move(first));
+    this->monomials.push_back(std::move(second));
     this->simplify();
 }
 
@@ -793,6 +806,7 @@ abs_ex Polynomial::reduceCommonPart()
     if (this->monomials.size() < 2)
             return copy(one);
     assert(this->monomials.size() >= 2);
+   // qDebug() << this->toString();
     abs_ex common_part = this->monomials.begin()->get()->findCommonPart((++this->monomials.begin())->get());
     auto it = ++++this->monomials.begin();
     while (it != this->monomials.end())
@@ -809,6 +823,9 @@ abs_ex Polynomial::reduceCommonPart()
         this->simplify();
     else
         this->simplified = true;
+   // qDebug() << this->toString();
+   // qDebug() << common_part->toString();
+    //qDebug() << common_part->downcast()->toString();
     return common_part->downcast();
 }
 bool Polynomial::isIrrationalSum()
@@ -867,7 +884,7 @@ std::pair<abs_ex, abs_ex> Polynomial::multiplyIrrationalSumOnAppropriateFormula(
     abs_ex zero(new Number(0));
     long long int deg = static_cast<Degree*>(right->monomials.front()->getFractal().first->front().get())->getRootValue();
     if (deg % 2 == 0)
-        return std::pair<abs_ex, abs_ex>((*l_ptr - *r_ptr)*(*l_ptr + *r_ptr)+zero, *l_ptr - *r_ptr);
+        return std::pair<abs_ex, abs_ex>((l_ptr - r_ptr)*(l_ptr + r_ptr)+zero, l_ptr - r_ptr);
     abs_ex second_multiplier(new Polynomial);
     bool plus = true;
     for (long long int i = deg - 1; i >= 0; --i)
@@ -882,10 +899,9 @@ std::pair<abs_ex, abs_ex> Polynomial::multiplyIrrationalSumOnAppropriateFormula(
             second_multiplier = second_multiplier - a * b;
         plus = !plus;
     }
-    AbstractExpression * th = static_cast<AbstractExpression*>(this);
 //    auto d = *th * *second_multiplier;
-
-    return std::pair<abs_ex, abs_ex>(*th * *second_multiplier + zero, std::move(second_multiplier));
+    abs_ex first_res = copy(this) * second_multiplier + zero;
+    return std::pair<abs_ex, abs_ex>(std::move(first_res), std::move(second_multiplier));
 }
 
 abs_ex Polynomial::toDegree(long long degree)
@@ -2534,14 +2550,14 @@ bool Polynomial::hasDifferential() const
     return false;
 }
 
-bool Polynomial::hasIntegratingConstant() const
+bool Polynomial::hasIntegratingConstantThatCanBeChanged() const
 {
-    return this->monomials.size() > 0 && isIntegratingConstantAddictive(this->monomials.back());
+    return this->monomials.size() > 0 && isIntegratingConstantAddictiveThatCanBeChanged(this->monomials.back());
 }
 
-abs_ex Polynomial::takeAwayIntegragingConstant()
+abs_ex Polynomial::takeAwayIntegragingConstantThatCanBeChanged()
 {
-    assert(this->hasIntegratingConstant());
+    assert(this->hasIntegratingConstantThatCanBeChanged());
     abs_ex constant = std::move(this->monomials.back());
     this->monomials.erase(--this->monomials.end());
     return constant;
@@ -2558,14 +2574,14 @@ bool Polynomial::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &seco
         for (auto it1 = this->monomials.begin(), it2 = monoms->begin();
              it1 != this->monomials.end() && it2 != monoms->end();)
         {
-            if (canBeConsideredAsConstant(it1->get()) && canBeConsideredAsConstant(it2->get()))
+            if (canBeConsideredAsConstantThatCanBeChanged(it1->get()) && canBeConsideredAsConstantThatCanBeChanged(it2->get()))
             {
                 ++it1;
                 ++it2;
             }
-            else if (canBeConsideredAsConstant(it1->get()))
+            else if (canBeConsideredAsConstantThatCanBeChanged(it1->get()))
                 ++it1;
-            else if (canBeConsideredAsConstant(it2->get()))
+            else if (canBeConsideredAsConstantThatCanBeChanged(it2->get()))
                 ++it2;
             if (it1 == this->monomials.end() && it2 != monoms->end())
                 return false;
@@ -2593,11 +2609,11 @@ bool Polynomial::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &seco
             merged = true;
         }
 
-        FunctionRange second_range = getRangeOfConstantAddictivesAndTakeThemAway(its_second);
+        FunctionRange second_range = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(its_second);
         if (!(second_range.isPoint() && *second_range.getPoint() == *zero))
         {
             merged = true;
-            FunctionRange this_range = getRangeOfConstantAddictivesAndTakeThemAway(dynamic_cast<AbstractExpression*>(this));
+            FunctionRange this_range = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(dynamic_cast<AbstractExpression*>(this));
             this->addMonomial(toFrac(integratingConstantExpr(unification(this_range, second_range))));
 
         }
@@ -2607,11 +2623,22 @@ bool Polynomial::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &seco
     return false;
 }
 
-bool Polynomial::hasIntegratingConstantAddictive() const
+abs_ex Polynomial::tryToFindExponentialFunction(int var) const
 {
     for (auto &it : this->monomials)
     {
-        if (isIntegratingConstantAddictive(it))
+        auto res = it->tryToFindExponentialFunction(var);
+        if (res != nullptr)
+            return res;
+    }
+    return nullptr;
+}
+
+bool Polynomial::hasIntegratingConstantAddictiveThatCanBeChanged() const
+{
+    for (auto &it : this->monomials)
+    {
+        if (isIntegratingConstantAddictiveThatCanBeChanged(it))
             return true;
     }
     return false;
@@ -2622,17 +2649,27 @@ void Polynomial::pullSomeMembersIntoOneIntegratingConstant()
     std::set<int> used_vars;
     FunctionRange range;
     bool initialized = false;
+    bool is_only_constant = true;
+    abs_ex its_constant = nullptr;
     for (auto it = this->monomials.begin(); it != this->monomials.end(); )
     {
         auto set = it->get()->getSetOfVariables();
         bool skip = false;
-        if (!(set.empty() || isIntegratingConstantAddictive(*it)))
+        if (!(set.empty() || isIntegratingConstantAddictiveThatCanBeChanged(*it)))
             skip = true;
         if (skip)
         {
             ++it;
             continue;
         }
+        if (is_only_constant && its_constant == nullptr &&
+                isIntegratingConstantAddictiveThatCanBeChanged(*it))
+        {
+            its_constant = copy(*it->get()->getFractal().first->begin());
+        }
+        else
+            is_only_constant = false;
+
         for (auto &it1 : set)
             used_vars.insert(it1);
         auto it_range = it->get()->getRange();
@@ -2645,6 +2682,11 @@ void Polynomial::pullSomeMembersIntoOneIntegratingConstant()
         }
         it = this->monomials.erase(it);
 
+    }
+    if (is_only_constant && its_constant != nullptr)
+    {
+        this->monomials.push_back(toFrac(std::move(its_constant)));
+        return;
     }
     this->monomials.push_back(toFrac(integratingConstantExpr(range)));
 }

@@ -73,7 +73,7 @@ bool AbsoluteValue::canDowncastTo()
         return true;
     if (this->expression->getId() == DEGREE)
         return true;
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->expression->getId()))
         return true;
     return false;
 }
@@ -105,9 +105,9 @@ abs_ex AbsoluteValue::downcastTo()
         auto arg = Degree::getArgumentOfDegree(this->expression.get());
         return pow(abs(copy(arg)), Degree::getDegreeOfExpression(this->expression.get()));
     }
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->expression->getId()))
     {
-        return integratingConstantExpr(this->getRange());
+        return integratingConstantExpr(this->expression->getId(), this->getRange());
     }
     abs_ex minus(new Number(-1));
     return this->expression * minus;
@@ -266,7 +266,7 @@ bool AbsoluteValue::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &s
     if (second->getId() == ABSOLUTE_VALUE)
     {
         auto arg = getArgumentOfFunction(second);
-        if (canBeConsideredAsConstant(expression) && canBeConsideredAsConstant(arg))
+        if (canBeConsideredAsConstantThatCanBeChanged(expression) && canBeConsideredAsConstantThatCanBeChanged(arg))
         {
             this->expression = integratingConstantExpr(unification(expression->getRange(), arg->getRange()));
             return true;
@@ -274,6 +274,11 @@ bool AbsoluteValue::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &s
         return expression->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
     }
     return false;
+}
+
+abs_ex AbsoluteValue::tryToFindExponentialFunction(int var) const
+{
+    return this->expression->tryToFindExponentialFunction(var);
 }
 
 abs_ex abs(const abs_ex &expr)

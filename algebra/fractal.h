@@ -114,12 +114,13 @@ public:
     virtual bool hasDifferential() const override;
     //отличие от hasIntegratingConstantMultiplier в том, что последний вызывается в simplify()
     //и ищет константу по всей дроби, а этот вызывается извне на уже упрощенную дробь
-    bool hasIntegratingConstant() const;
-    abs_ex takeAwayConstantMultiplier();
+    bool hasIntegratingConstantThatCanBeChanged() const;
+    abs_ex takeAwayConstantMultiplierThatCanBeChanged();
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
+    abs_ex tryToFindExponentialFunction(int var) const override;
 private:
     void takeAwayAbsoluteValues();
-    bool hasIntegratingConstantMultiplier() const;
+    bool hasIntegratingConstantMultiplierThatCanBeChanged() const;
     void pullSomeMultipliersIntoIntegratingConstant();
     std::pair<abs_ex, abs_ex> checkIfCanDoUniversalTrigonometricSubstitution(int var) const;
     bool isNumeratorsDegreeBiggerThanDenominatorsDegree(int var) const;
@@ -129,6 +130,7 @@ private:
     abs_ex getAntiderivariveByBriningFunctionIntoDifferential(int var) const;
     abs_ex getAntiderivativeOfIrrationalFunction(int var) const;
     abs_ex getAntiderivativeOfFunctionWithRootOfLinearFunction(int var) const;
+    abs_ex getAntiderivativeOfFunctionThatHaveExponentialExpression(int var) const;
 
     bool casted_trigonometry;
     void castTrigonometry();
@@ -164,7 +166,7 @@ abs_ex integrate(const abs_ex & frac);
 abs_ex definiteIntegral(const abs_ex &func, const abs_ex & from, const abs_ex & to);
 abs_ex toAbsEx(const std::unique_ptr<Fractal> & expr);
 abs_ex toAbsEx(std::unique_ptr<Fractal> && expr);
-std::unique_ptr<Fractal> toFrac(abs_ex & expr);
+std::unique_ptr<Fractal> toFrac(const abs_ex & expr);
 std::unique_ptr<Fractal> toFrac(abs_ex && expr);
 fractal_argument operator*(fractal_argument & fmult, fractal_argument & smult);
 std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);

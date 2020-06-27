@@ -137,7 +137,7 @@ bool Logarithm::canDowncastTo()
         if (facts.size() > 1 || (facts.size() == 1 && facts.begin()->second > 1))
             return true;
     }
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
     return false;
 }
@@ -204,9 +204,9 @@ abs_ex Logarithm::downcastTo()
             res = std::move(res) + numToAbs(it.second) * ln(numToAbs(it.first));
         return res;
     }
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
     {
-        return integratingConstantExpr(this->getRange());
+        return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
     assert(false);
 }
@@ -403,7 +403,7 @@ bool Logarithm::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &secon
     if (second->getId() == this->getId())
     {
         auto arg = getArgumentOfFunction(second);
-        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        if (canBeConsideredAsConstantThatCanBeChanged(argument) && canBeConsideredAsConstantThatCanBeChanged(arg))
         {
             this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
             return true;
@@ -411,6 +411,11 @@ bool Logarithm::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &secon
         return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
     }
     return false;
+}
+
+abs_ex Logarithm::tryToFindExponentialFunction(int var) const
+{
+    return this->argument->tryToFindExponentialFunction(var);
 }
 
 bool Logarithm::operator<(const AbstractExpression &right) const

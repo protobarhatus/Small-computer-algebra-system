@@ -220,7 +220,7 @@ Number Fractal::getCoefficient()
 }
 bool Fractal::canDowncastTo()
 {
-    if (this->isOnlyVarsIntegratingConstants())
+    if (this->isOnlyVarsIntegratingConstantsThatCanBeChanged())
         return true;
     return (this->denominator.empty() && this->coefficient.getDenominator() == 1 && this->coefficient.getNumerator() == 1 && this->numerator.size() == 1) ||
             (this->numerator.empty() && this->denominator.empty()) ||
@@ -235,7 +235,10 @@ abs_ex Fractal::downcastTo()
     }
     if (this->coefficient.isZero())
         return copy(zero);
-    if (this->isOnlyVarsIntegratingConstants())
+    if (this->coefficient.isOne() && this->denominator.empty() && this->numerator.size() == 1 &&
+            isIntegratingConstantAndCanChangeIt(this->numerator.begin()->get()->getId()))
+            return integratingConstantExpr(this->numerator.begin()->get()->getId(), this->getRange());
+    if (this->isOnlyVarsIntegratingConstantsThatCanBeChanged())
     {
         return integratingConstantExpr(this->getRange());
     }
@@ -287,8 +290,8 @@ std::unique_ptr<Fractal> Fractal::operator+(const std::unique_ptr<Fractal> & sec
 {
     if (this->denominator == sec_sum->denominator && this->coefficient == sec_sum->coefficient)
     {
-        abs_ex newnum_ptr = *static_cast<AbstractExpression*>(new Fractal(&this->numerator, this->coefficient.getNumerator())) +
-                *static_cast<AbstractExpression*>(new Fractal(&sec_sum->numerator, sec_sum->coefficient.getNumerator()));
+        abs_ex newnum_ptr = toAbsEx(static_cast<AbstractExpression*>(new Fractal(&this->numerator, this->coefficient.getNumerator()))) +
+                toAbsEx(static_cast<AbstractExpression*>(new Fractal(&sec_sum->numerator, sec_sum->coefficient.getNumerator())));
         fractal_argument newnum;
         newnum.push_back(std::move(newnum_ptr));
         std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&newnum, &this->denominator, Number(1, this->coefficient.getDenominator())/*, this->coefficient * sec_sum->coefficient*/));
@@ -331,6 +334,7 @@ std::unique_ptr<Fractal> Fractal::operator-(const std::unique_ptr<Fractal> &subt
 void Fractal::simplify()
 {
     SIM_IF_NEED
+      //      qDebug() << this->toString();
     for (auto &it: this->numerator)
     {
         it->simplify();
@@ -341,7 +345,9 @@ void Fractal::simplify()
         it->simplify();
         it = it->downcast();
     }
+    //qDebug() << this->toString();
     this->takeCommonPartOfPolynomials();
+   // qDebug() << this->toString();
     for (fractal_argument::iterator it = this->numerator.begin(); it != this->numerator.end();)
     {
         if (it->get()->getId() == FRACTAL)
@@ -368,6 +374,7 @@ void Fractal::simplify()
 
     this->numerator.sort(&AbstractExpression::lessToSort);
     this->denominator.sort(&AbstractExpression::lessToSort);
+   // qDebug() << this->toString();
     this->pullNumbersIntoCoefficient();
     this->multiplyIrrationalSums();
     this->getRidOfIrrationalityInDenominator();
@@ -380,21 +387,43 @@ void Fractal::simplify()
     this->reducePolynomialsCoefficient();
     //ye, its extra, but it is unimportant becouse fractals in requlary geometric are small. it's maden for reduced polynomial.
     this->reduceSameMembers();
+
     this->reducePolynomials();
+   // qDebug() << this->toString();
     this->takeCommonPartOfPolynomials();
     for (auto &it: this->numerator)
         it = it->downcast();
     for (auto &it: this->denominator)
         it = it->downcast();
+    for (fractal_argument::iterator it = this->numerator.begin(); it != this->numerator.end();)
+    {
+        if (it->get()->getId() == FRACTAL)
+        {
+            this->addFractal(static_cast<Fractal*>(it->get()));
+            it = this->numerator.erase(it);
+        }
+        else
+            ++it;
+    }
+    for (fractal_argument::iterator it = this->denominator.begin(); it != this->denominator.end();)
+    {
+        if (it->get()->getId() == FRACTAL)
+        {
+            this->addFractal(static_cast<Fractal*>(it->get()), true);
+            it = this->denominator.erase(it);
+        }
+        else
+            ++it;
+    }
     this->reduceSameMembers();
     this->pullNumbersIntoCoefficient();
     this->setSameMembersIntoDegree();
     this->castTrigonometry();
     this->castTrigonometryArguments();
-    if (this->hasIntegratingConstantMultiplier())
+    if (this->hasIntegratingConstantMultiplierThatCanBeChanged())
     {
         this->pullSomeMultipliersIntoIntegratingConstant();
-        if (this->numerator.size() > 0 && isIntegratingConstant(this->numerator.back()->getId()) &&
+        if (this->numerator.size() > 0 && isIntegratingConstantAndCanChangeIt(this->numerator.back()->getId()) &&
                 VariablesDistributor::get().getVariablesDefinition(this->numerator.back()->getId())->getRange().isSymmetricRelativelyZero())
         this->takeAwayAbsoluteValues();
     }
@@ -484,7 +513,7 @@ void Fractal::reduceMembersWithDowngradingDegree()
         {
            if (canReduceWithDowngradingDegree(it1->get(), it2->get()))
            {
-               abs_ex newDegree = *Degree::getDegreeOfExpression(it1->get()) - *Degree::getDegreeOfExpression(it2->get());
+               abs_ex newDegree = Degree::getDegreeOfExpression(it1->get()) - Degree::getDegreeOfExpression(it2->get());
                abs_ex arg = makeAbstractExpression(Degree::getArgumentOfDegree(it1->get())->getId(), Degree::getArgumentOfDegree(it1->get()));
                has_erased = true;
                it1 = this->numerator.erase(it1);
@@ -783,7 +812,7 @@ Number Fractal::getMaxDegreeOfVariable(int id)
 std::unique_ptr<Fractal> Fractal::getFractalWithoutVariable(int id) const
 {
     //std::unique_ptr<Fractal> result = std::make_unique<Fractal>(this);
-    std::unique_ptr<Fractal> result(new Fractal(makeAbstractExpression(FRACTAL, this)));
+    std::unique_ptr<Fractal> result = toFrac(copy(this));
     for (auto it = result->numerator.begin(); it != result->numerator.end();)
     {
         if (Degree::getArgumentOfDegree(it->get())->getId() == id)
@@ -827,8 +856,8 @@ void Fractal::reducePolynomials()
             {
                 try {
                     auto gcf = gcd(static_cast<Polynomial*>(it1->get()), static_cast<Polynomial*>(it2->get()));
-               // if (gcf == nullptr)
-               //     continue;
+                if (gcf == nullptr)
+                    continue;
                 //qDebug() << gcf->makeStringOfExpression();
                     auto it1_pol = static_cast<Polynomial*>(it1->get())->divide(gcf.get()).first;
                     if (it1_pol == nullptr)
@@ -899,6 +928,10 @@ bool Fractal::canTurnIntoPolynomWithOpeningParentheses() const
 {
     if (!this->denominator.empty() || this->coefficient.getDenominator() != 1)
         return false;
+    auto set = this->getSetOfVariables();
+
+    //if (!set.empty() && isIntegratingConstanThatCant(*--this->getSetOfVariables().end()))
+     //       return false;
     for (auto &it : this->numerator)
     {
         if (it->getId() == POLYNOMIAL || (it->getId() == DEGREE && static_cast<Degree*>(it.get())->canTurnIntoPolynomial()))
@@ -1662,6 +1695,11 @@ abs_ex integrateByParts(const abs_ex & u, const abs_ex & dv, int var)
     abs_ex int_v_du = integrate(v*du*D(abs_ex(new Variable(getVariable(var)))));
     if (int_v_du == nullptr)
         return nullptr;
+   // qDebug() << u->toString();
+    //qDebug() << v->toString();
+   // qDebug() << int_v_du->toString();
+   // qDebug() << (u*v)->toString();
+   // qDebug() << (u*v - int_v_du)->toString();
     return u*v - int_v_du;
 }
 abs_ex Fractal::getAntiderivativeByParts(int var) const
@@ -1919,6 +1957,34 @@ abs_ex Fractal::getAntiderivativeOfFunctionWithRootOfLinearFunction(int var) con
     return integr;
 }
 
+abs_ex Fractal::getAntiderivativeOfFunctionThatHaveExponentialExpression(int var) const
+{
+    abs_ex expon = this->tryToFindExponentialFunction(var);
+    //qDebug() << expon->toString();
+    if (expon == nullptr)
+        return nullptr;
+    abs_ex base = copy(Degree::getArgumentOfDegree(expon.get()));
+    auto ln_f = ::checkIfItsLinearFunction(Degree::getDegreeOfExpression(expon.get()), var);
+    assert(ln_f.first != nullptr);
+
+    abs_ex t = systemVarExpr(zero, nullptr, false, false);
+    abs_ex x_change = (ln(t)/ln(base) - ln_f.second)/ln_f.first;
+    abs_ex frac_to_integr = copy(this);
+   // qDebug() << x_change->toString();
+   // qDebug() << frac_to_integr->toString();
+    setUpExpressionIntoVariable(frac_to_integr, x_change, var);
+    // qDebug() << frac_to_integr->toString();
+    frac_to_integr = std::move(frac_to_integr) * x_change->derivative(t->getId());
+  //  qDebug() << frac_to_integr->toString();
+    auto integr = frac_to_integr->antiderivative(t->getId());
+    if (integr == nullptr)
+        return nullptr;
+    //qDebug() << integr->toString();
+    setUpExpressionIntoVariable(integr, expon, t->getId());
+  //  qDebug() << integr->toString();
+    return integr;
+}
+
 //да, это будет очередная большая функция. Здесь нет сложного поведения, только проверка на различные табличные интегралы
 //рассчитываем на то, что сработало takeCommonPartOfPolynomial()
 //еще рассчитываем на то, что все полиномы которые можно разложить - разложены
@@ -1989,6 +2055,25 @@ abs_ex Fractal::antiderivative(int var) const
         else if (prev_num_size > current_num_size)
             return cop.antiderivative(var);
     }
+    else
+    {
+        Fractal cop = *this;
+        cop.expandNumerator();
+        if (cop.numerator.size() == 1 && cop.numerator.begin()->get()->getId() == POLYNOMIAL)
+        {
+            auto monoms = static_cast<Polynomial*>(cop.numerator.begin()->get())->getMonoms();
+            abs_ex result = copy(zero);
+            fractal_argument empty;
+            for (auto &it : *monoms)
+            {
+                abs_ex its_result = (toAbsEx(it)/abs_ex(new Fractal(&empty, &this->denominator)))->antiderivative(var);
+                if (its_result == nullptr)
+                    return nullptr;
+                result = std::move(result) + std::move(its_result);
+            }
+
+        }
+    }
     //пробуем интегрирование по частям
     auto p_int = this->getAntiderivativeByParts(var);
     if (p_int != nullptr)
@@ -1999,6 +2084,9 @@ abs_ex Fractal::antiderivative(int var) const
     auto irrat_arg = this->getAntiderivativeOfIrrationalFunction(var);
     if (irrat_arg != nullptr)
         return irrat_arg;
+    auto expon_arg = this->getAntiderivativeOfFunctionThatHaveExponentialExpression(var);
+    if (expon_arg != nullptr)
+        return expon_arg;
     auto trig_arg = this->checkIfCanDoUniversalTrigonometricSubstitution(var);
     if (trig_arg.first != nullptr)
     {
@@ -2364,7 +2452,7 @@ abs_ex Fractal::tableAntiderivative(int var) const
                 ln_f = checkIfItsLinearFunction(deg, var);
                 if (ln_f.first == nullptr)
                     return nullptr;
-                return minus_one/ln_f.first * takeDegreeOf(copy(arg), (*minus_one) * (*deg)) / ln(arg);
+                return minus_one/ln_f.first * takeDegreeOf(copy(arg), (minus_one) * (deg)) / ln(arg);
             }
             if (deg->hasVariable(var))
                 return nullptr;
@@ -2760,7 +2848,8 @@ abs_ex Fractal::tableAntiderivative(int var) const
                     abs_ex & b = ln_f1.second;
                     abs_ex & c = ln_f2.first;
                     abs_ex & d = ln_f2.second;
-                    return one / c * sqrt(*arg_num * *arg_denom) - (a*d - b*c)/c/sqrt(a*c) * atan(sqrt(*a* *arg_denom / (*c * *arg_num)));
+                    return one / c * sqrt(copy(arg_num) * copy(arg_denom)) - (a*d - b*c)/c/sqrt(a*c) *
+                            atan(sqrt(a* copy(arg_denom) / (c * copy(arg_num))));
                 }
             }
         }
@@ -3267,7 +3356,7 @@ abs_ex Fractal::tableAntiderivative(int var) const
                     abs_ex t = abs_ex(new Variable(systemVar()));
                     abs_ex pre_integral = (pow(one - sqr(t), ideg1/2) * pow(-t, ideg2))->antiderivative(t->getId());
                     std::map<int, abs_ex> to_change;
-                    to_change.insert({t->getId(), *arg2 * *minus_one});
+                    to_change.insert({t->getId(), copy(arg2) * minus_one});
                     replaceSystemVariablesToExpressions(pre_integral, to_change);
                     return one/ln_f2.first * pre_integral;
                 }
@@ -3386,9 +3475,9 @@ bool Fractal::hasDifferential() const
     return false;
 }
 
-bool Fractal::hasIntegratingConstant() const
+bool Fractal::hasIntegratingConstantThatCanBeChanged() const
 {
-    return this->numerator.size() > 0 && isIntegratingConstant(this->numerator.back()->getId());
+    return this->numerator.size() > 0 && isIntegratingConstantAndCanChangeIt(this->numerator.back()->getId());
 }
 
 void Fractal::takeAwayAbsoluteValues()
@@ -3410,19 +3499,19 @@ void Fractal::takeAwayAbsoluteValues()
         this->simplify();
 }
 
-bool Fractal::hasIntegratingConstantMultiplier() const
+bool Fractal::hasIntegratingConstantMultiplierThatCanBeChanged() const
 {
     for (auto &it : numerator)
-        if (isIntegratingConstant(it->getId()))
+        if (isIntegratingConstantAndCanChangeIt(it->getId()))
             return true;
     for (auto &it : denominator)
-        if (isIntegratingConstant(it->getId()))
+        if (isIntegratingConstantAndCanChangeIt(it->getId()))
             return true;
 }
 
-abs_ex Fractal::takeAwayConstantMultiplier()
+abs_ex Fractal::takeAwayConstantMultiplierThatCanBeChanged()
 {
-    assert(this->hasIntegratingConstant());
+    assert(this->hasIntegratingConstantThatCanBeChanged());
     abs_ex constant = std::move(this->numerator.back());
     this->numerator.erase(--this->numerator.end());
     return constant;
@@ -3439,14 +3528,14 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
         for (auto it1 = this->numerator.begin(), it2 = fr.first->begin();
              it1 != this->numerator.end() && it2 != fr.first->end();)
         {
-            if (canBeConsideredAsConstant(*it1) && canBeConsideredAsConstant(*it2))
+            if (canBeConsideredAsConstantThatCanBeChanged(*it1) && canBeConsideredAsConstantThatCanBeChanged(*it2))
             {
                 ++it1;
                 ++it2;
             }
-            else if (canBeConsideredAsConstant(*it1))
+            else if (canBeConsideredAsConstantThatCanBeChanged(*it1))
                 ++it1;
-            else if (canBeConsideredAsConstant(*it2))
+            else if (canBeConsideredAsConstantThatCanBeChanged(*it2))
                 ++it2;
             if (it1 == this->numerator.end() && it2 != fr.first->end())
                 return false;
@@ -3476,14 +3565,14 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
         for (auto it1 = this->denominator.begin(), it2 = fr.second->begin();
              it1 != this->denominator.end() && it2 != fr.second->end();)
         {
-            if (canBeConsideredAsConstant(*it1) && canBeConsideredAsConstant(*it2))
+            if (canBeConsideredAsConstantThatCanBeChanged(*it1) && canBeConsideredAsConstantThatCanBeChanged(*it2))
             {
                 ++it1;
                 ++it2;
             }
-            else if (canBeConsideredAsConstant(*it1))
+            else if (canBeConsideredAsConstantThatCanBeChanged(*it1))
                 ++it1;
-            else if (canBeConsideredAsConstant(*it2))
+            else if (canBeConsideredAsConstantThatCanBeChanged(*it2))
                 ++it2;
             if (it1 == this->denominator.end() && it2 != fr.second->end())
                 return false;
@@ -3510,11 +3599,11 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
             ++it2;
             merged = true;
         }
-        FunctionRange second_range = getRangeOfConstantMultipliersAndTakeThemAway(its_second);
+        FunctionRange second_range = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(its_second);
         if (!(second_range.isPoint() && *second_range.getPoint() == *one))
         {
             merged = true;
-            FunctionRange this_range = getRangeOfConstantMultipliersAndTakeThemAway(dynamic_cast<AbstractExpression*>(this));
+            FunctionRange this_range = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(dynamic_cast<AbstractExpression*>(this));
             this->pushBackToNumerator(integratingConstantExpr(unification(this_range, second_range)));
 
         }
@@ -3525,6 +3614,23 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
 
     }
     return false;
+}
+
+abs_ex Fractal::tryToFindExponentialFunction(int var) const
+{
+    for (auto &it : this->numerator)
+    {
+        abs_ex res = it->tryToFindExponentialFunction(var);
+        if (res != nullptr)
+            return res;
+    }
+    for (auto &it : this->denominator)
+    {
+        abs_ex res = it->tryToFindExponentialFunction(var);
+        if (res != nullptr)
+            return res;
+    }
+    return nullptr;
 }
 
 void Fractal::pullSomeMultipliersIntoIntegratingConstant()
@@ -3538,17 +3644,26 @@ void Fractal::pullSomeMultipliersIntoIntegratingConstant()
     }
     this->coefficient = 1;
     std::set<int> used_vars;
+    bool is_only_constant = true;
+    abs_ex its_constant = nullptr;
     for (auto it = this->numerator.begin(); it != this->numerator.end();)
     {
         auto set = it->get()->getSetOfVariables();
         bool skip = false;
-        if (!(set.empty() || isIntegratingConstant(it->get()->getId())))
+        if (!(set.empty() || isIntegratingConstantAndCanChangeIt(it->get()->getId())))
             skip = true;
         if (skip)
         {
             ++it;
             continue;
         }
+        if (is_only_constant && its_constant == nullptr &&
+                isIntegratingConstantAndCanChangeIt(it->get()->getId()))
+        {
+            its_constant = copy(*it);
+        }
+        else
+            is_only_constant = false;
         for (auto &it1 : set)
             used_vars.insert(it1);
         auto it_range = it->get()->getRange();
@@ -3566,7 +3681,7 @@ void Fractal::pullSomeMultipliersIntoIntegratingConstant()
         auto set = it->get()->getSetOfVariables();
         bool skip = false;
         for (auto &it1 : set)
-            if (!isIntegratingConstant(it1) || has(used_vars, it1))
+            if (!isIntegratingConstantAndCanChangeIt(it1) || has(used_vars, it1))
             {
                 skip = true;
                 break;
@@ -3576,6 +3691,13 @@ void Fractal::pullSomeMultipliersIntoIntegratingConstant()
             ++it;
             continue;
         }
+        if (is_only_constant && its_constant == nullptr &&
+                isIntegratingConstantAndCanChangeIt(it->get()->getId()))
+        {
+            its_constant = copy(*it);
+        }
+        else
+            is_only_constant = false;
         for (auto &it1 : set)
             used_vars.insert(it1);
         auto it_range = it->get()->getRange();
@@ -3587,6 +3709,11 @@ void Fractal::pullSomeMultipliersIntoIntegratingConstant()
             initialized = true;
         }
         it = this->denominator.erase(it);
+    }
+    if (is_only_constant && its_constant != nullptr)
+    {
+        this->numerator.push_back(std::move(its_constant));
+        return;
     }
     this->numerator.push_back(integratingConstantExpr(range));
 }
@@ -3713,7 +3840,7 @@ std::unique_ptr<Fractal> operator-(const std::unique_ptr<Fractal> & left, const 
 
 abs_ex toAbsEx(const std::unique_ptr<Fractal> &expr)
 {
-    return abs_ex(new Fractal(expr.get()))->downcast();
+    return abs_ex(copy(expr.get()).release())->downcast();
 }
 
 abs_ex toAbsEx(std::unique_ptr<Fractal> &&expr)
@@ -3721,13 +3848,19 @@ abs_ex toAbsEx(std::unique_ptr<Fractal> &&expr)
     return abs_ex(expr.release())->downcast();
 }
 
-std::unique_ptr<Fractal> toFrac(abs_ex &expr)
+std::unique_ptr<Fractal> toFrac(const abs_ex &expr)
 {
+    if (expr->getId() == FRACTAL)
+        return std::unique_ptr<Fractal>(
+                    static_cast<Fractal*>(copy(expr).release()));
     return std::unique_ptr<Fractal>(new Fractal(expr.get()));
 }
 
 std::unique_ptr<Fractal> toFrac(abs_ex &&expr)
 {
+    if (expr->getId() == FRACTAL)
+        return std::unique_ptr<Fractal>(
+                    static_cast<Fractal*>(expr.release()));
     return std::unique_ptr<Fractal>(new Fractal(std::move(expr)));
 }
 

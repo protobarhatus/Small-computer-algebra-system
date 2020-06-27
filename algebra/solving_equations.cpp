@@ -245,6 +245,8 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             //иначе можем упасть в бесконечный цикл возведения в в степень
             if (Degree::getArgumentOfDegree(right_expr.get())->hasVariable(var))
                 return res;
+           // qDebug() << (deg - ln(right_expr)/ln(copy(arg)))->toString();
+
             return solveEquation(deg - ln(right_expr)/ln(copy(arg)), var);
         }
         return res;
@@ -439,9 +441,11 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
 std::list<abs_ex> checkIfItsMultiplicationOfDegreesAndTryToSolve(const abs_ex & var_part, const abs_ex & right_part, int var)
 {
     assert(var_part->getId() == FRACTAL);
- //   qDebug() << var_part->makeStringOfExpression();
- //   qDebug() << right_part->makeStringOfExpression();
+   // qDebug() << var_part->makeStringOfExpression();
+  //  qDebug() << right_part->makeStringOfExpression();
     Fractal * fr = static_cast<Fractal*>(var_part.get());
+    if (!(fr->getCoefficient().isOne() && fr->getFractal().second->empty()))
+        return std::list<abs_ex>();
     assert(fr->getCoefficient().isOne() && fr->getFractal().second->empty());
     if (Degree::getDegreeOfExpression(fr->getFractal().first->begin()->get())->getId() != NUMBER)
         return std::list<abs_ex>();
@@ -486,9 +490,12 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
    // qDebug() << right_expr->makeStringOfExpression();
     if (var_expr->getId() == FRACTAL)
     {
+     //   qDebug() << var_expr->toString();
         auto mult = static_cast<Fractal*>(var_expr.get())->getFractalWithoutVariable(var);
+       // qDebug() << mult->toString();
         var_expr = std::move(var_expr) / toAbsEx(mult);
         right_expr = std::move(right_expr) / toAbsEx(mult);
+       // qDebug() << var_expr->toString();
         if (var_expr->getId() == FRACTAL)
         {
             res = checkIfItsMultiplicationOfDegreesAndTryToSolve(var_expr, right_expr, var);
@@ -725,7 +732,7 @@ std::list<abs_ex > solveEquation(const abs_ex &equation, int var)
             it = pow(it, one/numToAbs(gcd_of_nums));
         return res;
     }
-    //qDebug() << equation->makeStringOfExpression();
+ //   qDebug() << equation->toString();
     return _solveEquation(equation, var);
 }
 
@@ -1105,10 +1112,10 @@ std::pair<abs_ex, int> tryToDistingushFullDegreeWithPrecisionOfCoefficientWithou
     return {nullptr, 0};
 
 }
-bool isIntegratingConstantAddictive(const std::unique_ptr<Fractal> & it)
+bool isIntegratingConstantAddictiveThatCanBeChanged(const std::unique_ptr<Fractal> & it)
 {
     if (it->getCoefficient() == 1 && it->getFractal().second->empty() &&
-            it->getFractal().first->size() == 1 && isIntegratingConstant(it->getFractal().first->begin()->get()->getId()))
+            it->getFractal().first->size() == 1 && isIntegratingConstantAndCanChangeIt(it->getFractal().first->begin()->get()->getId()))
         return true;
     return false;
 }

@@ -23,6 +23,8 @@ Variable::Variable(int id, VariablesDefinition * def)
 Variable::Variable(int id, QString iname)
 {
     this->id = id;
+    if (isIntegratingConstant(id))
+        VariablesDistributor::increaseIntegratingConstant(id);
     this->name = iname;
     if (id >= VariablesDistributor::firstSystemNum())
     {
@@ -36,12 +38,22 @@ Variable::Variable(int id, QString iname)
 Variable::Variable(int id, QString name, VariablesDefinition *def)
 {
     this->id = id;
+    if (isIntegratingConstant(id))
+        VariablesDistributor::increaseIntegratingConstant(id);
     this->name = name;
     this->definition = def;
+}
+
+Variable::~Variable()
+{
+    if (isIntegratingConstant(id))
+        VariablesDistributor::decreaseIntegratingConstant(id);
 }
 Variable::Variable(const Variable & var)
 {
     this->id = var.id;
+    if (isIntegratingConstant(id))
+        VariablesDistributor::increaseIntegratingConstant(id);
     this->name = var.name;
     this->definition = var.definition;
 }
@@ -133,6 +145,8 @@ Variable::Variable(int id)
 {
    // assert(id <= Variable::id_counter);
     this->id = id;
+    if (isIntegratingConstant(id))
+        VariablesDistributor::increaseIntegratingConstant(id);
     this->definition = VariablesDistributor::getVariablesDefinition(id);
     if (id <= Variable::id_counter)
     {
@@ -215,4 +229,9 @@ bool Variable::hasDifferential() const
 bool Variable::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
 {
     return *this == *second;
+}
+
+abs_ex Variable::tryToFindExponentialFunction(int var) const
+{
+    return nullptr;
 }

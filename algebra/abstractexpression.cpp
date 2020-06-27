@@ -58,9 +58,9 @@ bool AbstractExpression::lessToSort(const abs_ex &left, const abs_ex &right)
         return true;
     if (left->getId() == DIFFERENTIAL && right->getId() != DIFFERENTIAL)
         return false;
-    if (isIntegratingConstant(left->getId()) && !isIntegratingConstant(right->getId()))
+    if (isIntegratingConstantAndCanChangeIt(left->getId()) && !isIntegratingConstantAndCanChangeIt(right->getId()))
         return false;
-    if (isIntegratingConstant(right->getId()) && !isIntegratingConstant(left->getId()))
+    if (isIntegratingConstantAndCanChangeIt(right->getId()) && !isIntegratingConstantAndCanChangeIt(left->getId()))
         return true;
     if (left->getId() != right->getId())
     {
@@ -78,35 +78,7 @@ bool AbstractExpression::operator!=(AbstractExpression &right)
 {
     return !(*this == right);
 }
-abs_ex AbstractExpression::operator*(AbstractExpression &expr)
-{
-    //den is empty
-    fractal_argument arg, den;
-    arg.push_back(makeAbstractExpression(this->getId(), this));
-    arg.push_back(makeAbstractExpression(expr.getId(), &expr));
-    abs_ex frac = abs_ex(new Fractal(&arg, &den));
-    return frac->downcast();
 
-}
-
-abs_ex AbstractExpression::operator/(AbstractExpression &expr)
-{
-    abs_ex frac = abs_ex(new Fractal(this, &expr));
-    return frac->downcast();
-}
-abs_ex AbstractExpression::operator+(AbstractExpression & expr)
-{
-    abs_ex polynom = abs_ex(new Polynomial(this, &expr));
-
-    return polynom->downcast();
-}
-abs_ex AbstractExpression::operator-(AbstractExpression &expr)
-{
-    std::unique_ptr<Fractal> subtrahend = std::unique_ptr<Fractal>(new Fractal(&expr, -1));
-    abs_ex polynom = abs_ex(new Polynomial(this, subtrahend.get()));
-
-    return polynom->downcast();
-}
 bool AbstractExpression::canDowncast()
 {
     return this->canDowncastTo();
@@ -120,23 +92,7 @@ abs_ex AbstractExpression::downcast()
         expr = expr->downcastTo();
     return expr;
 }
-abs_ex operator*(const abs_ex & left, const abs_ex & right)
-{
-    return std::move(*left.get() * *right.get());
-}
-abs_ex operator/(const abs_ex & left, const abs_ex & right)
-{
-    return std::move(*left.get() / *right.get());
-}
 
-abs_ex operator+(const abs_ex & left, const abs_ex & right)
-{
-    return std::move(*left.get() + *right.get());
-}
-abs_ex operator-(const abs_ex & left, const abs_ex & right)
-{
-    return std::move(*left.get() - *right.get());
-}
 int AbstractExpression::getPositionRelativelyZero()
 {
     if (this->getSetOfVariables().empty())
@@ -157,10 +113,14 @@ bool AbstractExpression::hasVariable(int var)
     return s.find(var) != s.end();
 }
 
-bool AbstractExpression::isOnlyVarsIntegratingConstants() const
+
+bool AbstractExpression::isOnlyVarsIntegratingConstantsThatCanBeChanged() const
 {
     auto set = this->getSetOfVariables();
-    return set.size() > 0 && isIntegratingConstant(*set.begin());
+    for (auto &it : set)
+        if (!isIntegratingConstantAndCanChangeIt(it))
+            return false;
+    return true;
 }
 
 
@@ -189,12 +149,16 @@ QString getStringArgumentOfTrigonometricalFunction(AbstractExpression *expr)
 
     }
 }
-
+bool isDegreeOfSomeFunction(const abs_ex & expr)
+{
+    AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
+    return (arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT ||
+           arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS);
+}
 abs_ex getArgumentOfFunction(abs_ex && expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
-    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT ||
-           arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS);
+    assert(isDegreeOfSomeFunction(expr));
     switch (arg->getId()) {
     case SINUS:
         return static_cast<Sinus*>(arg)->getArgumentMoved();
@@ -755,13 +719,307 @@ bool biggerOrEquall(const abs_ex &left, const abs_ex &right)
     //можем обойтись без прямого сравнения на равенство из-за того как ведет себя getPositionRelativelyZero
     return (left-right)->getPositionRelativelyZero() > 0;
 }
-
+bool canBeConsideredAsConstant(const AbstractExpression *expr)
+{
+    return isIntegratingConstant(expr->getId()) || expr->getSetOfVariables().empty();
+}
 bool canBeConsideredAsConstant(const abs_ex &expr)
 {
     return canBeConsideredAsConstant(expr.get());
 }
 
-bool canBeConsideredAsConstant(const AbstractExpression *expr)
+
+bool canBeConsideredAsConstantThatCanBeChanged(const AbstractExpression * expr)
 {
-    return isIntegratingConstant(expr->getId()) || expr->getSetOfVariables().empty();
+    return isIntegratingConstantAndCanChangeIt(expr->getId()) || expr->getSetOfVariables().empty();
+}
+bool canBeConsideredAsConstantThatCanBeChanged(const abs_ex & expr)
+{
+    return canBeConsideredAsConstantThatCanBeChanged(expr.get());
+}
+/*abs_ex AbstractExpression::operator*(AbstractExpression &expr)
+{
+    //den is empty
+    fractal_argument arg, den;
+    arg.push_back(makeAbstractExpression(this->getId(), this));
+    arg.push_back(makeAbstractExpression(expr.getId(), &expr));
+    abs_ex frac = abs_ex(new Fractal(&arg, &den));
+    return frac->downcast();
+
+}
+
+abs_ex AbstractExpression::operator/(AbstractExpression &expr)
+{
+    abs_ex frac = abs_ex(new Fractal(this, &expr));
+    return frac->downcast();
+}
+abs_ex AbstractExpression::operator+(AbstractExpression & expr)
+{
+    abs_ex polynom = abs_ex(new Polynomial(this, &expr));
+
+    return polynom->downcast();
+}
+abs_ex AbstractExpression::operator-(AbstractExpression &expr)
+{
+    std::unique_ptr<Fractal> subtrahend = std::unique_ptr<Fractal>(new Fractal(&expr, -1));
+    abs_ex polynom = abs_ex(new Polynomial(this, subtrahend.get()));
+
+    return polynom->downcast();
+}*/
+bool isOne(const abs_ex & expr)
+{
+    if (expr->getId() == FRACTAL)
+    {
+        auto fr = static_cast<Fractal*>(expr.get());
+        return fr->getCoefficient().isOne() && fr->getFractal().first->empty() &&
+                fr->getFractal().second->empty();
+    }
+    return *expr == *one;
+}
+abs_ex operator*(const abs_ex & left, const abs_ex & right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) * *static_cast<Number*>(right.get()));
+    if (isOne(left))
+        return copy(right);
+    if (*left == *minus_one && right->getId() == FRACTAL)
+    {
+        abs_ex res = copy(right);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    if (isOne(right))
+        return copy(left);
+    if (*right == *minus_one && left->getId() == FRACTAL)
+    {
+        abs_ex res = copy(left);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    fractal_argument arg, den;
+    arg.push_back(copy(left));
+    arg.push_back(copy(right));
+    abs_ex frac = abs_ex(new Fractal(std::move(arg), std::move(den)));
+    return frac->downcast();
+}
+abs_ex operator/(const abs_ex & left, const abs_ex & right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) / *static_cast<Number*>(right.get()));
+    if (isOne(right))
+        return copy(left);
+    if (*right == *minus_one && left->getId() == FRACTAL)
+    {
+        abs_ex res = copy(left);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    fractal_argument arg, den;
+    arg.push_back(copy(left));
+    den.push_back(copy(right));
+    abs_ex frac = abs_ex(new Fractal(std::move(arg), std::move(den)));
+    return frac->downcast();
+}
+
+abs_ex operator+(const abs_ex & left, const abs_ex & right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) + *static_cast<Number*>(right.get()));
+    abs_ex polynom = abs_ex(new Polynomial(toFrac(left), toFrac(right)));
+
+    return polynom->downcast();
+}
+abs_ex operator-(const abs_ex & left, const abs_ex & right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) - *static_cast<Number*>(right.get()));
+    abs_ex polynom = abs_ex(new Polynomial(toFrac(left), toFrac(-right)));
+
+    return polynom->downcast();
+}
+abs_ex operator*(abs_ex &&left, const abs_ex &right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) * *static_cast<Number*>(right.get()));
+    if (isOne(left))
+        return copy(right);
+    if (*left == *minus_one && right->getId() == FRACTAL)
+    {
+        abs_ex res = copy(right);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    if (isOne(right))
+        return std::move(left);
+    if (*right == *minus_one && left->getId() == FRACTAL)
+    {
+        abs_ex res = std::move(left);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    fractal_argument arg, den;
+    arg.push_back(std::move(left));
+    arg.push_back(copy(right));
+    abs_ex frac = abs_ex(new Fractal(std::move(arg), std::move(den)));
+    return frac->downcast();
+}
+
+abs_ex operator/(abs_ex &&left, const abs_ex &right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) / *static_cast<Number*>(right.get()));
+    if (isOne(right))
+        return std::move(left);
+    if (*right == *minus_one && left->getId() == FRACTAL)
+    {
+        abs_ex res = std::move(left);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    fractal_argument arg, den;
+    arg.push_back(std::move(left));
+    den.push_back(copy(right));
+    abs_ex frac = abs_ex(new Fractal(std::move(arg), std::move(den)));
+    return frac->downcast();
+}
+
+abs_ex operator+(abs_ex &&left, const abs_ex &right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) + *static_cast<Number*>(right.get()));
+    abs_ex polynom = abs_ex(new Polynomial(toFrac(std::move(left)), toFrac(right)));
+
+    return polynom->downcast();
+}
+
+abs_ex operator-(abs_ex &&left, const abs_ex &right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) - *static_cast<Number*>(right.get()));
+    abs_ex polynom = abs_ex(new Polynomial(toFrac(std::move(left)), toFrac(-right)));
+
+    return polynom->downcast();
+}
+abs_ex operator*(const abs_ex & left, abs_ex && right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) * *static_cast<Number*>(right.get()));
+    if (isOne(left))
+        return std::move(right);
+    if (*left == *minus_one && right->getId() == FRACTAL)
+    {
+        abs_ex res = std::move(right);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    if (isOne(right))
+        return copy(left);
+    if (*right == *minus_one && left->getId() == FRACTAL)
+    {
+        abs_ex res = copy(left);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    fractal_argument arg, den;
+    arg.push_back(copy(left));
+    arg.push_back(std::move(right));
+    abs_ex frac = abs_ex(new Fractal(std::move(arg), std::move(den)));
+    return frac->downcast();
+}
+abs_ex operator/(const abs_ex & left, abs_ex && right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) / *static_cast<Number*>(right.get()));
+
+    if (isOne(right))
+        return copy(left);
+    if (*right == *minus_one && left->getId() == FRACTAL)
+    {
+        abs_ex res = copy(left);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    fractal_argument arg, den;
+    arg.push_back(copy(left));
+    den.push_back(std::move(right));
+    abs_ex frac = abs_ex(new Fractal(std::move(arg), std::move(den)));
+    return frac->downcast();
+}
+
+abs_ex operator+(const abs_ex & left, abs_ex && right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) + *static_cast<Number*>(right.get()));
+    abs_ex polynom = abs_ex(new Polynomial(toFrac(left), toFrac(std::move(right))));
+
+    return polynom->downcast();
+}
+abs_ex operator-(const abs_ex & left, abs_ex && right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) - *static_cast<Number*>(right.get()));
+    abs_ex polynom = abs_ex(new Polynomial(toFrac(left), toFrac(-std::move(right))));
+
+    return polynom->downcast();
+}
+abs_ex operator*(abs_ex && left, abs_ex && right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) * *static_cast<Number*>(right.get()));
+    if (isOne(left))
+        return std::move(right);
+    if (*left == *minus_one && right->getId() == FRACTAL)
+    {
+        abs_ex res = std::move(right);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    if (isOne(right))
+        return std::move(left);
+    if (*right == *minus_one && left->getId() == FRACTAL)
+    {
+        abs_ex res = std::move(left);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    fractal_argument arg, den;
+    arg.push_back(std::move(left));
+    arg.push_back(std::move(right));
+    abs_ex frac = abs_ex(new Fractal(std::move(arg), std::move(den)));
+    return frac->downcast();
+}
+abs_ex operator/(abs_ex && left, abs_ex && right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) / *static_cast<Number*>(right.get()));
+    if (isOne(right))
+        return std::move(left);
+    if (*right == *minus_one && left->getId() == FRACTAL)
+    {
+        abs_ex res = std::move(left);
+        static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
+        return res;
+    }
+    fractal_argument arg, den;
+    arg.push_back(std::move(left));
+    den.push_back(std::move(right));
+    abs_ex frac = abs_ex(new Fractal(std::move(arg), std::move(den)));
+    return frac->downcast();
+}
+
+abs_ex operator+(abs_ex && left, abs_ex && right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) + *static_cast<Number*>(right.get()));
+    abs_ex polynom = abs_ex(new Polynomial(toFrac(std::move(left)), toFrac(std::move(right))));
+
+    return polynom->downcast();
+}
+abs_ex operator-(abs_ex && left, abs_ex && right)
+{
+    if (left->getId() == NUMBER && right->getId() == NUMBER)
+        return toAbsEx(*static_cast<Number*>(left.get()) - *static_cast<Number*>(right.get()));
+    abs_ex polynom = abs_ex(new Polynomial(toFrac(std::move(left)), toFrac(-std::move(right))));
+
+    return polynom->downcast();
 }

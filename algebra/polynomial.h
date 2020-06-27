@@ -18,6 +18,7 @@ public:
     Polynomial(const Polynomial & pol);
     Polynomial(Polynomial && pol);
     Polynomial(AbstractExpression * fsum, AbstractExpression * secsum = std::make_unique<Number>(0).get());
+    Polynomial(std::unique_ptr<Fractal> && first, std::unique_ptr<Fractal> && second);
     Polynomial& operator=(Polynomial && pol);
     void addMonomial(Fractal* fractal);
     void addMonomial(std::unique_ptr<Fractal> && monom);
@@ -101,11 +102,12 @@ public:
     std::list<std::unique_ptr<Fractal>>* getMonoms();
     bool hasDifferential() const override;
     //отличие также в том, что hasIntegratingConstantAddictive() вызывается внутри simplify()
-    bool hasIntegratingConstant() const;
-    abs_ex takeAwayIntegragingConstant();
+    bool hasIntegratingConstantThatCanBeChanged() const;
+    abs_ex takeAwayIntegragingConstantThatCanBeChanged();
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
+    abs_ex tryToFindExponentialFunction(int var) const override;
 private:
-    bool hasIntegratingConstantAddictive() const;
+    bool hasIntegratingConstantAddictiveThatCanBeChanged() const;
     void pullSomeMembersIntoOneIntegratingConstant();
     void checkIfCanSimplifyThisTrigonometryByTakingCommonPart();
     bool casted_trigonometry;

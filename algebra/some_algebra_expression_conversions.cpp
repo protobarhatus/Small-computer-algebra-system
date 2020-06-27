@@ -126,7 +126,9 @@ std::unique_ptr<Polynomial> gcd(Polynomial * a_p, Polynomial * b_p)
     std::map<QString, int> replaced_functions;
     auto func_vec_a = replaceEveryFunctionOnSystemVariable(a, replaced_functions);
     auto func_vec_b = replaceEveryFunctionOnSystemVariable(b, replaced_functions);
-    assert(!a->getSetOfPolyVariables().empty() && !b->getSetOfPolyVariables().empty());
+    if (a->getSetOfPolyVariables().empty() || b->getSetOfPolyVariables().empty())
+        return nullptr;
+   // assert(!a->getSetOfPolyVariables().empty() && !b->getSetOfPolyVariables().empty());
     auto div_result = a->divide(b);
     bool has_a_bigger_degree = true;
     if (div_result.first == nullptr)
@@ -459,4 +461,9 @@ bool hasIntersections(const std::set<int> &a, const std::set<int> &b)
         if (has(b, it))
             return true;
     return false;
+}
+
+abs_ex toAbsEx(AbstractExpression *expr)
+{
+    return abs_ex(expr);
 }

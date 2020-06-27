@@ -162,6 +162,11 @@ bool Constant::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second
 {
     return *this == *second;
 }
+
+abs_ex Constant::tryToFindExponentialFunction(int var) const
+{
+    return nullptr;
+}
 bool Constant::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == CONSTANT);

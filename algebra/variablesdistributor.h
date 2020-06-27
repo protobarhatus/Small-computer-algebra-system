@@ -15,6 +15,7 @@ public:
     //не знаю насколько синглтону нужен деструктор, но да пусть будет
     ~VariablesDistributor();
     static int firstIntegrateConstant();
+    friend abs_ex integratingConstantExpr(int index, const FunctionRange & range);
 private:
     friend Variable getVariable(int id);
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
@@ -31,11 +32,17 @@ private:
     std::vector<VariablesDefinition*> variables;
     std::vector<VariablesDefinition*> system_variables;
     std::vector<VariablesDefinition*> integrating_constants;
+
+    std::vector<int> amount_of_integrating_constants;
     friend bool isIntegratingConstant(int index);
     friend Variable integratingConstant();
     friend Variable integratingConstant(const FunctionRange & range);
     friend QString makeIntegratingConstantName(int id);
+    static void increaseIntegratingConstant(int id);
+    static void decreaseIntegratingConstant(int id);
     friend Variable systemVar(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
+    friend class Variable;
+    friend bool isIntegratingConstantAndCanChangeIt(int id);
 };
 QString makeIntegratingConstantName(int id);
 bool isIntegratingConstant(int index);
@@ -49,8 +56,11 @@ Variable systemVar(int min, int max);
 Variable systemVar(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
 abs_ex systemVarExpr(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
 Variable integratingConstant();
-Variable integratingConstant(const FunctionRange & range);
+Variable integratingConstant( const FunctionRange & range);
+bool isIntegratingConstantAndCanChangeIt(int id);
 abs_ex integratingConstantExpr();
 abs_ex integratingConstantExpr(const FunctionRange & range);
+abs_ex integratingConstantExpr(int index);
+abs_ex integratingConstantExpr(int index, const FunctionRange & range);
 QString makeVariablesName(int id);
 #endif // VARIABLESDISTRIBUTOR_H

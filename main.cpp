@@ -129,10 +129,8 @@ int main(int argc, char *argv[])
     //возможности взять интегралы вида 1/sin(ax+b),  1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
     //это надо исправить
 
-    c = integral(x*x*x*x*x/(pow(x, 4) - pow(x, 2) + 1), x);
 
-    // c = cos(2*x)*cos(2*x) - sin(x);
-//c = pow(euler(),-1*(x + ln(x)));
+
 
     //auto res = solveEquation(ln(abs(x)) + ln(abs(y)) + c, y);
     //auto res = solveEquation((2*pow(x, 4) - 3*pow(x, 3) - x*x -3*x + 2), x);
@@ -148,17 +146,27 @@ int main(int argc, char *argv[])
    // auto res = solveEquation(sin(2*x + 1) - sin(x - 3), x);
    // auto res = solveEquation(ln(x - 3) + ln(x + 3), x);
     //auto res = solveEquation(pow(euler(), a)/abs(x) - abs(y), y);
+    //auto res = solveEquation(ln(abs(x)) - ln(abs(x+1)) - ln(abs(y - 3)) + integratingConstantExpr(), y);
 
 
 
-     //auto res = solveDifur(dx*y - dy*x, x, y);
+     auto res = solveDifur(dx*y - dy*x, x, y);
    // auto res = solveDifur(y - dy*x/dx, x, y);
     //auto res = solveDifur(dy/dx + 2*y, x, y);
    // auto res = solveDifur(dy/dx + (2*y + 1)*cot(x), x, y);
  //   auto res = solveDifur(y*ln(y) + x*dy/dx, x, y);
     //auto res = solveDifur(pow(euler(),(y - x*x))*dy -2*x*dx, x, y);
    // auto res = solveDifur(sqrt(x*y - 2*x)*dy/dx + x*y*y + 5*y*y, x, y);
-    auto res = solveDifur(2*(x*y + y)*dy/dx + x*(pow(y, 4) + 1), x, y);
+   // auto res = solveDifur(2*(x*y + y)*dy/dx + x*(pow(y, 4) + 1), x, y);
+    //auto res = solveDifur(2*dy/dx *sin(y) *cos(y)*pow(sin(x), 2) + cos(x), x, y);
+   // auto res = solveDifur((1 + pow(euler(), x))*y*dy - pow(euler(), y)*dx, x, y);
+   // auto res = solveDifur(y - x*dy/dx - 3*(1 + x*x*dy/dx), x, y);
+    //auto res = solveDifur(x*dy/dx - (y - x*pow(euler(), y/x)), x, y);
+
+  //  auto res = solveDifur(x*dy/dx - 2*sqrt(x*x + y*y) - y, x, y);
+   /* y = (pow(x, 4) - 1)/2/x;
+    dy = D(y);
+    c = x*dy/dx - 2*sqrt(x*x + y*y) - y;*/
     qDebug() << "RES: ";
     for (auto &it : res)
         qDebug() << it.toString();

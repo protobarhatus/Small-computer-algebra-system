@@ -112,7 +112,7 @@ bool Sinus::canDowncastTo()
         return true;
    // if (this->argument->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->argument.get())->getMonomialsPointers().size() == 2)
      //   return true;
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
     return false;
 }
@@ -154,9 +154,9 @@ abs_ex Sinus::downcastTo()
     {
         return -sin(-argument);
     }
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
     {
-        return integratingConstantExpr(this->getRange());
+        return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
     return abs_ex(nullptr);
 }
@@ -435,7 +435,7 @@ bool Sinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
     if (second->getId() == this->getId())
     {
         auto arg = getArgumentOfFunction(second);
-        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        if (canBeConsideredAsConstantThatCanBeChanged(argument) && canBeConsideredAsConstantThatCanBeChanged(arg))
         {
             this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
             return true;
@@ -443,6 +443,11 @@ bool Sinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
         return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
     }
     return false;
+}
+
+abs_ex Sinus::tryToFindExponentialFunction(int var) const
+{
+    return this->argument->tryToFindExponentialFunction(var);
 }
 
 abs_ex sin(const abs_ex &expr)

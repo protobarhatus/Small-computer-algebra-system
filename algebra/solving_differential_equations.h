@@ -22,10 +22,10 @@ private:
     abs_ex result;
     Type type;
 };
-FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(abs_ex & expr);
-FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(abs_ex & expr);
-FunctionRange getRangeOfConstantMultipliersAndTakeThemAway(AbstractExpression * expr);
-FunctionRange getRangeOfConstantAddictivesAndTakeThemAway(AbstractExpression * expr);
+FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(abs_ex & expr);
+FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(abs_ex & expr);
+FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(AbstractExpression * expr);
+FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(AbstractExpression * expr);
 std::list<DifurResult> solveDifur(const abs_ex & difur, int x, int y);
 
 

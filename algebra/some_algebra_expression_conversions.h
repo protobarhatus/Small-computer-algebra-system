@@ -31,4 +31,5 @@ bool inc(VariablesCombinations & combinations);
 std::pair<bool, std::unique_ptr<Fractal>> getPiMember(abs_ex & expr);
 bool isPiMemberInTable(Number coe);
 bool isPiMemberOnAxis(Number coe);
+abs_ex toAbsEx( AbstractExpression * expr);
 #endif // SOME_ALGEBRA_EXPRESSION_CONVERSIONS_H

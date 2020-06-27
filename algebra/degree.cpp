@@ -88,6 +88,11 @@ bool Degree::canDowncastTo()
             return false;
         return true;
     }
+    if (this->degree->getId() == FRACTAL)
+    {
+        if (static_cast<Fractal*>(this->degree.get())->getCoefficient().getNumerator() < 0)
+            return true;
+    }
     if (this->degree->getPositionRelativelyZero() < 0)
         return true;
     if (this->argument->getId() == NUMBER && !static_cast<Number*>(this->argument.get())->isInteger())
@@ -122,14 +127,31 @@ bool Degree::canDowncastTo()
    /* if (this->degree->getId() == FRACTAL && !static_cast<Fractal*>(this->degree.get())->getCoefficient().isOne() &&
             this->argument->getId() == NUMBER)
         return true;*/
-    if (this->isOnlyVarsIntegratingConstants())
+    if (this->isOnlyVarsIntegratingConstantsThatCanBeChanged())
         return true;
     if (this->argument->getSetOfVariables().empty())
     {
-        if (this->degree->getId() == FRACTAL && static_cast<Fractal*>(degree.get())->hasIntegratingConstant())
+        if (this->degree->getId() == FRACTAL && static_cast<Fractal*>(degree.get())->hasIntegratingConstantThatCanBeChanged())
             return true;
-        if (this->degree->getId() == POLYNOMIAL && static_cast<Polynomial*>(degree.get())->hasIntegratingConstant())
+        if (this->degree->getId() == POLYNOMIAL && static_cast<Polynomial*>(degree.get())->hasIntegratingConstantThatCanBeChanged())
             return true;
+    }
+    if (this->degree->getId() == FRACTAL)
+    {
+        auto fr = static_cast<Fractal*>(this->degree.get())->getFractal();
+        bool has_log_of_arg = false;
+        for (auto &it : *fr.second)
+            if (isDegreeOfSomeFunction(it) && *getArgumentOfFunction(it) == *argument)
+            {
+                has_log_of_arg = true;
+                break;
+            }
+        if (has_log_of_arg)
+        {
+            for (auto &it : *fr.first)
+                if (it->getId() == LOGARITHM)
+                    return true;
+        }
     }
     return false;
 }
@@ -145,7 +167,13 @@ abs_ex Degree::downcastTo()
         auto arg = static_cast<Logarithm*>(Degree::getArgumentOfDegree(degree.get()))->getArgumentsCopy();
         return pow(arg, pow(copy(Degree::getArgumentOfDegree(degree.get())), Degree::getDegreeOfExpression(degree.get()) - one));
     }
-
+    if (this->degree->getId() == FRACTAL)
+    {
+        if (static_cast<Fractal*>(this->degree.get())->getCoefficient().getNumerator() < 0)
+        {
+            return one/pow(std::move(argument), -degree);
+        }
+    }
     if ((this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isOne()) || static_cast<Number*>(this->degree.get())->isZero())
         return abs_ex(new Number(1));
     if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isZero())
@@ -262,14 +290,14 @@ abs_ex Degree::downcastTo()
     }
     if (this->argument->getSetOfVariables().empty())
     {
-        if (this->degree->getId() == FRACTAL && static_cast<Fractal*>(degree.get())->hasIntegratingConstant())
+        if (this->degree->getId() == FRACTAL && static_cast<Fractal*>(degree.get())->hasIntegratingConstantThatCanBeChanged())
         {
-            abs_ex constant = static_cast<Fractal*>(degree.get())->takeAwayConstantMultiplier();
+            abs_ex constant = static_cast<Fractal*>(degree.get())->takeAwayConstantMultiplierThatCanBeChanged();
             return pow(pow(argument, constant), degree);
         }
-        if (this->degree->getId() == POLYNOMIAL && static_cast<Polynomial*>(degree.get())->hasIntegratingConstant())
+        if (this->degree->getId() == POLYNOMIAL && static_cast<Polynomial*>(degree.get())->hasIntegratingConstantThatCanBeChanged())
         {
-            abs_ex constant = static_cast<Polynomial*>(degree.get())->takeAwayIntegragingConstant();
+            abs_ex constant = static_cast<Polynomial*>(degree.get())->takeAwayIntegragingConstantThatCanBeChanged();
             return pow(argument, constant) * pow(argument, degree);
         }
     }
@@ -299,10 +327,39 @@ abs_ex Degree::downcastTo()
         return pow(pow(argument, static_cast<Fractal*>(this->degree.get())->getCoefficient()),
                    degree/toAbsEx(static_cast<Fractal*>(this->degree.get())->getCoefficient()));
     }*/
-
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()) &&
+            this->degree->getSetOfVariables().empty())
+        return integratingConstantExpr(this->argument->getId(), this->getRange());
+    if (isIntegratingConstantAndCanChangeIt(this->degree->getId()) &&
+            this->argument->getSetOfVariables().empty())
+        return integratingConstantExpr(this->degree->getId(), this->getRange());
+    if (this->isOnlyVarsIntegratingConstantsThatCanBeChanged())
     {
         return integratingConstantExpr(this->getRange());
+    }
+    if (this->degree->getId() == FRACTAL)
+    {
+        auto fr = static_cast<Fractal*>(this->degree.get())->getFractal();
+        bool has_log_of_arg = false;
+        fractal_argument::iterator log_of_args;
+        for (auto it = fr.second->begin(); it != fr.second->end(); ++it)
+            if (isDegreeOfSomeFunction(*it) && *getArgumentOfFunction(*it) == *argument)
+            {
+                has_log_of_arg = true;
+                log_of_args = it;
+                break;
+            }
+        if (has_log_of_arg)
+        {
+            for (auto it = fr.first->begin(); it != fr.first->end(); ++it)
+                if (it->get()->getId() == LOGARITHM)
+                {
+                    auto new_arg = getArgumentOfFunction(it->get());
+                    fr.first->erase(it);
+                    fr.second->erase(log_of_args);
+                    return pow(new_arg, degree);
+                }
+        }
     }
 
     return copy( this->argument.get());
@@ -360,7 +417,8 @@ void Degree::simplify()
         bool is_argument_square = false;
         if (static_cast<Degree*>(this->argument.get())->degree->getId() == NUMBER)
             is_argument_square = (static_cast<Number*>(static_cast<Degree*>(this->argument.get())->degree.get()))->getNumerator() % 2 == 0;
-        this->degree = *static_cast<Degree*>(static_cast<Degree*>(this->argument.get())->degree.get()) * *this->degree;
+        this->degree = copy(static_cast<Degree*>(static_cast<Degree*>(this->argument.get())->degree.get())) *
+                std::move(this->degree);
         //what I want to do is sqrt((-2)^2) = 2, like this
         if (static_cast<Degree*>(this->argument.get())->degree->getId() == NUMBER &&
                 static_cast<Degree*>(this->argument.get())->argument->getId() == NUMBER &&
@@ -461,7 +519,7 @@ void Degree::reducePolynomialArgument()
     if (red_coe.compareWith(1) != 0)
     {
         //преобразование выражения вида 3a + 3b в 3(a+b). затем оно разделится downcasting-ом на 2 разные степени
-        this->argument = *this->argument * red_coe;
+        this->argument = std::move(this->argument) * toAbsEx(red_coe);
     }
 }
 void Degree::transformPolynomialDegree(bool has_vars)
@@ -830,13 +888,30 @@ double Degree::getApproximateValue(const std::function<double (VariablesDefiniti
 abs_ex Degree::changeSomePartOn(QString part, abs_ex &on_what)
 {
   //  NONCONST
+    abs_ex ret = nullptr;
     if (this->argument->makeStringOfExpression() == part)
     {
         abs_ex cop = copy(on_what);
         this->argument.swap(cop);
-        return cop;
+        ret = std::move(cop);
     }
-    return this->argument->changeSomePartOn(part, on_what);
+    if (this->degree->makeStringOfExpression() == part)
+    {
+        abs_ex cop = copy(on_what);
+        this->degree.swap(cop);
+        ret = std::move(cop);
+    }
+    if (ret != nullptr)
+        return ret;
+    ret = this->argument->changeSomePartOn(part, on_what);
+    if (ret == nullptr)
+        return this->degree->changeSomePartOn(part, on_what);
+    else
+    {
+        this->degree->changeSomePartOn(part, on_what);
+        return ret;
+    }
+    return ret;
 }
 
 abs_ex Degree::changeSomePartOnExpression(QString part, abs_ex &on_what)
@@ -1435,14 +1510,14 @@ bool Degree::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
         auto deg = Degree::getDegreeOfExpression(second.get());
         bool changed_arg = false;
         bool changed_deg = false;
-        if (canBeConsideredAsConstant(this->argument) && canBeConsideredAsConstant(arg))
+        if (canBeConsideredAsConstantThatCanBeChanged(this->argument) && canBeConsideredAsConstantThatCanBeChanged(arg))
         {
             this->argument = integratingConstantExpr(unification(this->argument->getRange(), arg->getRange()));
             changed_arg = true;
         }
         else
             changed_arg = this->argument->tryToMergeIdenticalBehindConstantExpressions(copy(arg));
-        if (canBeConsideredAsConstant(this->degree) && canBeConsideredAsConstant(deg))
+        if (canBeConsideredAsConstantThatCanBeChanged(this->degree) && canBeConsideredAsConstantThatCanBeChanged(deg))
         {
             this->degree = integratingConstantExpr(unification(this->degree->getRange(), deg->getRange()));
             changed_deg = true;
@@ -1452,6 +1527,15 @@ bool Degree::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
         return changed_arg || changed_deg;
     }
     return false;
+}
+
+abs_ex Degree::tryToFindExponentialFunction(int var) const
+{
+    if (has(this->argument->getSetOfVariables(), var))
+        return nullptr;
+    if (checkIfItsLinearFunction(this->degree, var).first != nullptr)
+        return copy(this);
+    return this->degree->tryToFindExponentialFunction(var);
 }
 
 abs_ex takeDegreeOf(abs_ex &&argument, const abs_ex &degree)

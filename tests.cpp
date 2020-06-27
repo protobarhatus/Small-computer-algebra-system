@@ -1320,6 +1320,15 @@ void testAlgMod()
     AlgExpr x = var();
     return integral(x*x*x*x*x/(pow(x, 4) - pow(x, 2) + 1), x) ==
              (-2*atan( (-1 + 2*x*x) /sqrt(3)) + ln(-1*x*x + 1 + x*x*x*x)*sqrt(3) + 2*sqrt(3)*x*x)/4 /sqrt(3);
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(1/(1 + pow(euler(), x)), x) == x - ln(1 + pow(euler(), x));
+},
+[]()->bool {
+    AlgExpr a = var();
+    AlgExpr b = var();
+    return pow(a, log(b, a)) == b;
 }
     };
 

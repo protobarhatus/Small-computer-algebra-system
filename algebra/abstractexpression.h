@@ -57,11 +57,11 @@ public:
     virtual bool operator==(AbstractExpression & right) = 0;
     bool operator!=(AbstractExpression & right);
     //returns simplified and downcasted fractal
-    abs_ex operator*(AbstractExpression & expr);
+    /*abs_ex operator*(AbstractExpression & expr);
     abs_ex operator/(AbstractExpression & expr);
     //returns simplified and downcasted polynomial
     abs_ex operator+(AbstractExpression & expr);
-    abs_ex operator-(AbstractExpression & expr);
+    abs_ex operator-(AbstractExpression & expr);*/
     virtual bool canDowncastTo() = 0;
     //need an addition when new types of expression added
     bool canDowncast();
@@ -108,9 +108,10 @@ public:
     virtual long long int getGcdOfNumeratorsOfDegrees(int var) const = 0;
     //не считает область значений сложной функции
     virtual FunctionRange getRange() const = 0;
-    bool isOnlyVarsIntegratingConstants() const;
     virtual bool hasDifferential() const = 0;
     virtual bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex & second) = 0;
+    virtual abs_ex tryToFindExponentialFunction(int var) const = 0;
+    bool isOnlyVarsIntegratingConstantsThatCanBeChanged() const;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -119,13 +120,16 @@ protected:
     virtual int getPositionRelativelyZeroIfHasVariables() = 0;
 
 };
-bool canBeConsideredAsConstant(const AbstractExpression * expr);
-bool canBeConsideredAsConstant(const abs_ex & expr);
+//bool canBeConsideredAsConstant(const AbstractExpression * expr);
+//bool canBeConsideredAsConstant(const abs_ex & expr);
+bool canBeConsideredAsConstantThatCanBeChanged(const AbstractExpression * expr);
+bool canBeConsideredAsConstantThatCanBeChanged(const abs_ex & expr);
 bool lower(const abs_ex & left, const abs_ex & right);
 bool bigger(const abs_ex & left, const abs_ex & right);
 bool lowerOrEquall(const abs_ex & left, const abs_ex & right);
 bool biggerOrEquall(const abs_ex & left, const abs_ex & right);
 bool subCompare(const abs_ex & a, const abs_ex & b);
+bool isDegreeOfSomeFunction(const abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);
 //std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);
@@ -173,9 +177,23 @@ std::pair<abs_ex, abs_ex> checkIfItsFunctionOfLinearArgument(const abs_ex & func
 std::pair<abs_ex, abs_ex> checkIfItsFunctionOfLinearArgument(const AbstractExpression * func, int var);
 abs_ex operator*(const abs_ex & left, const abs_ex & right);
 abs_ex operator/(const abs_ex & left, const abs_ex & right);
-
 abs_ex operator+(const abs_ex & left, const abs_ex & right);
 abs_ex operator-(const abs_ex & left, const abs_ex & right);
+
+abs_ex operator*(abs_ex && left, const abs_ex & right);
+abs_ex operator/(abs_ex && left, const abs_ex & right);
+abs_ex operator+(abs_ex && left, const abs_ex & right);
+abs_ex operator-(abs_ex && left, const abs_ex & right);
+
+abs_ex operator*(const abs_ex & left, abs_ex && right);
+abs_ex operator/(const abs_ex & left, abs_ex && right);
+abs_ex operator+(const abs_ex & left, abs_ex && right);
+abs_ex operator-(const abs_ex & left, abs_ex && right);
+
+abs_ex operator*(abs_ex && left, abs_ex && right);
+abs_ex operator/(abs_ex && left, abs_ex && right);
+abs_ex operator+(abs_ex && left, abs_ex && right);
+abs_ex operator-(abs_ex && left, abs_ex && right);
 
 
 abs_ex operator-(const abs_ex & arg);

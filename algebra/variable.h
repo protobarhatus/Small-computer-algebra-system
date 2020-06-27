@@ -15,6 +15,7 @@ public:
     //это конструктор чисто на время разработки, по-хорошему им пользоваться нельзя. Он не будет пополняться или изменяться
     Variable(int id, QString name);
     Variable(int id, QString name, VariablesDefinition * def);
+    ~Variable();
     virtual AlgebraExpression getId() const override;
     virtual bool operator==(AbstractExpression & right) override;
     virtual void simplify() override;
@@ -42,6 +43,7 @@ public:
     virtual FunctionRange getRange() const override;
     bool hasDifferential() const override;
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
+    abs_ex tryToFindExponentialFunction(int var) const override;
 private:
     friend Variable getVariable(int id);
     friend Variable integratingConstant();

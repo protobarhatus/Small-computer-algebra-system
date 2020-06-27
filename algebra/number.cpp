@@ -389,6 +389,11 @@ bool Number::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
     return *this == *second;
 }
 
+abs_ex Number::tryToFindExponentialFunction(int var) const
+{
+    return nullptr;
+}
+
 Number abs(Number num)
 {
     if (num.compareWith(0) < 0)

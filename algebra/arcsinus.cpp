@@ -94,7 +94,7 @@ bool ArcSinus::canDowncastTo()
     if (*arg == *minus_one || *arg == *(-sqrt(three)/two) || *arg == *-half || *arg == *zero || *arg == *(-sqrt(two)/two)||
              *arg == *half || *arg == *(-sqrt(two)/two) || *arg == *(sqrt(three)/two) || *arg == *one)
         return true;
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
     return false;
 }
@@ -124,9 +124,9 @@ abs_ex ArcSinus::downcastTo()
         return getPi()/three;
     if (*arg == *one)
         return getPi()/two;
-    if (this->isOnlyVarsIntegratingConstants())
+    if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
     {
-        return integratingConstantExpr(this->getRange());
+        return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
     assert(false);
     return nullptr;
@@ -336,7 +336,7 @@ bool ArcSinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second
     if (second->getId() == ARCSINUS)
     {
         auto arg = getArgumentOfFunction(second);
-        if (canBeConsideredAsConstant(argument) && canBeConsideredAsConstant(arg))
+        if (canBeConsideredAsConstantThatCanBeChanged(argument) && canBeConsideredAsConstantThatCanBeChanged(arg))
         {
             this->argument = integratingConstantExpr(unification(argument->getRange(), arg->getRange()));
             return true;
@@ -344,6 +344,11 @@ bool ArcSinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second
         return argument->tryToMergeIdenticalBehindConstantExpressions(getArgumentOfFunction(second));
     }
     return false;
+}
+
+abs_ex ArcSinus::tryToFindExponentialFunction(int var) const
+{
+    return this->argument->tryToFindExponentialFunction(var);
 }
 
 bool ArcSinus::operator<(const AbstractExpression &right) const
