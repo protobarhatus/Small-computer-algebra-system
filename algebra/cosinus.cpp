@@ -13,7 +13,7 @@
 #include "absolutevalue.h"
 Cosinus::Cosinus(const abs_ex & iargument)
 {
-    this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
+    this->argument = copy(iargument);
     this->simplify();
 }
 Cosinus::Cosinus(abs_ex && arg)
@@ -21,13 +21,13 @@ Cosinus::Cosinus(abs_ex && arg)
     this->argument.swap(arg);
     this->simplify();
 }
-Cosinus::Cosinus(const Cosinus & copy)
+Cosinus::Cosinus(const Cosinus & cop)
 {
-    this->argument = makeAbstractExpression(copy.argument->getId(), copy.argument.get());
-    this->simplified = copy.simplified;
-    if (copy.pi_member != nullptr)
-        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*copy.pi_member));
-    this->is_pi_member_only = copy.is_pi_member_only;
+    this->argument = copy(cop.argument);
+    this->simplified = cop.simplified;
+    if (cop.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*cop.pi_member));
+    this->is_pi_member_only = cop.is_pi_member_only;
     this->simplify();
 }
 Cosinus::Cosinus(Cosinus && mov)

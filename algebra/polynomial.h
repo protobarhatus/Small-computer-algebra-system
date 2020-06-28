@@ -19,6 +19,8 @@ public:
     Polynomial(Polynomial && pol);
     Polynomial(AbstractExpression * fsum, AbstractExpression * secsum = std::make_unique<Number>(0).get());
     Polynomial(std::unique_ptr<Fractal> && first, std::unique_ptr<Fractal> && second);
+    Polynomial(const abs_ex & expr);
+    Polynomial(abs_ex && expr);
     Polynomial& operator=(Polynomial && pol);
     void addMonomial(Fractal* fractal);
     void addMonomial(std::unique_ptr<Fractal> && monom);
@@ -135,4 +137,5 @@ private:
     bool is_fractional_coefficients_allowed = false;
 };
 std::unique_ptr<Polynomial> toPolynomialPointer(const abs_ex & expr);
+std::unique_ptr<Polynomial> toPolynomialPointer(abs_ex && expr);
 #endif // POLYNOMIAL_H

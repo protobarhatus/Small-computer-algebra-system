@@ -16,6 +16,7 @@ public:
     ~VariablesDistributor();
     static int firstIntegrateConstant();
     friend abs_ex integratingConstantExpr(int index, const FunctionRange & range);
+    static int amountOfVariable(int i);
 private:
     friend Variable getVariable(int id);
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени

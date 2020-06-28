@@ -18,7 +18,7 @@ AlgExpr::AlgExpr()
 }
 AlgExpr::AlgExpr(const AlgExpr & expr)
 {
-    this->expression = makeAbstractExpression(expr.expression->getId(), expr.expression.get());
+    this->expression = copy(expr.expression);
 }
 AlgExpr::AlgExpr(AlgExpr && expr)
 {
@@ -47,7 +47,7 @@ AlgExpr::AlgExpr(abs_ex && expr)
 
 AlgExpr& AlgExpr::operator=(const AlgExpr &expr)
 {
-    this->expression = makeAbstractExpression(expr.expression->getId(), expr.expression.get());
+    this->expression = copy(expr.expression);
     return *this;
 }
 AlgExpr& AlgExpr::operator=(AlgExpr && expr)

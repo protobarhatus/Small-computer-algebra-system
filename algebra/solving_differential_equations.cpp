@@ -98,7 +98,8 @@ std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const 
         return {std::list<abs_ex> (), true};
     auto ic = integratingConstantExpr();
 
-    res.push_back(left_integr - right_integr + ic);
+    res.push_back(left_integr - right_integr + std::move(ic));
+   // qDebug() << next(res.begin())->get()->toString();
     return {std::move(res), true};
 }
 std::pair<std::list<abs_ex>, bool> tryToSolveHomoheneousDifur(abs_ex && difur, int x, int y)
@@ -310,6 +311,66 @@ FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(abs_ex
     }
     return FunctionRangeSegment(zero, zero, true, true);
 }
+FunctionRange getRangeOfConstantMultipliersThatCanBeChanged(const AbstractExpression * expr)
+{
+    assert(expr->getId() == FRACTAL);
+
+    if (expr->getId() == FRACTAL)
+    {
+        auto fr = static_cast<const Fractal*>(expr)->getFractal();
+        if (isIntegratingConstantAndCanChangeIt(fr.first->back()->getId()))
+        {
+            auto res = fr.first->back()->getRange();
+            //fr.first->erase(--fr.first->end());
+            return res;
+        }
+        bool initialized = false;
+        FunctionRange range;
+        for (auto it = fr.first->begin(); it != fr.first->end();)
+        {
+            if (it->get()->getSetOfVariables().empty())
+            {
+                if (initialized)
+                    range = rangeOfMultiplication(range, it->get()->getRange());
+                else
+                {
+                    range = it->get()->getRange();
+                    initialized = true;
+                }
+                //it = fr.first->erase(it);
+                ++it;
+            }
+            else
+                ++it;
+        }
+        for (auto it = fr.second->begin(); it != fr.second->end();)
+        {
+            if (it->get()->getSetOfVariables().empty())
+            {
+                if (initialized)
+                    range = rangeOfDivision(range, it->get()->getRange());
+                else
+                {
+                    range = it->get()->getRange();
+                    initialized = true;
+                }
+               // it = fr.second->erase(it);
+                ++it;
+            }
+            else
+                ++it;
+        }
+        if (initialized)
+            return range;
+        else
+            return FunctionRange(one, one, true, true);
+    }
+    return FunctionRange(one, one, true, true);
+}
+FunctionRange getRangeOfConstantMultipliersThatCanBeChanged(const abs_ex & expr)
+{
+    return getRangeOfConstantMultipliersThatCanBeChanged(expr.get());
+}
 FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(AbstractExpression * expr)
 {
     assert(expr->getId() == FRACTAL);
@@ -422,27 +483,49 @@ FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(abs_e
     }
     return FunctionRange(one, one, true, true);
 }
-
+abs_ex copyWithLiftingIntegrateConstantsIndex(const abs_ex & expr)
+{
+    abs_ex res = copy(expr);
+    auto set = expr->getSetOfVariables();
+    for (auto &it : set)
+    {
+        if (isIntegratingConstant(it))
+            setUpExpressionIntoVariable(res, integratingConstantExpr(VariablesDistributor::getVariablesDefinition(it)->getRange()),
+                                        it);
+    }
+    return res;
+}
 void uniteSameResults(std::list<abs_ex> & list)
 {
+
     for (auto it = list.begin(); it != list.end(); ++it)
     {
         for (auto it1 = next(it); it1 != list.end();)
         {
-            auto sub = *it - *it1;
-            if (isZero(sub))
+           // auto sub = *it - *it1;
+            //auto sub = copyWithLiftingIntegrateConstantsIndex(*it) -
+            //        copyWithLiftingIntegrateConstantsIndex(*it1);
+            //if (isZero(sub))
+            //{
+             //   it1 = list.erase(it1);
+             //   continue;
+            //}
+            if (subCompare(*it, *it1))
             {
                 it1 = list.erase(it1);
                 continue;
             }
-            if (isIntegratingConstantAndCanChangeIt(sub->getId()))
+           // qDebug() << it->get()->toString();
+          //  qDebug() << it1->get()->toString();
+           // qDebug() << VariablesDistributor::amountOfVariable(1500000000);
+           /* if (isIntegratingConstantAndCanChangeIt(sub->getId()))
             {
                 FunctionRange range1 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(*it);
                 FunctionRange range2 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(*it1);
                 *it = *it + integratingConstantExpr(unification(range1, range2));
                 it1 = list.erase(it1);
-            }//они не могут быть одновременно нулями, это сверху раскрывается
-            else if (isZero(*it) || isZero(*it1))
+            }*///они не могут быть одновременно нулями, это сверху раскрывается
+            if (isZero(*it) || isZero(*it1))
             {
                 if (isZero(*it))
                     std::swap(*it, *it1);
@@ -459,16 +542,20 @@ void uniteSameResults(std::list<abs_ex> & list)
                 }
                 else
                     ++it1;
+                it->get()->simplify();
             }
-            else if (isIntegratingConstantAndCanChangeIt((*it / *it1)->getId()))
+          /*  else if (isIntegratingConstantAndCanChangeIt((*it / *it1)->getId()))
             {
                 FunctionRange range1 = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(*it);
                 FunctionRange range2 = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(*it1);
                 *it = *it * integratingConstantExpr(unification(range1, range2));
                 it1 = list.erase(it1);
-            }
+            }*/
             else if (it->get()->tryToMergeIdenticalBehindConstantExpressions(*it1))
+            {
                 it1 = list.erase(it1);
+                it->get()->simplify();
+            }
             else if (it->get()->getSetOfVariables().empty() || it1->get()->getSetOfVariables().empty())
             {
                 if (it->get()->getSetOfVariables().empty())
@@ -512,16 +599,47 @@ void uniteSameResults(std::list<abs_ex> & list)
                     it1 = list.erase(it1);
                 else
                     ++it1;
+                it->get()->simplify();
             }
             else
                 ++it1;
         }
     }
 }
-void setDifferentIntegratingConstantInDifferentExpressions(std::list<abs_ex> & exprs)
+void setDifferentIntegratingConstantInDifferentExpressions(std::set<int> & used_constants, std::list<abs_ex> & exprs)
 {
-    lkjhgfds
+    for (auto &it : exprs)
+    {
+        auto set = it->getSetOfVariables();
+        for (auto &it1 : set)
+        {
+            if (!isIntegratingConstant(it1))
+                continue;
+            if (has(used_constants, it1))
+            {
+                setUpExpressionIntoVariable(it, integratingConstantExpr(VariablesDistributor::getVariablesDefinition(it1)->getRange()), it1);
+                //it->setSimplified(false);
+               // qDebug()<<it->toString();
+                //it->simplify();
+            }
+            else
+                used_constants.insert(it1);
+
+
+        }
+    }
 }
+void simplifyAndDowncast(std::list<abs_ex> & list)
+{
+    for (auto &it : list)
+    {
+       // qDebug() << it->toString();
+        it->setSimplified(false);
+        it->simplify();
+        it = it->downcast();
+    }
+}
+
 std::list<DifurResult> solveDifur(const abs_ex &difur, int x, int y)
 {
     auto res = solveDifurInCommonIntegral(difur, x, y);
@@ -554,9 +672,19 @@ std::list<DifurResult> solveDifur(const abs_ex &difur, int x, int y)
         else
             ++it;
     }
+    std::set<int> used_constants;
+    setDifferentIntegratingConstantInDifferentExpressions(used_constants, res);
+    setDifferentIntegratingConstantInDifferentExpressions(used_constants, solved_for_x);
+    setDifferentIntegratingConstantInDifferentExpressions(used_constants, solved_for_y);
+
+    simplifyAndDowncast(res);
+    simplifyAndDowncast(solved_for_x);
+    simplifyAndDowncast(solved_for_y);
+
     uniteSameResults(res);
     uniteSameResults(solved_for_x);
     uniteSameResults(solved_for_y);
+
     std::list<DifurResult> result;
     for (auto &it : res)
         result.push_back(DifurResult(std::move(it), DifurResult::COMMON_INTEGRAL));

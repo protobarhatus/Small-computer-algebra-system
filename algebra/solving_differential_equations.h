@@ -26,6 +26,8 @@ FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(abs_ex
 FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(abs_ex & expr);
 FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(AbstractExpression * expr);
 FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(AbstractExpression * expr);
+FunctionRange getRangeOfConstantMultipliersThatCanBeChanged(const abs_ex & expr);
+FunctionRange getRangeOfConstantMultipliersThatCanBeChanged(const AbstractExpression * expr);
 std::list<DifurResult> solveDifur(const abs_ex & difur, int x, int y);
 
 

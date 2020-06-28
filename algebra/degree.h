@@ -9,6 +9,8 @@ class Degree : public AbstractExpression
 public:
     Degree(abs_ex && argument, abs_ex  && degree);
     Degree(const abs_ex & argument, const abs_ex & degree);
+    Degree(const abs_ex & argument, abs_ex && degree);
+    Degree(abs_ex && argument, const abs_ex & degree);
     Degree(const Degree & degree);
     Degree(const abs_ex & argument, Number degree);
     Degree(abs_ex && argument, Number degree);
@@ -73,6 +75,8 @@ private:
 bool canReduceWithDowngradingDegree(AbstractExpression * left, AbstractExpression * right);
 abs_ex takeDegreeOf(const abs_ex & argument, const abs_ex & degree);
 abs_ex takeDegreeOf(abs_ex && argument, abs_ex && degree);
+abs_ex takeDegreeOf(abs_ex && argument, const abs_ex & degree);
+abs_ex takeDegreeOf(const abs_ex & argument, abs_ex && degree);
 abs_ex takeDegreeOf(abs_ex && argument, const abs_ex & degree);
 abs_ex takeDegreeOf(const abs_ex & argument, Number degree);
 abs_ex takeDegreeOf(abs_ex && argument, Number degree);

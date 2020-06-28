@@ -32,19 +32,19 @@ AlgebraExpression Fractal::getId() const
 }
 Fractal::Fractal(AbstractExpression * num, AbstractExpression * denum, Number coe) : coefficient(coe)
 {
-    this->pushBackToNumerator(makeAbstractExpression(num->getId(), num));
-    this->pushBackToDenominator(makeAbstractExpression(denum->getId(), denum));
+    this->pushBackToNumerator(copy(num));
+    this->pushBackToDenominator(copy(denum));
     this->simplify();
 }
 Fractal::Fractal(const fractal_argument * num, const fractal_argument * denum, Number coe) : coefficient(coe)
 {
     for (auto &it : *num)
     {
-        this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+        this->pushBackToNumerator(copy(it));
     }
     for (auto &it : *denum)
     {
-        this->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+        this->pushBackToDenominator(copy(it));
     }
     this->simplify();
 }
@@ -53,11 +53,11 @@ Fractal::Fractal(const fractal_argument &num, const fractal_argument &denum, Num
 {
     for (auto &it : num)
     {
-        this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+        this->pushBackToNumerator(copy(it));
     }
     for (auto &it : denum)
     {
-        this->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+        this->pushBackToDenominator(copy(it));
     }
     this->simplify();
 }
@@ -88,7 +88,7 @@ Fractal::Fractal(fractal_argument * num, Number coe) : coefficient(coe)
 {
     for (auto &it : *num)
     {
-        this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+        this->pushBackToNumerator(copy(it));
     }
     this->simplify();
 }
@@ -97,13 +97,13 @@ Fractal::Fractal(const fractal_argument &num, Number coe) : coefficient(coe)
 {
     for (auto &it : num)
     {
-        this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+        this->pushBackToNumerator(copy(it));
     }
     this->simplify();
 }
 Fractal::Fractal(AbstractExpression * num, Number coe) : coefficient(coe)
 {
-    this->pushBackToNumerator(makeAbstractExpression(num->getId(), num));
+    this->pushBackToNumerator(copy(num));
     this->simplify();
 }
 Fractal::Fractal(Number coe) : coefficient(coe)
@@ -196,9 +196,9 @@ bool Fractal::isLetterPartEquallTo(Fractal *frac)
 Fractal::Fractal(const Fractal & right) : coefficient(right.coefficient)
 {
     for (auto &it : right.numerator)
-        this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+        this->pushBackToNumerator(copy(it));
     for (auto &it : right.denominator)
-        this->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+        this->pushBackToDenominator(copy(it));
     this->simplified = right.simplified;
 }
 Fractal::Fractal(Fractal && expr) : coefficient(expr.coefficient)
@@ -231,7 +231,7 @@ abs_ex Fractal::downcastTo()
     assert(this->canDowncastTo());
     if (this->numerator.empty() && this->denominator.empty())
     {
-        return makeAbstractExpression(NUMBER, &this->coefficient);
+        return toAbsEx(this->coefficient);
     }
     if (this->coefficient.isZero())
         return copy(zero);
@@ -240,9 +240,10 @@ abs_ex Fractal::downcastTo()
             return integratingConstantExpr(this->numerator.begin()->get()->getId(), this->getRange());
     if (this->isOnlyVarsIntegratingConstantsThatCanBeChanged())
     {
+      //  qDebug() << this->toString();
         return integratingConstantExpr(this->getRange());
     }
-    return copy( this->numerator.begin()->get());
+    return std::move( *this->numerator.begin());
 }
 bool Fractal::isZero() const
 {
@@ -257,9 +258,9 @@ fractal_argument operator*(fractal_argument & fmult, fractal_argument & smult)
 {
     fractal_argument result;
     for (auto &it : fmult)
-        result.push_back(makeAbstractExpression(it->getId(), it.get()));
+        result.push_back(copy(it));
     for (auto &it : smult)
-        result.push_back(makeAbstractExpression(it->getId(), it.get()));
+        result.push_back(copy(it));
     //std::sort(result.begin(), result.end(), &AbstractExpression::less);
     Fractal frac(&result);
     result = std::move(*frac.getFractal().first);
@@ -425,7 +426,7 @@ void Fractal::simplify()
         this->pullSomeMultipliersIntoIntegratingConstant();
         if (this->numerator.size() > 0 && isIntegratingConstantAndCanChangeIt(this->numerator.back()->getId()) &&
                 VariablesDistributor::get().getVariablesDefinition(this->numerator.back()->getId())->getRange().isSymmetricRelativelyZero())
-        this->takeAwayAbsoluteValues();
+            this->takeAwayAbsoluteValues();
     }
     this->numerator.sort(&AbstractExpression::lessToSort);
     this->denominator.sort(&AbstractExpression::lessToSort);
@@ -514,7 +515,7 @@ void Fractal::reduceMembersWithDowngradingDegree()
            if (canReduceWithDowngradingDegree(it1->get(), it2->get()))
            {
                abs_ex newDegree = Degree::getDegreeOfExpression(it1->get()) - Degree::getDegreeOfExpression(it2->get());
-               abs_ex arg = makeAbstractExpression(Degree::getArgumentOfDegree(it1->get())->getId(), Degree::getArgumentOfDegree(it1->get()));
+               abs_ex arg = copy(Degree::getArgumentOfDegree(it1->get()));
                has_erased = true;
                it1 = this->numerator.erase(it1);
                it2 = this->denominator.erase(it2);
@@ -686,17 +687,17 @@ void Fractal::addFractal(Fractal *fractal, bool as_denominator)
     {
         this->setCoefficinet( this->coefficient / fractal->coefficient);
         for (auto &it : fractal->numerator)
-            this->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+            this->pushBackToDenominator(std::move(it));
         for (auto &it : fractal->denominator)
-            this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+            this->pushBackToNumerator(std::move(it));
     }
     else
     {
         this->setCoefficinet( this->coefficient * fractal->coefficient);
         for (auto &it : fractal->numerator)
-            this->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+            this->pushBackToNumerator(std::move(it));
         for (auto &it : fractal->denominator)
-            this->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+            this->pushBackToDenominator(std::move(it));
     }
 }
 void Fractal::reducePolynomialsCoefficient()
@@ -862,11 +863,11 @@ void Fractal::reducePolynomials()
                     auto it1_pol = static_cast<Polynomial*>(it1->get())->divide(gcf.get()).first;
                     if (it1_pol == nullptr)
                         continue;
-                    auto it1_expr = makeAbstractExpression(POLYNOMIAL, it1_pol.get());
+                    abs_ex it1_expr (it1_pol.release());
                     it1->swap(it1_expr);
                     *it1 = it1->get()->downcast();
                     auto it2_pol = static_cast<Polynomial*>(it2->get())->divide(gcf.get()).first;
-                    auto it2_expr = makeAbstractExpression(POLYNOMIAL, it2_pol.get());
+                    abs_ex it2_expr (it2_pol.release());
                     it2->swap(it2_expr);
                     *it2 = it2->get()->downcast();
                     did_something = true;
@@ -884,9 +885,9 @@ std::unique_ptr<Fractal> Fractal::operator*(const std::unique_ptr<Fractal> & rig
     std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&this->numerator, &this->denominator));
     result->setCoefficinet( this->coefficient * right->coefficient);
     for (auto &it : right->numerator)
-        result->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+        result->pushBackToNumerator(copy(it));
     for (auto &it : right->denominator)
-        result->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+        result->pushBackToDenominator(copy(it));
     result->simplify();
     return result;
 }
@@ -896,9 +897,9 @@ std::unique_ptr<Fractal> Fractal::operator*(const Fractal & right)
     result->setCoefficinet( this->coefficient * right.coefficient);
 
     for (auto &it : right.numerator)
-        result->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+        result->pushBackToNumerator(copy(it));
     for (auto &it : right.denominator)
-        result->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+        result->pushBackToDenominator(copy(it));
     result->simplify();
     return result;
 }
@@ -907,9 +908,9 @@ std::unique_ptr<Fractal> Fractal::operator/(const std::unique_ptr<Fractal> & rig
     std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&this->numerator, &this->denominator));
     result->setCoefficinet( this->coefficient / right->coefficient);
     for (auto &it : right->numerator)
-        result->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+        result->pushBackToDenominator(copy(it));
     for (auto &it : right->denominator)
-        result->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+        result->pushBackToNumerator(copy(it));
     result->simplify();
     return result;
 }
@@ -918,9 +919,9 @@ std::unique_ptr<Fractal> Fractal::operator/(const Fractal & right) const
     std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&this->numerator, &this->denominator));
     result->setCoefficinet( this->coefficient / right.coefficient);
     for (auto &it : right.numerator)
-        result->pushBackToDenominator(makeAbstractExpression(it->getId(), it.get()));
+        result->pushBackToDenominator(copy(it));
     for (auto &it : right.denominator)
-        result->pushBackToNumerator(makeAbstractExpression(it->getId(), it.get()));
+        result->pushBackToNumerator(copy(it));
     result->simplify();
     return result;
 }
@@ -1000,7 +1001,7 @@ void Fractal::setSameMembersIntoDegree()
                 if (*Degree::getArgumentOfDegree(it->get()) == *Degree::getArgumentOfDegree(it1->get()))
                 {
                     AbstractExpression * degree = Degree::getArgumentOfDegree(it->get());
-                     auto degr = abs_ex(new Degree(abs_ex(makeAbstractExpression(degree->getId(), degree)),
+                     auto degr = abs_ex(new Degree(copy(degree),
                         Degree::getDegreeOfExpression(it->get()) + Degree::getDegreeOfExpression(it1->get())));
                      degr = degr->downcast();
                      it->swap(degr);
@@ -1022,7 +1023,7 @@ void Fractal::setSameMembersIntoDegree()
                 if (*Degree::getArgumentOfDegree(it->get()) == *Degree::getArgumentOfDegree(it1->get()))
                 {
                      AbstractExpression * degree = Degree::getArgumentOfDegree(it->get());
-                     auto degr = abs_ex(new Degree(makeAbstractExpression(degree->getId(), degree),
+                     auto degr = abs_ex(new Degree(copy(degree),
                         Degree::getDegreeOfExpression(it->get()) + Degree::getDegreeOfExpression(it1->get())));
                      degr = degr->downcast();
                      it->swap(degr);
@@ -1170,23 +1171,23 @@ fractal_argument _findCommonPart(fractal_argument & first, fractal_argument & se
                 auto deg2 = Degree::getDegreeOfExpression(it2.get());
                 abs_ex deg_to_set;
                 if (*deg1 == *deg2)
-                    deg_to_set = makeAbstractExpression(deg1->getId(), deg1.get());
+                    deg_to_set = std::move(deg1);
                 else if (deg1->getId() == NUMBER && deg2->getId() == NUMBER)
                     deg_to_set = abs_ex(new Number(static_cast<Number*>(deg1.get())->compareWith(*static_cast<Number*>(deg2.get())) < 0 ?
                                                                                     *static_cast<Number*>(deg1.get()) : *static_cast<Number*>(deg2.get())));
                 else if (deg1->getId() == NUMBER)
-                    deg_to_set = makeAbstractExpression(deg1->getId(), deg1.get());
+                    deg_to_set = std::move(deg1);
                 else if (deg2->getId() == NUMBER)
-                    deg_to_set = makeAbstractExpression(deg2->getId(), deg2.get());
+                    deg_to_set = std::move(deg2);
                 else
                 {
                     auto sub_result = deg1 - deg2;
                     if (sub_result->getId() == NUMBER)
                     {
                         if (static_cast<Number*>(sub_result.get())->compareWith(0) > 0)
-                            deg_to_set = makeAbstractExpression(deg1->getId(), deg1.get());
+                            deg_to_set = std::move(deg1);
                         else
-                            deg_to_set = makeAbstractExpression(deg2->getId(), deg2.get());
+                            deg_to_set = std::move(deg2);
                     }
                     else
                     {
@@ -1194,19 +1195,18 @@ fractal_argument _findCommonPart(fractal_argument & first, fractal_argument & se
                         if (div_result->getId() == NUMBER)
                         {
                             if (static_cast<Number*>(div_result.get())->compareWith(1) > 0)
-                                deg_to_set = makeAbstractExpression(deg1->getId(), deg1.get());
+                                deg_to_set = std::move(deg1);
                             else
-                                deg_to_set = makeAbstractExpression(deg2->getId(), deg2.get());
+                                deg_to_set = std::move(deg2);
                         }
                         else //здесь уже пофиг
-                            deg_to_set = makeAbstractExpression(deg1->getId(), deg1.get());
+                            deg_to_set = std::move(deg1);
                     }
                 }
                  if (deg_to_set->getId() == NUMBER && static_cast<Number*>(deg_to_set.get())->isOne())
-                    result.push_back(makeAbstractExpression(Degree::getArgumentOfDegree(it1.get())->getId(), Degree::getArgumentOfDegree(it1.get())));
+                    result.push_back(copy(Degree::getArgumentOfDegree(it1.get())));
                 else
-                    result.push_back(abs_ex(new Degree(makeAbstractExpression(Degree::getArgumentOfDegree(it1.get())->getId(),
-                                                                                                                 Degree::getArgumentOfDegree(it1.get())), deg_to_set)));
+                    result.push_back(abs_ex(new Degree(copy(Degree::getArgumentOfDegree(it1.get())), deg_to_set)));
             }
         }
     }
@@ -1349,10 +1349,10 @@ void Fractal::getRidOfRootsInDenominator()
           //                                                            Degree::getArgumentOfDegree(it.get())),
          //                                                        std::move(den_deg)));
             AbstractExpression * arg = Degree::getArgumentOfDegree(it.get());
-            it = abs_ex (new Degree(makeAbstractExpression(arg->getId(), arg),
+            it = abs_ex (new Degree(copy(arg),
                                                                 std::move(den_deg)));
              arg = Degree::getArgumentOfDegree(it.get());
-            this->numerator.push_back(abs_ex(new Degree(makeAbstractExpression(arg->getId(), arg),
+            this->numerator.push_back(abs_ex(new Degree(copy(arg),
                                                                                      std::move(mult_deg_pt))));
         }
     }
@@ -2610,7 +2610,7 @@ abs_ex Fractal::tableAntiderivative(int var) const
                 auto ln_f = checkIfItsLinearFunction(arg, var);
                 if (ln_f.first != nullptr)
                 {
-                    return two/ln_f.first*sqrt(makeAbstractExpression(arg->getId(), arg));
+                    return two/ln_f.first*sqrt(copy(arg));
                 }
                 auto qc_f = checkIfItsQuadraticFunction(arg, var);
                 abs_ex x (new Variable(getVariable(var)));
@@ -3522,8 +3522,8 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
     if (second->getId() == FRACTAL)
     {
         bool merged = false;
-        abs_ex its_second =  copy(second);
-        auto fr = static_cast<Fractal*>(its_second.get())->getFractal();
+        //abs_ex its_second =  copy(second);
+        auto fr = static_cast<Fractal*>(second.get())->getFractal();
         std::list<std::pair<fractal_argument::iterator, abs_ex>> originals;
         for (auto it1 = this->numerator.begin(), it2 = fr.first->begin();
              it1 != this->numerator.end() && it2 != fr.first->end();)
@@ -3551,6 +3551,14 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
                 ++it2;
                 continue;
             }
+            if (isIntegratingConstantAndCanChangeIt(it1->get()->getId()) &&
+                    isIntegratingConstantAndCanChangeIt(it2->get()->getId()))
+            {
+                ++it1;
+                ++it2;
+                continue;
+            }
+
             originals.push_back({it1, copy(*it1)});
             if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(*it2))
             {
@@ -3599,7 +3607,8 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
             ++it2;
             merged = true;
         }
-        FunctionRange second_range = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(its_second);
+
+        FunctionRange second_range = getRangeOfConstantMultipliersThatCanBeChanged(second);
         if (!(second_range.isPoint() && *second_range.getPoint() == *one))
         {
             merged = true;
@@ -3637,14 +3646,16 @@ void Fractal::pullSomeMultipliersIntoIntegratingConstant()
 {
     FunctionRange range;
     bool initialized = false;
+    bool is_only_constant = true;
     if (this->coefficient != 1)
     {
         range = this->coefficient.getRange();
         initialized = true;
+        is_only_constant = false;
     }
     this->coefficient = 1;
     std::set<int> used_vars;
-    bool is_only_constant = true;
+
     abs_ex its_constant = nullptr;
     for (auto it = this->numerator.begin(); it != this->numerator.end();)
     {

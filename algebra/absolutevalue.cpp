@@ -7,7 +7,7 @@
 #include "variablesdistributor.h"
 AbsoluteValue::AbsoluteValue(const abs_ex & expr)
 {
-    this->expression = makeAbstractExpression(expr->getId(), expr.get());
+    this->expression = copy(expr);
     this->simplify();
 }
 AbsoluteValue::AbsoluteValue(abs_ex && expr)
@@ -17,7 +17,7 @@ AbsoluteValue::AbsoluteValue(abs_ex && expr)
 }
 AbsoluteValue::AbsoluteValue(const AbsoluteValue & value)
 {
-    this->expression = makeAbstractExpression(value.expression->getId(), value.expression.get());
+    this->expression = copy(value.expression);
     this->simplified = value.simplified;
     this->expr_position = value.expr_position;
 }
@@ -81,7 +81,7 @@ abs_ex AbsoluteValue::downcastTo()
 {
     assert(canDowncastTo());
     if (this->expr_position > 0)
-        return makeAbstractExpression(this->expression->getId(), this->expression.get());
+        return std::move(this->expression);
     if (this->expr_position == 0 && this->expression->getId() == FRACTAL)
     {
         Fractal * argument = static_cast<Fractal*>(this->expression.get());
@@ -89,14 +89,14 @@ abs_ex AbsoluteValue::downcastTo()
         num.push_back(abs_ex(new AbsoluteValue(abs_ex(new Number(argument->getCoefficient())))));
         auto argument_multipliers = argument->getFractal();
         for (auto &it : *argument_multipliers.first)
-            num.push_back(abs_ex(new AbsoluteValue(makeAbstractExpression(it->getId(), it.get()))));
+            num.push_back(abs_ex(new AbsoluteValue(std::move(it))));
         for (auto &it : *argument_multipliers.second)
-            denum.push_back(abs_ex(new AbsoluteValue(makeAbstractExpression(it->getId(), it.get()))));
+            denum.push_back(abs_ex(new AbsoluteValue(std::move(it))));
         return abs_ex(new Fractal(std::move(num), std::move(denum)));
     }
     if (this->expr_position < 0 && this->expression->getId() == POLYNOMIAL)
     {
-        auto copy = makeAbstractExpression(this->expression->getId(), this->expression.get());
+        auto copy = std::move(this->expression);
         static_cast<Polynomial*>(copy.get())->changeSign();
         return std::move(copy);
     }

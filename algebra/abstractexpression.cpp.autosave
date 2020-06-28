@@ -25,7 +25,7 @@ AbstractExpression &AbstractExpression::operator=(const AbstractExpression &expr
 
 AbstractExpression::AbstractExpression(const AbstractExpression &expr)
 {
-
+    
 }
 
 

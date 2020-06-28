@@ -563,6 +563,8 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
 }
 std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
 {
+  //  qDebug() << equation->toString();
+
     std::list<abs_ex> res;
     if (equation->getId() == NUMBER)
     {
@@ -676,7 +678,11 @@ std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
             res.splice(res.end(), _solveEquation(equation, var));
             return res;
         }
-        return solveEquationOfPolynom(toPolynomialPointer(equation), var);
+        //qDebug() << VariablesDistributor::amountOfVariable(1500000003);
+        //equation->setSimplified(false);
+       // equation->simplify();
+     //   qDebug() << equation->toString();
+        return solveEquationOfPolynom(toPolynomialPointer(copyWithLiftingIntegrationConstants(equation)), var);
     }
         //return { -ln_f.second / ln_f.first};
     return res;

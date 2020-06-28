@@ -7,10 +7,11 @@ class Polynomial;
 class Fractal;
 
 
-std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, const AbstractExpression * argument);
+//std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, const AbstractExpression * argument);
 bool has(const std::set<int> & set, int el);
 abs_ex copy(const AbstractExpression * arg);
 abs_ex copy(const abs_ex & arg);
+abs_ex copyWithLiftingIntegrationConstants(const abs_ex & expr);
 long long int factorial(long long int N);
 long long int gcd(long long int a, long long int b);
 //extended euclidean algorithm; returns {d, {x, y}} that d = x*a+y*b and d = gcd(a, b)

@@ -154,7 +154,7 @@ abs_ex Logarithm::downcastTo()
             static_cast<Number*>(Degree::getDegreeOfExpression(this->argument.get()).get())->getNumerator() % 2 == 0)
     {
         AbstractExpression * arg = Degree::getArgumentOfDegree(this->argument.get());
-        return Degree::getDegreeOfExpression(this->argument.get()) * ln(abs(makeAbstractExpression(arg->getId(), arg)));
+        return Degree::getDegreeOfExpression(this->argument.get()) * ln(abs(abs_ex(arg)));
     }
     if (this->argument->getId() == DEGREE)
         return Degree::getDegreeOfExpression(this->argument.get()) * ln(Degree::getArgumentOfDegree(this->argument.get()));

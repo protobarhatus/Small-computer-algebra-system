@@ -12,7 +12,7 @@
 #include "variablesdistributor.h"
 Sinus::Sinus(const abs_ex & iargument)
 {
-    this->argument = makeAbstractExpression(iargument->getId(), iargument.get());
+    this->argument = copy(iargument);
     this->simplify();
 }
 Sinus::Sinus(abs_ex && arg)
@@ -20,13 +20,13 @@ Sinus::Sinus(abs_ex && arg)
     this->argument.swap(arg);
     this->simplify();
 }
-Sinus::Sinus(const Sinus & copy)
+Sinus::Sinus(const Sinus & cop)
 {
-    this->argument = makeAbstractExpression(copy.argument->getId(), copy.argument.get());
-    this->simplified = copy.simplified;
-    if (copy.pi_member != nullptr)
-        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*copy.pi_member));
-    this->is_pi_member_only = copy.is_pi_member_only;
+    this->argument = copy(cop.argument);
+    this->simplified = cop.simplified;
+    if (cop.pi_member != nullptr)
+        this->pi_member = std::unique_ptr<Fractal>(new Fractal(*cop.pi_member));
+    this->is_pi_member_only = cop.is_pi_member_only;
     this->simplify();
 }
 Sinus::Sinus(Sinus && mov)

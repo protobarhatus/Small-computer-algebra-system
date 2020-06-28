@@ -45,7 +45,7 @@ void out(const Polynom & p)
 int main(int argc, char *argv[])
 {
 
-   // testAlgMod();
+    testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -150,10 +150,10 @@ int main(int argc, char *argv[])
 
 
 
-     auto res = solveDifur(dx*y - dy*x, x, y);
+  //   auto res = solveDifur(dx*y - dy*x, x, y);
    // auto res = solveDifur(y - dy*x/dx, x, y);
-    //auto res = solveDifur(dy/dx + 2*y, x, y);
-   // auto res = solveDifur(dy/dx + (2*y + 1)*cot(x), x, y);
+   // auto res = solveDifur(dy/dx + 2*y, x, y);                       //y = C/e^(2x),  C in R
+    auto res = solveDifur(dy/dx + (2*y + 1)*cot(x), x, y);
  //   auto res = solveDifur(y*ln(y) + x*dy/dx, x, y);
     //auto res = solveDifur(pow(euler(),(y - x*x))*dy -2*x*dx, x, y);
    // auto res = solveDifur(sqrt(x*y - 2*x)*dy/dx + x*y*y + 5*y*y, x, y);

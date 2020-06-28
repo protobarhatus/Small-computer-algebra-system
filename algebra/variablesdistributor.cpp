@@ -112,6 +112,12 @@ int VariablesDistributor::firstIntegrateConstant()
 {
     return VariablesDistributor::get().first_integrate_constant;
 }
+
+int VariablesDistributor::amountOfVariable(int i)
+{
+    return VariablesDistributor::get().amount_of_integrating_constants[i -
+            VariablesDistributor::get().first_integrate_constant];
+}
 Variable systemVar(int num)
 {
     //return Variable(num + VariablesDistributor::firstSystemNum(), makeVariablesName(num + VariablesDistributor::firstSystemNum()));

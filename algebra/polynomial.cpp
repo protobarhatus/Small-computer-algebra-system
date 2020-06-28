@@ -387,6 +387,16 @@ Polynomial::Polynomial(std::unique_ptr<Fractal> &&first, std::unique_ptr<Fractal
     this->simplify();
 }
 
+Polynomial::Polynomial(const abs_ex &expr)
+{
+    this->monomials.push_back(toFrac(expr));
+}
+
+Polynomial::Polynomial(abs_ex &&expr)
+{
+    this->monomials.push_back(toFrac(std::move(expr)));
+}
+
 
 void Polynomial::addMonomial(Fractal* fractal)
 {
@@ -922,7 +932,7 @@ abs_ex Polynomial::toDegree(long long degree)
     {
         abs_ex monom = getDegrCoefficientPtr(degree, combinations);
         for (int i = 0; i < combinations.size(); ++i)
-            monom = monom * takeDegreeOf(makeAbstractExpression(FRACTAL, monoms_vec[i]->get()), combinations[i]);
+            monom = monom * takeDegreeOf(copy(monoms_vec[i]->get()), combinations[i]);
         result_ptr->pushBack(absToFrac(std::move(monom)));
     }while(inc(combinations));
     result_ptr->simplify();
@@ -942,7 +952,7 @@ abs_ex Polynomial::tryToTakeRoot(long long int root)
         polynom = this;
     else
     {
-        cop = makeAbstractExpression(POLYNOMIAL, this);
+        cop = copy(this);
         std::map<QString, int> f;
         functions = replaceEveryFunctionOnSystemVariable(cop, f);
         polynom = dynamic_cast<Polynomial*>(cop.get());
@@ -1038,7 +1048,7 @@ std::list<std::unique_ptr<Fractal>> groupPolynom(const std::list<Fractal*> & ung
         Fractal var_group(1);
         for (auto &it : *(*start)->getFractal().first)
             if (Degree::getArgumentOfDegree(it.get())->getId() > 0)
-                var_group.getFractal().first->push_back(makeAbstractExpression(it->getId(), it.get()));
+                var_group.getFractal().first->push_back(copy(it));
         Polynomial remain_members;
         for (auto it = start; it != end; ++it)
             remain_members.addMonomial(*(*it) / var_group);
@@ -1084,7 +1094,7 @@ abs_ex openAbs(abs_ex rt)
             if (it->getId() == ABSOLUTE_VALUE)
             {
                 abs_ex under_abs = static_cast<AbsoluteValue*>(it.get())->open();
-                it = makeAbstractExpression(under_abs->getId(), under_abs.get());
+                it = std::move(under_abs);
             }
         assert(fr.second->size() == 0);
         return abs_ex(new Fractal(fr.first, frac->getCoefficient()));
@@ -1148,8 +1158,8 @@ std::unique_ptr<Fractal> chooseAddictive(std::list<std::list<std::unique_ptr<Fra
         return std::unique_ptr<Fractal>(new Fractal(std::move(ptr)));
     };
     if (can_choose_group_that_dont_intersect_with_others)
-        return absToFrac(openAbs(takeDegreeOf(makeAbstractExpression(result->begin()->get()->getId(), result->begin()->get()), Number(1) / root)));
-    return absToFrac(openAbs(takeDegreeOf(makeAbstractExpression(group_with_max_amount_of_vars->begin()->get()->getId(), group_with_max_amount_of_vars->begin()->get()), Number(1) / root)));
+        return absToFrac(openAbs(takeDegreeOf(copy(result->begin()->get()), Number(1) / root)));
+    return absToFrac(openAbs(takeDegreeOf(copy(group_with_max_amount_of_vars->begin()->get()), Number(1) / root)));
 }
 void _debugGroup(std::list<std::list<std::unique_ptr<Fractal>>::iterator> & group)
 {
@@ -1214,7 +1224,7 @@ std::list<std::unique_ptr<Fractal>> getAddictivesFromSameGroup(std::list<std::li
     result_vector.push_back(result.begin());
     for (auto it = ++group.begin(); it != group.end() && in(getPatternOfMonomialsDegree((*it)->get())); ++it)
     {
-        abs_ex monom = makeAbstractExpression(FRACTAL, (*it)->get());
+        abs_ex monom = copy( (*it)->get());
         if (result.size() > 1)
         {
             VariablesCombinations combinations = VariablesCombinations(result.size());
@@ -1226,10 +1236,10 @@ std::list<std::unique_ptr<Fractal>> getAddictivesFromSameGroup(std::list<std::li
                     summ = sum(summ, mult(getPatternOfMonomialsDegree((*result_vector[i]).get()), combinations[i]));
                 if (summ == getPatternOfMonomialsDegree((*it)->get()))
                 {
-                    abs_ex multiplicator = openAbs(takeDegreeOf(makeAbstractExpression(FRACTAL, (*result_vector.begin())->get()), combinations[0]));
+                    abs_ex multiplicator = openAbs(takeDegreeOf(copy( (*result_vector.begin())->get()), combinations[0]));
                     for (int i = 1; i < combinations.size(); ++i)
                         if (combinations[i] != 0)
-                            multiplicator = multiplicator * openAbs(takeDegreeOf(makeAbstractExpression(FRACTAL, (*result_vector[i]).get()), combinations[i]));
+                            multiplicator = multiplicator * openAbs(takeDegreeOf(copy( (*result_vector[i]).get()), combinations[i]));
                     monom = monom - multiplicator * getDegrCoefficientPtr(root, combinations);
                 }
             } while(inc(combinations));
@@ -1305,7 +1315,7 @@ std::list<std::unique_ptr<Fractal>> getAddictivesInPolynom(std::list<std::list<s
 
     std::list<std::list<std::unique_ptr<Fractal>>::iterator> addictives_with_same_group;
     std::unique_ptr<Fractal> root_as_number(new Fractal(root));
-    std::unique_ptr<Fractal> degree_of_defined_addictive = absToFrac(openAbs(takeDegreeOf(makeAbstractExpression(FRACTAL, defined_addictive.get()), root - 1)));
+    std::unique_ptr<Fractal> degree_of_defined_addictive = absToFrac(openAbs(takeDegreeOf(copy( defined_addictive.get()), root - 1)));
     for (auto it = monoms.begin(); it != monoms.end(); ++it)
     {
         if (!isFactorMatchingToAddictive(*it))
@@ -1675,7 +1685,7 @@ abs_ex Polynomial::tryToTakeRootOfNonVariablesPolynomial()
                     z = takeDegreeOf(nz, hl);
             auto formula = [&two_p, &half, &minus](abs_ex & mult1, abs_ex & mult2, abs_ex & divider, bool is_negative)->abs_ex {
                 abs_ex res (new Degree(mult1 * mult2 / divider / two_p,
-                                                                    makeAbstractExpression(NUMBER, half.get())));
+                                                                    half));
                 if (is_negative)
                     res = res * minus;
                 return res;
@@ -1919,7 +1929,7 @@ int Polynomial::getPositionRelativelyZeroIfHasVariables()
             else if (degr.isOne())
                 b = b + it->getFractalWithoutVariable(var_id);
             else if (degr.isZero())
-                c = c + makeAbstractExpression(FRACTAL, it.get());
+                c = c + copy( it.get());
             else
             {
                 succes = false;
@@ -2179,7 +2189,7 @@ std::array<abs_ex, 3> Polynomial::checkQuadraticFunction(int var_id) const
         else if (degr.isOne())
             b = b + it->getFractalWithoutVariable(var_id);
         else if (degr.isZero())
-            c = c + makeAbstractExpression(FRACTAL, it.get());
+            c = c + copy( it.get());
         else
         {
             return {nullptr, nullptr, nullptr};
@@ -2757,5 +2767,16 @@ std::unique_ptr<Polynomial> toPolynomialPointer(const abs_ex & expr)
     else
     {
         return std::unique_ptr<Polynomial>(new Polynomial(expr.get()));
+    }
+}
+std::unique_ptr<Polynomial> toPolynomialPointer(abs_ex && expr)
+{
+    if (expr->getId() == POLYNOMIAL)
+    {
+        return std::unique_ptr<Polynomial>(static_cast<Polynomial*>(expr.release()));
+    }
+    else
+    {
+        return std::unique_ptr<Polynomial>(new Polynomial(std::move(expr)));
     }
 }

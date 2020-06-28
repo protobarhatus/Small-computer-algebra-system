@@ -27,13 +27,25 @@ Degree::Degree(abs_ex && iargument, abs_ex && idegree)
 }
 Degree::Degree(const abs_ex & arg, const abs_ex & deg)
 {
-    this->argument = makeAbstractExpression(arg->getId(), arg.get());
-    this->degree = makeAbstractExpression(deg->getId(), deg.get());
+    this->argument = copy(arg);
+    this->degree = copy(deg);
     this->simplify();
+}
+
+Degree::Degree(const abs_ex &argument, abs_ex &&degree)
+{
+    this->argument = copy(argument);
+    this->degree = std::move(degree);
+}
+
+Degree::Degree(abs_ex &&argument, const abs_ex &degree)
+{
+    this->argument = std::move(argument);
+    this->degree = copy(degree);
 }
 Degree::Degree(const abs_ex & arg, Number deg)
 {
-    this->argument = makeAbstractExpression(arg->getId(), arg.get());
+    this->argument = copy(arg);
     this->degree = abs_ex(new Number(deg));
     this->simplify();
 }
@@ -61,8 +73,8 @@ bool Degree::operator==(AbstractExpression &right)
 }
 Degree::Degree(const Degree & deg)
 {
-    this->degree = makeAbstractExpression(deg.degree->getId(), deg.degree.get());
-    this->argument = makeAbstractExpression(deg.argument->getId(), deg.argument.get());
+    this->degree = copy(deg.degree);
+    this->argument = copy(deg.argument);
     this->simplified = deg.simplified;
     this->simplify();
 }
@@ -82,7 +94,8 @@ bool Degree::canDowncastTo()
         Fractal * frac = static_cast<Fractal*>(this->argument.get());
         auto fr = frac->getFractal();
         //это на случай подобно sqrt(-a), чтобы не пытался разложить на sqrt(-1)*sqrt(a)
-        if (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->getDenominator() % 2 == 0 &&
+        if (((this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->getDenominator() % 2 == 0) ||
+             (this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->getCoefficient().getDenominator() % 2 == 0)) &&
                 ((fr.first->size() == 1 && fr.second->empty())) &&
                 frac->getCoefficient() == -1)
             return false;
@@ -188,11 +201,11 @@ abs_ex Degree::downcastTo()
         if (static_cast<Number*>(this->argument.get())->getNumerator() != 1)
         {
             Number num_coe = static_cast<Number*>(this->argument.get())->getNumerator();
-            num.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &num_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            num.push_back(abs_ex(new Degree(toAbsEx(num_coe), copy(degree))));
             num.begin()->get()->simplify();
         }
         Number denom_coe = static_cast<Number*>(this->argument.get())->getDenominator();
-        denum.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+        denum.push_back(abs_ex(new Degree(toAbsEx(denom_coe), std::move(this->degree))));
         denum.begin()->get()->simplify();
         return abs_ex(new Fractal(&num, &denum));
     }    
@@ -209,7 +222,7 @@ abs_ex Degree::downcastTo()
             {
                 bool s;
                 num.push_back(abs_ex(new Degree(abs_ex(new Number(power(it.first, it.second, s))),
-                                                                             makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+                                                                             copy(degree))));
             }
             return abs_ex(new Fractal(std::move(num), std::move(den), is_negative ? -1 : 1));
         }
@@ -223,14 +236,16 @@ abs_ex Degree::downcastTo()
         fractal_argument num, denum;
         Number num_coe = static_cast<Fractal*>(this->argument.get())->getCoefficient().getNumerator();
         Number denom_coe = Number( static_cast<Fractal*>(this->argument.get())->getCoefficient().getDenominator());
-        if (num_coe.getNumerator() < 0 && this->degree->getId() == NUMBER &&
-                static_cast<Number*>(this->degree.get())->getDenominator() % 2 == 0)
+        if (num_coe.getNumerator() < 0 && ((this->degree->getId() == NUMBER &&
+                static_cast<Number*>(this->degree.get())->getDenominator() % 2 == 0) ||
+                (this->degree->getId() == FRACTAL &&
+                 static_cast<Fractal*>(this->degree.get())->getCoefficient().getDenominator() % 2 == 0)))
         {
 
             if (!(num_coe * -1).isOne())
                 num.push_back(pow(numToAbs(-num_coe.getNumerator()), degree));
             if (!denom_coe.isOne())
-                denum.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+                denum.push_back(abs_ex(new Degree(toAbsEx(denom_coe), copy(degree))));
             if(fract.first->empty())
             {
 
@@ -247,6 +262,10 @@ abs_ex Degree::downcastTo()
             else
             {
                 auto it1 = fract.first->begin();
+                //qDebug() << this->toString();
+                //qDebug() << degree->toString();
+              //  qDebug() << (*it1)->toString();
+                //qDebug() << (-(*it1))->toString();
                 num.push_back(pow(-(*it1), copy(degree)));
                 ++it1;
                 while (it1 != fract.first->end())
@@ -262,16 +281,16 @@ abs_ex Degree::downcastTo()
             return fr;
         }
         if (!num_coe.isOne())
-            num.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &num_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            num.push_back(abs_ex(new Degree(toAbsEx(num_coe), copy(degree))));
         for (auto &it : *fract.first)
         {
-            num.push_back(abs_ex(new Degree(makeAbstractExpression(it->getId(), it.get()), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            num.push_back(abs_ex(new Degree(std::move(it), copy(degree))));
         }
         if (!denom_coe.isOne())
-            denum.push_back(abs_ex(new Degree(makeAbstractExpression(NUMBER, &denom_coe), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            denum.push_back(abs_ex(new Degree(toAbsEx(denom_coe), copy(degree))));
         for (auto &it : *fract.second)
         {
-            denum.push_back(abs_ex(new Degree(makeAbstractExpression(it->getId(), it.get()), makeAbstractExpression(this->degree->getId(), this->degree.get()))));
+            denum.push_back(abs_ex(new Degree(std::move(it), copy(degree))));
         }
         auto fr =  abs_ex(new Fractal(&num, &denum));
         fr->simplify();
@@ -293,12 +312,14 @@ abs_ex Degree::downcastTo()
         if (this->degree->getId() == FRACTAL && static_cast<Fractal*>(degree.get())->hasIntegratingConstantThatCanBeChanged())
         {
             abs_ex constant = static_cast<Fractal*>(degree.get())->takeAwayConstantMultiplierThatCanBeChanged();
-            return pow(pow(argument, constant), degree);
+            return pow(pow(argument, std::move(constant)), std::move(degree));
         }
         if (this->degree->getId() == POLYNOMIAL && static_cast<Polynomial*>(degree.get())->hasIntegratingConstantThatCanBeChanged())
         {
+            qDebug() << this->argument->toString();
+            qDebug() << this->degree->toString();
             abs_ex constant = static_cast<Polynomial*>(degree.get())->takeAwayIntegragingConstantThatCanBeChanged();
-            return pow(argument, constant) * pow(argument, degree);
+            return pow(argument, std::move(constant)) * pow(argument, std::move(degree));
         }
     }
     if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL)
@@ -376,7 +397,7 @@ AbstractExpression * Degree::getArgumentOfDegree(AbstractExpression *expr)
 abs_ex Degree::getDegreeOfExpression(AbstractExpression *expr)
 {
     if (expr->getId() == DEGREE)
-        return makeAbstractExpression(static_cast<Degree*>(expr)->degree->getId(), static_cast<Degree*>(expr)->degree.get());
+        return copy(static_cast<Degree*>(expr)->degree);
     else
         return abs_ex(new Number(1));
 }
@@ -398,7 +419,7 @@ std::pair<std::unique_ptr<fractal_argument>, bool> Degree::getListOfArguments()
     fractal_argument * list = new fractal_argument;
     for (int i = 0; i < abs(static_cast<Number*>(this->degree.get())->getNumerator()); ++i)
     {
-        list->push_back(makeAbstractExpression(argument->getId(), argument.get()));
+        list->push_back(copy(argument));
     }
     return std::pair<std::unique_ptr<fractal_argument>, bool>(std::unique_ptr<fractal_argument>(list), static_cast<Number*>(this->degree.get())->compareWith(0) < 0);
 }
@@ -843,9 +864,17 @@ abs_ex takeDegreeOf(const abs_ex & argument, const abs_ex & degree)
 {
     return Degree(argument, degree).downcast();
 }
+abs_ex takeDegreeOf(abs_ex && argument, const abs_ex & degree)
+{
+    return Degree(std::move(argument), degree).downcast();
+}
+abs_ex takeDegreeOf(const abs_ex & argument, abs_ex && degree)
+{
+    return Degree(argument, std::move(degree)).downcast();
+}
 abs_ex takeDegreeOf(abs_ex && argument, abs_ex && degree)
 {
-    return Degree(argument, degree).downcast();
+    return Degree(std::move(argument), std::move(degree)).downcast();
 }
 abs_ex takeDegreeOf(const abs_ex & argument, Number degree)
 {
@@ -1538,10 +1567,7 @@ abs_ex Degree::tryToFindExponentialFunction(int var) const
     return this->degree->tryToFindExponentialFunction(var);
 }
 
-abs_ex takeDegreeOf(abs_ex &&argument, const abs_ex &degree)
-{
-    return takeDegreeOf(std::move(argument), copy(degree));
-}
+
 
 abs_ex sqrt(const abs_ex &arg)
 {

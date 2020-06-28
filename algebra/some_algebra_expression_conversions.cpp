@@ -65,10 +65,17 @@ abs_ex copy(const AbstractExpression * arg)
 {
     if (arg == nullptr)
         return nullptr;
-    return makeAbstractExpression(arg->getId(), arg);
+    auto res = makeAbstractExpression(arg->getId(), arg);
+    auto set = res->getSetOfVariables();
+    for (auto &it : set)
+        if (isIntegratingConstantAndCanChangeIt(it))
+            setUpExpressionIntoVariable(res, integratingConstantExpr(VariablesDistributor::getVariablesDefinition(it)->getRange()
+                                                                     ), it);
+    return res;
 }
 abs_ex copy(const abs_ex & arg)
 {
+    return copy(arg.get());
     if (arg == nullptr)
         return nullptr;
     return makeAbstractExpression(arg->getId(), arg.get());
@@ -466,4 +473,15 @@ bool hasIntersections(const std::set<int> &a, const std::set<int> &b)
 abs_ex toAbsEx(AbstractExpression *expr)
 {
     return abs_ex(expr);
+}
+
+abs_ex copyWithLiftingIntegrationConstants(const abs_ex &expr)
+{
+    abs_ex res = copy(expr);
+    auto set = res->getSetOfVariables();
+    for (auto &it : set)
+        if (isIntegratingConstantAndCanChangeIt(it))
+            setUpExpressionIntoVariable(res, integratingConstantExpr(VariablesDistributor::getVariablesDefinition(it)->getRange()
+                                                                     ), it);
+    return res;
 }

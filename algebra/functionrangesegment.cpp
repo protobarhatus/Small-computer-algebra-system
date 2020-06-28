@@ -152,6 +152,10 @@ QString FunctionRangeSegment::toString() const
 {
     if (this->min() == nullptr && this->max() == nullptr)
         return "R";
+    if (this->isPoint())
+    {
+        return "{ " + this->min()->toString() + " }";
+    }
     QString res;
     if (this->isMinIncluded())
         res += '[';
