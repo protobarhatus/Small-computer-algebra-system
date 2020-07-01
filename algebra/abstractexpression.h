@@ -120,8 +120,8 @@ protected:
     virtual int getPositionRelativelyZeroIfHasVariables() = 0;
 
 };
-//bool canBeConsideredAsConstant(const AbstractExpression * expr);
-//bool canBeConsideredAsConstant(const abs_ex & expr);
+bool canBeConsideredAsConstant(const AbstractExpression * expr);
+bool canBeConsideredAsConstant(const abs_ex & expr);
 bool canBeConsideredAsConstantThatCanBeChanged(const AbstractExpression * expr);
 bool canBeConsideredAsConstantThatCanBeChanged(const abs_ex & expr);
 bool lower(const abs_ex & left, const abs_ex & right);
@@ -139,8 +139,16 @@ std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression * 
 void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
 //bool canOpenByTrigonometricalSum(abs_ex & expr);
 abs_ex tryToOpenByTrigonometricalSum(abs_ex &expr);
+
+void replaceIntegratingConstantsOnSystemVariables(abs_ex & expr, std::map<int, abs_ex> & system_vars_to_consts_indexes);
+void replaceSystemVariablesBackOnIntegratingConstants(abs_ex & expr, std::map<int, abs_ex> & system_vars_to_consts_indexes);
+void replaceIntegratingConstantsOnSystemVariables(AbstractExpression * expr, std::map<int, abs_ex> & system_vars_to_consts_indexes);
+void replaceSystemVariablesBackOnIntegratingConstants(AbstractExpression * expr, std::map<int, abs_ex> & system_vars_to_consts_indexes);
+
 void setUpExpressionIntoVariable(abs_ex & func, const abs_ex & expr, int var);
 void setUpExpressionIntoVariable(abs_ex & func, abs_ex && expr, int var);
+void setUpExpressionIntoVariable(AbstractExpression * func, const abs_ex & expr, int var);
+void setUpExpressionIntoVariable(AbstractExpression * func, abs_ex && expr, int var);
 //отличие от ...BackToFunctions в том, что она снимает simplified с выражения и упрощает его.
 //делать это в ...BackToFunctions нельзя, так как это вызовет бесконечную рекурсию
 void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);

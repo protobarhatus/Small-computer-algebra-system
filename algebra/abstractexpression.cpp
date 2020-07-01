@@ -43,6 +43,10 @@ bool AbstractExpression::less(const AbstractExpression * left, const AbstractExp
         return false;
     if (isIntegratingConstantAndCanChangeIt(right->getId()) && !isIntegratingConstantAndCanChangeIt(left->getId()))
         return true;
+    if (isIntegratingConstant(left->getId()) && !isIntegratingConstant(right->getId()))
+        return false;
+    if (isIntegratingConstant(right->getId()) && !isIntegratingConstant(left->getId()))
+        return true;
     if (left->getId() != right->getId())
     {
 
@@ -65,6 +69,10 @@ bool AbstractExpression::lessToSort(const abs_ex &left, const abs_ex &right)
     if (isIntegratingConstantAndCanChangeIt(left->getId()) && !isIntegratingConstantAndCanChangeIt(right->getId()))
         return false;
     if (isIntegratingConstantAndCanChangeIt(right->getId()) && !isIntegratingConstantAndCanChangeIt(left->getId()))
+        return true;
+    if (isIntegratingConstant(left->getId()) && !isIntegratingConstant(right->getId()))
+        return false;
+    if (isIntegratingConstant(right->getId()) && !isIntegratingConstant(left->getId()))
         return true;
     if (left->getId() != right->getId())
     {
@@ -1029,4 +1037,63 @@ abs_ex operator-(abs_ex && left, abs_ex && right)
     abs_ex polynom = abs_ex(new Polynomial(toFrac(std::move(left)), toFrac(-std::move(right))));
 
     return polynom->downcast();
+}
+
+void setUpExpressionIntoVariable(AbstractExpression *func, const abs_ex &expr, int var)
+{
+    std::map<int, abs_ex> repl_vars;
+    repl_vars.insert({var, copy(expr)});
+   // qDebug() << func->makeStringOfExpression();
+    replaceSystemVariablesToExpressions(func, repl_vars);
+    //qDebug() << func->makeStringOfExpression();
+    func->setSimplified(false);
+    func->simplify();
+   // func = func->downcast().release();
+}
+
+void setUpExpressionIntoVariable(AbstractExpression *func, abs_ex &&expr, int var)
+{
+    std::map<int, abs_ex> repl_vars;
+    repl_vars.insert({var, std::move(expr)});
+    replaceSystemVariablesToExpressions(func, repl_vars);
+    func->setSimplified(false);
+    func->simplify();
+    //func = func->downcast().release();
+}
+
+void replaceIntegratingConstantsOnSystemVariables(abs_ex &expr, std::map<int, abs_ex> &system_vars_to_consts_indexes)
+{
+    replaceIntegratingConstantsOnSystemVariables(expr.get(), system_vars_to_consts_indexes);
+}
+
+void replaceSystemVariablesBackOnIntegratingConstants(abs_ex &expr, std::map<int, abs_ex> &system_vars_to_consts_indexes)
+{
+    replaceSystemVariablesBackOnIntegratingConstants(expr.get(), system_vars_to_consts_indexes);
+    expr = expr->downcast();
+}
+
+void replaceIntegratingConstantsOnSystemVariables(AbstractExpression *expr, std::map<int, abs_ex> &system_vars_to_consts_indexes)
+{
+    auto set = expr->getSetOfVariables();
+    for (auto &it : set)
+    {
+        if (isIntegratingConstant(it))
+        {
+            auto t = systemVarExpr();
+            abs_ex its_const = getVariableExpr(it);
+            expr->changeSomePartOn(its_const->makeStringOfExpression(), t);
+            system_vars_to_consts_indexes.insert({it, std::move(t)});
+        }
+    }
+}
+
+void replaceSystemVariablesBackOnIntegratingConstants(AbstractExpression *expr, std::map<int, abs_ex> &system_vars_to_consts_indexes)
+{
+    for (auto &it : system_vars_to_consts_indexes)
+    {
+        abs_ex constant = getVariableExpr(it.first);
+        expr->changeSomePartOn(it.second->makeStringOfExpression(), constant);
+    }
+    expr->setSimplified(false);
+    expr->simplify();
 }

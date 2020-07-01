@@ -115,6 +115,8 @@ int VariablesDistributor::firstIntegrateConstant()
 
 int VariablesDistributor::amountOfVariable(int i)
 {
+    if (i >= Variable::integrating_constant_id_counter)
+        return 0;
     return VariablesDistributor::get().amount_of_integrating_constants[i -
             VariablesDistributor::get().first_integrate_constant];
 }
@@ -230,4 +232,9 @@ bool isIntegratingConstantAndCanChangeIt(int id)
 {
     return isIntegratingConstant(id) &&
             VariablesDistributor::get().amount_of_integrating_constants[id - VariablesDistributor::get().first_integrate_constant] == 1;
+}
+
+int amountOfIntegratingConstant(int index)
+{
+    return VariablesDistributor::amountOfVariable(index + 1500000000);
 }

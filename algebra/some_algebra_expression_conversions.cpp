@@ -66,11 +66,12 @@ abs_ex copy(const AbstractExpression * arg)
     if (arg == nullptr)
         return nullptr;
     auto res = makeAbstractExpression(arg->getId(), arg);
-    auto set = res->getSetOfVariables();
+    /*auto set = res->getSetOfVariables();
     for (auto &it : set)
-        if (isIntegratingConstantAndCanChangeIt(it))
+        if (isIntegratingConstant(it) &&
+                VariablesDistributor::amountOfVariable(it) == 2)
             setUpExpressionIntoVariable(res, integratingConstantExpr(VariablesDistributor::getVariablesDefinition(it)->getRange()
-                                                                     ), it);
+                                                                     ), it);*/
     return res;
 }
 abs_ex copy(const abs_ex & arg)
@@ -474,14 +475,47 @@ abs_ex toAbsEx(AbstractExpression *expr)
 {
     return abs_ex(expr);
 }
-
-abs_ex copyWithLiftingIntegrationConstants(const abs_ex &expr)
+abs_ex copyWithLiftingIntegrationConstantsThatCanBeChanged(const AbstractExpression * expr)
 {
     abs_ex res = copy(expr);
     auto set = res->getSetOfVariables();
     for (auto &it : set)
-        if (isIntegratingConstantAndCanChangeIt(it))
+        if (isIntegratingConstant(it) &&
+                VariablesDistributor::amountOfVariable(it) == 2)
+            setUpExpressionIntoVariable(res.get(), integratingConstantExpr(VariablesDistributor::getVariablesDefinition(it)->getRange()
+                                                                     ), it);
+    return res;
+}
+abs_ex copyWithLiftingIntegrationConstantsThatCanBeChanged(const abs_ex &expr)
+{
+    abs_ex res = copy(expr);
+    auto set = res->getSetOfVariables();
+    for (auto &it : set)
+        if (isIntegratingConstant(it) &&
+                VariablesDistributor::amountOfVariable(it) == 2)
             setUpExpressionIntoVariable(res, integratingConstantExpr(VariablesDistributor::getVariablesDefinition(it)->getRange()
                                                                      ), it);
     return res;
+}
+
+void liftAllIntegratingConstants(abs_ex &expr)
+{
+    auto set = expr->getSetOfVariables();
+    for (auto &it : set)
+        if (isIntegratingConstant(it))
+            setUpExpressionIntoVariable(expr, integratingConstantExpr(VariablesDistributor::getVariablesDefinition(it)->getRange()),
+                                        it);
+    expr->setSimplified(false);
+    expr->simplify();
+    expr = expr->downcast();
+}
+
+abs_ex licCopy(const AbstractExpression *expr)
+{
+    return copyWithLiftingIntegrationConstantsThatCanBeChanged(expr);
+}
+
+abs_ex licCopy(const abs_ex &expr)
+{
+    return copyWithLiftingIntegrationConstantsThatCanBeChanged(expr);
 }

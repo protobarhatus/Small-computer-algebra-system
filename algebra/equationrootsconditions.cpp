@@ -118,7 +118,7 @@ RootCondition &RootCondition::operator=(RootCondition &&cop)
 }
 
 RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, const abs_ex &expression) :
-    var(_var), condition_expression(copy(expression)), type(condition),
+    var(_var), condition_expression(licCopy(expression)), type(condition),
     is_expr_independent_of_var(false)
 {
     if (!condition_expression->hasVariable(var))

@@ -4,7 +4,7 @@
 DifEquationRootCondition::DifEquationRootCondition(const abs_ex &cond, int x, int y, Type t)
 {
     this->type = t;
-    this->condition = copy(cond);
+    this->condition = copyWithLiftingIntegrationConstantsThatCanBeChanged(cond);
     this->x = x;
     this->y = y;
     this->is_condition_difur = this->condition->hasDifferential();

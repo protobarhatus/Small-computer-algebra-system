@@ -87,6 +87,8 @@ abs_ex pow(abs_ex && arg, const abs_ex & deg);
 abs_ex pow(abs_ex && arg, abs_ex && deg);
 abs_ex pow(const abs_ex & arg, abs_ex && deg);
 abs_ex pow(const abs_ex & arg, Number deg);
+abs_ex pow(const abs_ex & arg, abs_ex && deg);
+abs_ex pow(abs_ex &&arg, abs_ex &&deg);
 abs_ex pow(abs_ex && arg, Number deg);
 abs_ex pow(Number arg, Number deg);
 abs_ex sqrt(const abs_ex & arg);

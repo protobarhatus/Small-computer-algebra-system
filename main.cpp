@@ -45,7 +45,7 @@ void out(const Polynom & p)
 int main(int argc, char *argv[])
 {
 
-    testAlgMod();
+   // testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -147,20 +147,21 @@ int main(int argc, char *argv[])
    // auto res = solveEquation(ln(x - 3) + ln(x + 3), x);
     //auto res = solveEquation(pow(euler(), a)/abs(x) - abs(y), y);
     //auto res = solveEquation(ln(abs(x)) - ln(abs(x+1)) - ln(abs(y - 3)) + integratingConstantExpr(), y);
-
-
+//auto res = solveEquation(ln(abs(ln(y))) + ln(abs(x)) + std::move(integratingConstantExpr()), y);
+//res.begin()->getExpr()->setSimplified(false);
+//res.begin()->getExpr()->simplify();
 
   //   auto res = solveDifur(dx*y - dy*x, x, y);
    // auto res = solveDifur(y - dy*x/dx, x, y);
    // auto res = solveDifur(dy/dx + 2*y, x, y);                       //y = C/e^(2x),  C in R
-    auto res = solveDifur(dy/dx + (2*y + 1)*cot(x), x, y);
- //   auto res = solveDifur(y*ln(y) + x*dy/dx, x, y);
-    //auto res = solveDifur(pow(euler(),(y - x*x))*dy -2*x*dx, x, y);
+   // auto res = solveDifur(dy/dx + (2*y + 1)*cot(x), x, y);             // y = -1/2 (sin(x)^2 + C)/sin(x)^2,  C in R
+   // auto res = solveDifur(y*ln(y) + x*dy/dx, x, y);                // y = 1/C^(1/|x|), C in (1; inf), y = C^(1/|x|), C in (1; inf), y = 1
+   // auto res = solveDifur(pow(euler(),(y - x*x))*dy -2*x*dx, x, y);   //ln(e^x^2 + C), C in R
    // auto res = solveDifur(sqrt(x*y - 2*x)*dy/dx + x*y*y + 5*y*y, x, y);
-   // auto res = solveDifur(2*(x*y + y)*dy/dx + x*(pow(y, 4) + 1), x, y);
+   // auto res = solveDifur(2*(x*y + y)*dy/dx + x*(pow(y, 4) + 1), x, y);  //-1*ln(|1 + x|) + x + atan(y^2) + C3  = 0  and  C3 is in  R
     //auto res = solveDifur(2*dy/dx *sin(y) *cos(y)*pow(sin(x), 2) + cos(x), x, y);
-   // auto res = solveDifur((1 + pow(euler(), x))*y*dy - pow(euler(), y)*dx, x, y);
-   // auto res = solveDifur(y - x*dy/dx - 3*(1 + x*x*dy/dx), x, y);
+    //auto res = solveDifur((1 + pow(euler(), x))*y*dy - pow(euler(), y)*dx, x, y);               //(-1 - y - x*e^y + ln(1 + e^x)*e^y + e^y*C) /e^y  = 0  and  C is in  R
+    auto res = solveDifur(y - x*dy/dx - 3*(1 + x*x*dy/dx), x, y);
     //auto res = solveDifur(x*dy/dx - (y - x*pow(euler(), y/x)), x, y);
 
   //  auto res = solveDifur(x*dy/dx - 2*sqrt(x*x + y*y) - y, x, y);

@@ -35,7 +35,7 @@ public:
 
     virtual bool canDowncastTo() override;
     virtual abs_ex downcastTo() override;
-    Number getCoefficient();
+    Number getCoefficient() const;
     void setCoefficinet(Number num);
     virtual bool operator==(AbstractExpression & right) override;
     //comparing without coefficient
@@ -56,10 +56,10 @@ public:
     virtual std::set<QString> getSetOfFunctions() const override;
     virtual Number getMaxDegreeOfVariable(int id) override;
     std::unique_ptr<Fractal> getFractalWithoutVariable(int id) const;
-    std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & right);
+    /*std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & right);
     std::unique_ptr<Fractal> operator*(const Fractal & right);
     std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> & right);
-    std::unique_ptr<Fractal> operator/(const Fractal & right) const;
+    std::unique_ptr<Fractal> operator/(const Fractal & right) const;*/
     //can do if has polynom in numerator and empty denominator and coefficient with denominator = 1. transform expr like c(a+b)(d+e) into cad+cbd+cae+cbe
     bool canTurnIntoPolynomWithOpeningParentheses() const;
     bool canTurnIntoPolynomWithOpeningParentheses(bool is_fractional_coefficient_allowed);
@@ -162,6 +162,24 @@ private:
 
     Number coefficient;
 };
+std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal>& left, const std::unique_ptr<Fractal> & right);
+std::unique_ptr<Fractal> operator*(std::unique_ptr<Fractal> && left, const std::unique_ptr<Fractal> & right);
+std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & left, std::unique_ptr<Fractal> && right);
+std::unique_ptr<Fractal> operator*(std::unique_ptr<Fractal> && left, std::unique_ptr<Fractal> && right);
+std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
+std::unique_ptr<Fractal> operator/(std::unique_ptr<Fractal> && left, const std::unique_ptr<Fractal> & right);
+std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> & left, std::unique_ptr<Fractal> && right);
+std::unique_ptr<Fractal> operator/(std::unique_ptr<Fractal> && left, std::unique_ptr<Fractal> && right);
+
+std::unique_ptr<Fractal> operator*(const Fractal & left, const Fractal & right);
+std::unique_ptr<Fractal> operator*(Fractal && left, const Fractal & right);
+std::unique_ptr<Fractal> operator*(const Fractal & left, Fractal && right);
+std::unique_ptr<Fractal> operator*(Fractal && left, Fractal && right);
+std::unique_ptr<Fractal> operator/(const Fractal & left, const Fractal & right);
+std::unique_ptr<Fractal> operator/(Fractal && left, const Fractal & right);
+std::unique_ptr<Fractal> operator/(const Fractal & left, Fractal && right);
+std::unique_ptr<Fractal> operator/(Fractal && left, Fractal && right);
+
 abs_ex integrate(const abs_ex & frac);
 abs_ex definiteIntegral(const abs_ex &func, const abs_ex & from, const abs_ex & to);
 abs_ex toAbsEx(const std::unique_ptr<Fractal> & expr);
@@ -169,8 +187,7 @@ abs_ex toAbsEx(std::unique_ptr<Fractal> && expr);
 std::unique_ptr<Fractal> toFrac(const abs_ex & expr);
 std::unique_ptr<Fractal> toFrac(abs_ex && expr);
 fractal_argument operator*(fractal_argument & fmult, fractal_argument & smult);
-std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
-std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
+
 std::unique_ptr<Fractal> operator+(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
 std::unique_ptr<Fractal> operator-(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right);
 bool operator==(fractal_argument & left, fractal_argument & right);

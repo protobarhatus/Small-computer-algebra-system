@@ -33,10 +33,12 @@ bool isPolynomOfAllVariables(const abs_ex & equation)
     return true;
 }
 //возвратное уравнение, хз как правильно на english
-std::list<abs_ex> checkIfitsReturnEquationAndTryToSolve(const abs_ex & equation, int var)
+std::list<abs_ex> checkIfitsReturnEquationAndTryToSolve(abs_ex && equation, int var)
 {
     std::list<abs_ex> res;
     auto pol = checkIfItsPolynom(equation, var);
+    liftAllIntegratingConstants(equation);
+
     //если размер массива четный, то степень уравнения нечетная, а тогда оно само должно разложиться в факторизации
     //ну и если это не полином, то тоже отсюда выйдет
     if (pol.size() % 2 == 0)
@@ -44,7 +46,8 @@ std::list<abs_ex> checkIfitsReturnEquationAndTryToSolve(const abs_ex & equation,
     int center = pol.size() / 2;
     if (*pol[center - 1] == *zero || *pol[center + 1] == *zero)
         return res;
-    abs_ex ratio = pol[center - 1]/pol[center + 1];
+
+    abs_ex ratio = std::move(pol[center - 1])/std::move(pol[center + 1]);
 
     for (int i = 2; i <= pol.size()/2; ++i)
     {
@@ -103,11 +106,11 @@ std::list<abs_ex> checkIfItsExponentialSumEquationAndTryToSolve(abs_ex && equati
         return res;
     if (basis->getPositionRelativelyZero() < 0)
     {
-        downcasted_frac = -downcasted_frac;
-        basis = -basis;
-        var_degree = -var_degree;
-        equation = -equation;
-        right = -right;
+        downcasted_frac = -std::move(downcasted_frac);
+        basis = -std::move(basis);
+        var_degree = -std::move(var_degree);
+        equation = -std::move(equation);
+        right = -std::move(right);
     }
     auto deg = Degree::getDegreeOfExpression(var_degree.get());
     abs_ex temp_var = systemVarExpr();
@@ -187,11 +190,11 @@ std::list<abs_ex> checkIfItsLogarithmicSumEquationAndTryToSolve(const abs_ex & e
         conditions.addCondition(RootCondition(var, RootCondition::BIGGER_THAN_ZERO, getArgumentOfFunction(fr_with_var)));
         conditions.addCondition(RootCondition(var, RootCondition::DONT_EQUAL_ZERO, getArgumentOfFunction(fr_with_var)));
     }
-    return solveEquation(new_equation - pow(getEuler(), right), var, conditions);
+    return solveEquation(new_equation - pow(getEuler(), licCopy(right)), var, conditions);
 
 }
 //вещи по типу sqrt(x) = a, или sqrt(x) = f(x)
-std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs_ex & right_expr, int var)
+std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, abs_ex && right_expr, int var)
 {
     std::list<abs_ex> res;
     if (var_expr->getId() == DEGREE)
@@ -214,15 +217,17 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
                 {
                     if (right_expr->getPositionRelativelyZero() < 0)
                         return res;
-                    auto right_pow = pow(right_expr, one/deg);
+                 //   qDebug() << right_expr->toString();
+                 //   qDebug() << deg->toString();
+                    auto right_pow = pow(licCopy(right_expr), one/deg);
                     //если с правой стороны появляется радикал, то такое преобразование
                     //бессмысленно, ибо потом его опять будем возводить в степень
                     //и в результате упадем в бесконечную рекурсию
                     if (hasRadicalMultiplier(right_pow))
                         return std::list<abs_ex>();
-                    res.splice(res.end(), solveEquation(copy(arg) - right_pow, var,
+                    res.splice(res.end(), solveEquation(copy(arg) - licCopy(right_pow), var,
                                                         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)));
-                    res.splice(res.end(), solveEquation(copy(arg) + right_pow, var,
+                    res.splice(res.end(), solveEquation(copy(arg) + std::move(right_pow), var,
                                                         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)));
                     return res;
                 }
@@ -230,13 +235,13 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
                 {
                     if (right_expr->getPositionRelativelyZero() < 0)
                         return res;
-                    return solveEquation(copy(arg) - pow(right_expr, one/deg), var,
+                    return solveEquation(copy(arg) - pow(licCopy(right_expr), one/deg), var,
                     { RootCondition(var, RootCondition::BIGGER_THAN_ZERO, copy(arg)),
                       RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)});
                 }
 
             }
-            return solveEquation(copy(arg) - pow(right_expr, one/deg), var);
+            return solveEquation(copy(arg) - pow(std::move(right_expr), one/deg), var);
         }
         if (!arg->hasVariable(var) && deg->hasVariable(var))
         {
@@ -247,7 +252,7 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
                 return res;
            // qDebug() << (deg - ln(right_expr)/ln(copy(arg)))->toString();
 
-            return solveEquation(deg - ln(right_expr)/ln(copy(arg)), var);
+            return solveEquation(deg - ln(std::move(right_expr))/ln(copy(arg)), var);
         }
         return res;
     }
@@ -256,16 +261,16 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
         if (right_expr->getPositionRelativelyZero() < 0)
             return res;
         auto arg = copy(static_cast<AbsoluteValue*>(var_expr.get())->getExpression());
-
-
-        res.splice(res.end(), solveEquation(arg - right_expr, var,
+      //  qDebug() << right_expr->toString();
+      //  qDebug() << amountOfIntegratingConstant(6);
+        res.splice(res.end(), solveEquation(arg - copyWithLiftingIntegrationConstantsThatCanBeChanged(right_expr), var,
         {RootCondition(var, RootCondition::BIGGER_THAN_ZERO, arg),
-         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)}));
-
-        res.splice(res.end(), solveEquation(arg + right_expr, var,
+         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, copyWithLiftingIntegrationConstantsThatCanBeChanged(right_expr))}));
+     //   qDebug() << AlgExpr(res.back()).toString();
+        res.splice(res.end(), solveEquation(arg + licCopy(right_expr), var,
         {RootCondition(var, RootCondition::LESS_THAN_ZERO, arg),
-         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)}));
-
+         RootCondition(var, RootCondition::BIGGER_THAN_ZERO, copyWithLiftingIntegrationConstantsThatCanBeChanged(right_expr))}));
+       // qDebug() << AlgExpr(res.back()).toString();
         return res;
     }
     if (var_expr->getId() == SINUS)
@@ -281,9 +286,9 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             if (right_expr->getId() == SINUS)
             {
                 auto var_arg = getArgumentOfFunction(var_expr);
-                auto right_arg = getArgumentOfFunction(right_expr);
-                res.splice(res.end(), solveEquation(var_arg - right_arg - two*getPi()*systemVarExpr(), var));
-                res.splice(res.end(), solveEquation(var_arg - getPi() + right_arg - two*getPi()*systemVarExpr(), var));
+                auto right_arg = getArgumentOfFunction(std::move(right_expr));
+                res.splice(res.end(), solveEquation(var_arg - licCopy(right_arg) - two*getPi()*systemVarExpr(), var));
+                res.splice(res.end(), solveEquation(var_arg - getPi() + licCopy(right_arg) - two*getPi()*systemVarExpr(), var));
                 return res;
             }
             /*if (right_expr->getId() == COSINUS)
@@ -302,9 +307,9 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             return res;
         }
         auto var_arg = getArgumentOfFunction(var_expr);
-        auto right_asin = asin(right_expr);
-        res.splice(res.end(), solveEquation(var_arg - right_asin - two*getPi()*systemVarExpr(), var));
-        res.splice(res.end(), solveEquation(var_arg - getPi() + right_asin - two*getPi()*systemVarExpr(), var));
+        auto right_asin = asin(std::move(right_expr));
+        res.splice(res.end(), solveEquation(var_arg - licCopy(right_asin) - two*getPi()*systemVarExpr(), var));
+        res.splice(res.end(), solveEquation(var_arg - getPi() + std::move(right_asin) - two*getPi()*systemVarExpr(), var));
         return res;
 
     }
@@ -316,22 +321,22 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             return res;
         if (right_expr->hasVariable(var))
         {
-            if (right_expr->getId() == SINUS)
-                return solveEquationOfSpecialCases(right_expr, var_expr, var);
+           // if (right_expr->getId() == SINUS)
+           //     return solveEquationOfSpecialCases(right_expr, var_expr, var);
             if (right_expr->getId() == COSINUS)
             {
                 auto var_arg = getArgumentOfFunction(var_expr);
-                auto right_arg = getArgumentOfFunction(right_expr);
-                res.splice(res.end(), solveEquation(var_arg - right_arg - two*getPi()*systemVarExpr(), var));
-                res.splice(res.end(), solveEquation(var_arg + right_arg - two*getPi()*systemVarExpr(), var));
+                auto right_arg = getArgumentOfFunction(std::move(right_expr));
+                res.splice(res.end(), solveEquation(var_arg - licCopy(right_arg) - two*getPi()*systemVarExpr(), var));
+                res.splice(res.end(), solveEquation(var_arg + licCopy(right_arg) - two*getPi()*systemVarExpr(), var));
                 return res;
             }
             return res;
         }
         auto var_arg = getArgumentOfFunction(var_expr);
-        auto right_acos = acos(right_expr);
-        res.splice(res.end(), solveEquation(var_arg - right_acos - two*getPi()*systemVarExpr(), var));
-        res.splice(res.end(), solveEquation(var_arg + right_acos - two*getPi()*systemVarExpr(), var));
+        auto right_acos = acos(std::move(right_expr));
+        res.splice(res.end(), solveEquation(var_arg - licCopy(right_acos) - two*getPi()*systemVarExpr(), var));
+        res.splice(res.end(), solveEquation(var_arg + licCopy(right_acos) - two*getPi()*systemVarExpr(), var));
         return res;
     }
     if (var_expr->getId() == TANGENT)
@@ -341,14 +346,14 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             if (right_expr->getId() == TANGENT)
             {
                 auto var_arg = getArgumentOfFunction(var_expr);
-                auto right_arg = getArgumentOfFunction(right_expr);
-                return solveEquation(var_arg - right_arg - getPi()*systemVarExpr(), var);
+                auto right_arg = getArgumentOfFunction(std::move(right_expr));
+                return solveEquation(var_arg - licCopy(right_arg) - getPi()*systemVarExpr(), var);
             }
             return res;
         }
         auto var_arg = getArgumentOfFunction(var_expr);
-        auto right_atan = atan(right_expr);
-        return solveEquation(var_arg - right_atan - getPi()*systemVarExpr(), var);
+        auto right_atan = atan(std::move(right_expr));
+        return solveEquation(var_arg - std::move(right_atan) - getPi()*systemVarExpr(), var);
     }
     if (var_expr->getId() == COTANGENT)
     {
@@ -357,14 +362,14 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             if (right_expr->getId() == COTANGENT)
             {
                 auto var_arg = getArgumentOfFunction(var_expr);
-                auto right_arg = getArgumentOfFunction(right_expr);
-                return solveEquation(var_arg - right_arg - getPi()*systemVarExpr(), var);
+                auto right_arg = getArgumentOfFunction(std::move(right_expr));
+                return solveEquation(var_arg - std::move(right_arg) - getPi()*systemVarExpr(), var);
             }
             return res;
         }
         auto var_arg = getArgumentOfFunction(var_expr);
-        auto right_acot = acot(right_expr);
-        return solveEquation(var_arg - right_acot - getPi()*systemVarExpr(), var);
+        auto right_acot = acot(std::move(right_expr));
+        return solveEquation(var_arg - std::move(right_acot) - getPi()*systemVarExpr(), var);
     }
     if (var_expr->getId() == LOGARITHM)
     {
@@ -374,8 +379,8 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             if (right_expr->getId() == LOGARITHM)
             {
                 auto var_arg = getArgumentOfFunction(var_expr);
-                auto right_arg = getArgumentOfFunction(right_expr);
-                return solveEquation(var_arg - right_arg, var, {
+                auto right_arg = getArgumentOfFunction(std::move(right_expr));
+                return solveEquation(var_arg - licCopy(right_arg), var, {
                                          RootCondition(var, RootCondition::BIGGER_THAN_ZERO, var_arg),
                                          RootCondition(var, RootCondition::DONT_EQUAL_ZERO, var_arg),
                                          RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_arg),
@@ -385,7 +390,11 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             return res;
         }
         auto var_arg = getArgumentOfFunction(var_expr);
-        return solveEquation(var_arg - pow(getEuler(), right_expr), var, {
+       // qDebug() << AlgExpr(right_expr).toString();
+       // qDebug() << VariablesDistributor::amountOfVariable(1500000006);
+    //    qDebug() << AlgExpr(pow(getEuler(), copyWithLiftingIntegrationConstantsThatCanBeChanged(right_expr))).toString();
+       // qDebug() << amountOfIntegratingConstant(10);
+        return solveEquation(var_arg - pow(getEuler(), std::move(right_expr)), var, {
                                  RootCondition(var, RootCondition::BIGGER_THAN_ZERO, var_arg),
                                  RootCondition(var, RootCondition::DONT_EQUAL_ZERO, var_arg)
                              });
@@ -397,8 +406,8 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             if (right_expr->getId() == ARCSINUS)
             {
                 auto var_arg = getArgumentOfFunction(var_expr);
-                auto right_arg = getArgumentOfFunction(right_expr);
-                return solveEquation(var_arg - right_arg, var, {
+                auto right_arg = getArgumentOfFunction(std::move(right_expr));
+                return solveEquation(var_arg - std::move(right_arg), var, {
                                          RootCondition(var, RootCondition::LESS_THAN_ZERO, var_arg - one),
                                          RootCondition(var, RootCondition::BIGGER_THAN_ZERO, var_arg + one),
                                          RootCondition(var, RootCondition::LESS_THAN_ZERO, var_arg - one),
@@ -408,12 +417,12 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             return res;
         }
         auto var_arg = getArgumentOfFunction(var_expr);
-        abs_ex right_asin = sin(right_expr);
-        return solveEquation(var_arg - right_asin, var, {
+        abs_ex right_asin = sin(std::move(right_expr));
+        return solveEquation(var_arg - std::move(right_asin), var, {
                                  RootCondition(var, RootCondition::LESS_THAN_ZERO, var_arg - one),
                                  RootCondition(var, RootCondition::BIGGER_THAN_ZERO, var_arg + one),
-                                 RootCondition(var, RootCondition::LESS_THAN_ZERO, right_expr - getPi()/two),
-                                 RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr + getPi()/two)
+                                 RootCondition(var, RootCondition::LESS_THAN_ZERO, licCopy(right_expr) - getPi()/two),
+                                 RootCondition(var, RootCondition::BIGGER_THAN_ZERO, licCopy(right_expr) + getPi()/two)
                              });
     }
     if (right_expr->getId() == ARCTANGENT)
@@ -423,16 +432,16 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, const abs
             if (right_expr->getId() == ARCTANGENT)
             {
                 auto var_arg = getArgumentOfFunction(var_expr);
-                auto right_arg = getArgumentOfFunction(right_expr);
-                return solveEquation(var_arg - right_arg, var);
+                auto right_arg = getArgumentOfFunction(std::move(right_expr));
+                return solveEquation(var_arg - std::move(right_arg), var);
             }
             return res;
         }
         auto var_arg = getArgumentOfFunction(var_expr);
-        abs_ex right_atan = tan(right_expr);
-        return solveEquation(var_arg - right_atan, var, {
-                                 RootCondition(var, RootCondition::LESS_THAN_ZERO, right_expr - getPi()/two),
-                                 RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr + getPi()/two)
+        abs_ex right_atan = tan(std::move(right_expr));
+        return solveEquation(var_arg - std::move(right_atan), var, {
+                                 RootCondition(var, RootCondition::LESS_THAN_ZERO, licCopy(right_expr) - getPi()/two),
+                                 RootCondition(var, RootCondition::BIGGER_THAN_ZERO, licCopy(right_expr) + getPi()/two)
                              });
     }
     return res;
@@ -460,26 +469,33 @@ std::list<abs_ex> checkIfItsMultiplicationOfDegreesAndTryToSolve(const abs_ex & 
     }
     if (lcm_of_denominators == 1)
         return std::list<abs_ex>();
-    return solveEquation(pow(var_part, lcm_of_denominators) - right_part, var);
+    return solveEquation(pow(var_part, lcm_of_denominators) - licCopy(right_part), var);
 }
 std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equation, int var)
 {
     std::list<abs_ex> res;
-    res = checkIfitsReturnEquationAndTryToSolve(copy(equation.get()), var);
+    res = checkIfitsReturnEquationAndTryToSolve(licCopy(equation.get()), var);
     if (res.size() > 0)
         return res;
 
     abs_ex var_expr = copy(zero);
     abs_ex right_expr = copy(zero);
-    auto monoms = equation->getMonomialsPointers();
+
+    abs_ex equation_copy_expr = copy(equation.get());
+    liftAllIntegratingConstants(equation_copy_expr);
+    auto equation_copy = toPolynomialPointer(std::move(equation_copy_expr));
+
+    auto monoms = equation_copy->getMonomialsPointers();
    // qDebug() << equation->makeStringOfExpression();
+   // qDebug() << equation->toString();
     for (auto &it : monoms)
     {
         if (it->hasVariable(var))
-            var_expr = std::move(var_expr) + copy(it);
+            var_expr = std::move(var_expr) + toAbsEx(std::move(it));
         else
-            right_expr = std::move(right_expr) - copy(it);
+            right_expr = std::move(right_expr) - toAbsEx(std::move(it));
     }
+    equation_copy.release();
     if (var_expr->getId() == POLYNOMIAL)
     {
         auto common_part = static_cast<Polynomial*>(var_expr.get())->reduceCommonPart();
@@ -519,7 +535,7 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
         //уравнение общего вида, которое хер пойми как решать, либо
         //уравнение по типу 2^2x + 2^x + 2 = a, либо сумма логарифмов, либо тригонометрическое уравнение,
         //либо полином
-        res = checkIfItsExponentialSumEquationAndTryToSolve(copy(var_expr), copy(right_expr), var);
+        res = checkIfItsExponentialSumEquationAndTryToSolve(copy(var_expr), licCopy(right_expr), var);
         if (res.size() > 0)
             return res;
         res = checkIfItsLogarithmicSumEquationAndTryToSolve(var_expr, right_expr, var);
@@ -533,11 +549,15 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
         }
     }
 
-    res = solveEquationOfSpecialCases(var_expr, right_expr, var);
+    res = solveEquationOfSpecialCases(var_expr, licCopy(right_expr), var);
     if (res.size() > 0)
         return res;
     var_expr = copy(zero);
     right_expr = copy(equation.get());
+    equation_copy_expr = copy(equation.get());
+    liftAllIntegratingConstants(equation_copy_expr);
+    equation_copy = toPolynomialPointer(std::move(equation_copy_expr));
+    monoms = equation_copy->getMonomialsPointers();
     for (auto &it : monoms)
     {
         auto var_monom = copy(it)/it->getFractalWithoutVariable(var);
@@ -545,9 +565,11 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
         {
             var_expr = copy(it)->downcast();
             right_expr = right_expr - copy(it);
+
             break;
         }
     }
+    equation_copy.release();
     right_expr = -right_expr;
     if (var_expr->getId() == FRACTAL)
     {
@@ -555,7 +577,7 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
         var_expr = var_expr / expr_without_var;
         right_expr = right_expr / expr_without_var;
     }
-    res = solveEquationOfSpecialCases(var_expr, right_expr, var);
+    res = solveEquationOfSpecialCases(var_expr, std::move(right_expr), var);
 
 
     return res;
@@ -592,8 +614,10 @@ std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
         EquationRootsConditions conditions;
         for (auto &it : *fr.second)
             conditions.addCondition(RootCondition(var, RootCondition::DONT_EQUAL_ZERO, it));
+       // qDebug() << equation->toString();
+       // qDebug() << VariablesDistributor::amountOfVariable(1500000004);
         for (auto &it : *fr.first)
-            res.splice(res.end(), solveEquation(it, var, conditions));
+            res.splice(res.end(), solveEquation(copyWithLiftingIntegrationConstantsThatCanBeChanged(it), var, conditions));
         return res;
 
     }
@@ -682,7 +706,8 @@ std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
         //equation->setSimplified(false);
        // equation->simplify();
      //   qDebug() << equation->toString();
-        return solveEquationOfPolynom(toPolynomialPointer(copyWithLiftingIntegrationConstants(equation)), var);
+      //  qDebug() << VariablesDistributor::amountOfVariable(1500000004);
+        return solveEquationOfPolynom(toPolynomialPointer(copyWithLiftingIntegrationConstantsThatCanBeChanged(equation)), var);
     }
         //return { -ln_f.second / ln_f.first};
     return res;
@@ -738,7 +763,8 @@ std::list<abs_ex > solveEquation(const abs_ex &equation, int var)
             it = pow(it, one/numToAbs(gcd_of_nums));
         return res;
     }
- //   qDebug() << equation->toString();
+  //  qDebug() << AlgExpr(equation).toString();
+   // qDebug() << amountOfIntegratingConstant(9);
     return _solveEquation(equation, var);
 }
 
@@ -1122,6 +1148,27 @@ bool isIntegratingConstantAddictiveThatCanBeChanged(const std::unique_ptr<Fracta
 {
     if (it->getCoefficient() == 1 && it->getFractal().second->empty() &&
             it->getFractal().first->size() == 1 && isIntegratingConstantAndCanChangeIt(it->getFractal().first->begin()->get()->getId()))
+        return true;
+    return false;
+}
+bool isIntegratingConstantAddictiveThatCanBeChanged(const Fractal * it)
+{
+    if (it->getCoefficient() == 1 && it->getFractal().second->empty() &&
+            it->getFractal().first->size() == 1 && isIntegratingConstantAndCanChangeIt(it->getFractal().first->begin()->get()->getId()))
+        return true;
+    return false;
+}
+bool isIntegratingConstantAddictive(const std::unique_ptr<Fractal> & it)
+{
+    if (it->getCoefficient() == 1 && it->getFractal().second->empty() &&
+            it->getFractal().first->size() == 1 && isIntegratingConstant(it->getFractal().first->begin()->get()->getId()))
+        return true;
+    return false;
+}
+bool isIntegratingConstantAddictive(const Fractal * it)
+{
+    if (it->getCoefficient() == 1 && it->getFractal().second->empty() &&
+            it->getFractal().first->size() == 1 && isIntegratingConstant(it->getFractal().first->begin()->get()->getId()))
         return true;
     return false;
 }

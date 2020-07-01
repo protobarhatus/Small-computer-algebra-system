@@ -99,7 +99,8 @@ std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const 
     auto ic = integratingConstantExpr();
 
     res.push_back(left_integr - right_integr + std::move(ic));
-   // qDebug() << next(res.begin())->get()->toString();
+   // qDebug() << difur->toString();
+   // qDebug() << res.back()->toString();
     return {std::move(res), true};
 }
 std::pair<std::list<abs_ex>, bool> tryToSolveHomoheneousDifur(abs_ex && difur, int x, int y)
@@ -277,7 +278,7 @@ FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(abs_ex
     {
         auto monoms = static_cast<Polynomial*>(expr.get())->getMonomialsPointers();
 
-        if (isIntegratingConstantAndCanChangeIt(monoms.back()->getId()))
+        if (isIntegratingConstantAddictiveThatCanBeChanged(monoms.back()))
         {
             auto res = monoms.back()->getRange();
             static_cast<Polynomial*>(expr.get())->getMonoms()->erase(--static_cast<Polynomial*>(expr.get())->getMonoms()->end());
@@ -502,6 +503,8 @@ void uniteSameResults(std::list<abs_ex> & list)
     {
         for (auto it1 = next(it); it1 != list.end();)
         {
+            //qDebug() << it->get()->toString();
+            //qDebug() << it1->get()->toString();
            // auto sub = *it - *it1;
             //auto sub = copyWithLiftingIntegrateConstantsIndex(*it) -
             //        copyWithLiftingIntegrateConstantsIndex(*it1);
@@ -510,13 +513,16 @@ void uniteSameResults(std::list<abs_ex> & list)
              //   it1 = list.erase(it1);
              //   continue;
             //}
+
             if (subCompare(*it, *it1))
             {
                 it1 = list.erase(it1);
                 continue;
             }
-           // qDebug() << it->get()->toString();
-          //  qDebug() << it1->get()->toString();
+              qDebug() << amountOfIntegratingConstant(21);
+              qDebug() << amountOfIntegratingConstant(24);
+            qDebug() << it->get()->toString();
+            qDebug() << it1->get()->toString();
            // qDebug() << VariablesDistributor::amountOfVariable(1500000000);
            /* if (isIntegratingConstantAndCanChangeIt(sub->getId()))
             {
@@ -683,6 +689,8 @@ std::list<DifurResult> solveDifur(const abs_ex &difur, int x, int y)
 
     uniteSameResults(res);
     uniteSameResults(solved_for_x);
+    qDebug() << amountOfIntegratingConstant(21);
+    qDebug() << amountOfIntegratingConstant(24);
     uniteSameResults(solved_for_y);
 
     std::list<DifurResult> result;

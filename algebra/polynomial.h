@@ -40,7 +40,8 @@ public:
     //makes coefficients's GCF = 1. Returned number is number polynomial has divided on
     Number reduce();
     //returns result and remainder. makes copy of both divider and dividend. both of them must be simplified
-    std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> divide(Polynomial * dividend);
+    std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> divide(Polynomial * dividend, bool
+                                                                               can_return_fractional_coefficients = true);
     virtual std::set<int> getSetOfPolyVariables() const override;
     virtual std::set<int> getSetOfVariables() const override;
     virtual std::set<QString> getSetOfFunctions() const override;

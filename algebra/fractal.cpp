@@ -214,7 +214,7 @@ std::pair<fractal_argument *, fractal_argument *> Fractal::getFractal() const
     *const_cast<bool*>(&this->simplified) = false;
     return std::pair<fractal_argument *, fractal_argument *>(const_cast<fractal_argument*>(&this->numerator), const_cast<fractal_argument*>(&this->denominator));
 }
-Number Fractal::getCoefficient()
+Number Fractal::getCoefficient() const
 {
     return this->coefficient;
 }
@@ -880,7 +880,7 @@ void Fractal::reducePolynomials()
         this->simplify();
    // this->reduceSameMembers();
 }
-std::unique_ptr<Fractal> Fractal::operator*(const std::unique_ptr<Fractal> & right)
+/*std::unique_ptr<Fractal> Fractal::operator*(const std::unique_ptr<Fractal> & right)
 {
     std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&this->numerator, &this->denominator));
     result->setCoefficinet( this->coefficient * right->coefficient);
@@ -924,7 +924,7 @@ std::unique_ptr<Fractal> Fractal::operator/(const Fractal & right) const
         result->pushBackToNumerator(copy(it));
     result->simplify();
     return result;
-}
+}*/
 bool Fractal::canTurnIntoPolynomWithOpeningParentheses() const
 {
     if (!this->denominator.empty() || this->coefficient.getDenominator() != 1)
@@ -982,7 +982,7 @@ std::unique_ptr<Polynomial> Fractal::turnIntoPolynomWithOpeningParentheses(bool 
     polynom->setFractionalCoefficientsAllowed(fractional_coefficients);
     for (auto &it : polynoms_monoms)
     {
-        polynom->addMonomial(*it * frac_without_polynom);
+        polynom->addMonomial(std::move(*it) * *frac_without_polynom);
     }
 
     return polynom;
@@ -1305,14 +1305,7 @@ void Fractal::getRidOfIrrationalityInDenominator()
     this->multiplyIrrationalSums();
 
 }
-std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right)
-{
-    return *left * right;
-}
-std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right)
-{
-    return *left / right;
-}
+
 void Fractal::sortVariablesInIncreasingOfTheirId()
 {
     NONCONST
@@ -3525,10 +3518,14 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
         //abs_ex its_second =  copy(second);
         auto fr = static_cast<Fractal*>(second.get())->getFractal();
         std::list<std::pair<fractal_argument::iterator, abs_ex>> originals;
+
+        std::map<int, abs_ex> replaced_on_system_vars_integrating_constants;
+
         for (auto it1 = this->numerator.begin(), it2 = fr.first->begin();
              it1 != this->numerator.end() && it2 != fr.first->end();)
         {
-            if (canBeConsideredAsConstantThatCanBeChanged(*it1) && canBeConsideredAsConstantThatCanBeChanged(*it2))
+            if (canBeConsideredAsConstantThatCanBeChanged(*it1) &&
+                    canBeConsideredAsConstantThatCanBeChanged(*it2))
             {
                 ++it1;
                 ++it2;
@@ -3551,8 +3548,8 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
                 ++it2;
                 continue;
             }
-            if (isIntegratingConstantAndCanChangeIt(it1->get()->getId()) &&
-                    isIntegratingConstantAndCanChangeIt(it2->get()->getId()))
+            if (isIntegratingConstant(it1->get()->getId()) &&
+                    isIntegratingConstant(it2->get()->getId()))
             {
                 ++it1;
                 ++it2;
@@ -3560,10 +3557,18 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
             }
 
             originals.push_back({it1, copy(*it1)});
+            replaceIntegratingConstantsOnSystemVariables(originals.back().second, replaced_on_system_vars_integrating_constants);
+          //  qDebug() << originals.back().second->toString();
+           // qDebug() << VariablesDistributor::amountOfVariable(1500000012);
+          //  qDebug() << it1->get()->toString();
             if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(*it2))
             {
+
                 for (auto &it : originals)
+                {
+                    replaceSystemVariablesBackOnIntegratingConstants(it.second, replaced_on_system_vars_integrating_constants);
                     *it.first = std::move(it.second);
+                }
                 return false;
             }
             ++it1;
@@ -3573,7 +3578,8 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
         for (auto it1 = this->denominator.begin(), it2 = fr.second->begin();
              it1 != this->denominator.end() && it2 != fr.second->end();)
         {
-            if (canBeConsideredAsConstantThatCanBeChanged(*it1) && canBeConsideredAsConstantThatCanBeChanged(*it2))
+            if (canBeConsideredAsConstantThatCanBeChanged(*it1) &&
+                    canBeConsideredAsConstantThatCanBeChanged(*it2))
             {
                 ++it1;
                 ++it2;
@@ -3597,10 +3603,15 @@ bool Fractal::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
                 continue;
             }
             originals.push_back({it1, copy(*it1)});
+            replaceIntegratingConstantsOnSystemVariables(originals.back().second, replaced_on_system_vars_integrating_constants);
+
             if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(*it2))
             {
                 for (auto &it : originals)
+                {
+                    replaceSystemVariablesBackOnIntegratingConstants(it.second, replaced_on_system_vars_integrating_constants);
                     *it.first = std::move(it.second);
+                }
                 return false;
             }
             ++it1;
@@ -3948,4 +3959,193 @@ abs_ex definiteIntegral(const abs_ex &frac, const abs_ex &from, const abs_ex &to
     right->setSimplified(false);
     return left - right;
 
+}
+std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(*left));
+    result->setCoefficinet(result->getCoefficient() * right->getCoefficient());
+    auto right_fr = right->getFractal();
+    for (auto &it : *right_fr.first)
+        result->pushBackToNumerator(copy(it));
+    for (auto &it : *right_fr.second)
+        result->pushBackToDenominator(copy(it));
+    result->simplify();
+    return result;
+
+}
+std::unique_ptr<Fractal> operator*(std::unique_ptr<Fractal> &&left, const std::unique_ptr<Fractal> &right)
+{
+    left->setCoefficinet(left->getCoefficient() * right->getCoefficient());
+    auto right_fr = right->getFractal();
+    for (auto &it : *right_fr.first)
+        left->pushBackToNumerator(copy(it));
+    for (auto &it : *right_fr.second)
+        left->pushBackToDenominator(copy(it));
+    left->simplify();
+    return std::move(left);
+}
+std::unique_ptr<Fractal> operator*(std::unique_ptr<Fractal> &&left, std::unique_ptr<Fractal> &&right)
+{
+    left->setCoefficinet(left->getCoefficient() * right->getCoefficient());
+    auto right_fr = right->getFractal();
+    for (auto &it : *right_fr.first)
+        left->pushBackToNumerator(std::move(it));
+    for (auto &it : *right_fr.second)
+        left->pushBackToDenominator(std::move(it));
+    left->simplify();
+    return std::move(left);
+}
+std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> &left, std::unique_ptr<Fractal> &&right)
+{
+    return std::move(right) * left;
+}
+std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> & left, const std::unique_ptr<Fractal> & right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(*left));
+    result->setCoefficinet(result->getCoefficient() / right->getCoefficient());
+    auto right_fr = right->getFractal();
+    for (auto &it : *right_fr.second)
+        result->pushBackToNumerator(copy(it));
+    for (auto &it : *right_fr.first)
+        result->pushBackToDenominator(copy(it));
+    result->simplify();
+    return result;
+}
+
+
+
+std::unique_ptr<Fractal> operator/(std::unique_ptr<Fractal> &&left, const std::unique_ptr<Fractal> &right)
+{
+    std::unique_ptr<Fractal> result = std::move(left);
+    result->setCoefficinet(result->getCoefficient() / right->getCoefficient());
+    auto right_fr = right->getFractal();
+    for (auto &it : *right_fr.second)
+        result->pushBackToNumerator(copy(it));
+    for (auto &it : *right_fr.first)
+        result->pushBackToDenominator(copy(it));
+    result->simplify();
+    return result;
+
+}
+
+std::unique_ptr<Fractal> operator/(const std::unique_ptr<Fractal> &left, std::unique_ptr<Fractal> &&right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(*left));
+    result->setCoefficinet(result->getCoefficient() / right->getCoefficient());
+    auto right_fr = right->getFractal();
+    for (auto &it : *right_fr.second)
+        result->pushBackToNumerator(std::move(it));
+    for (auto &it : *right_fr.first)
+        result->pushBackToDenominator(std::move(it));
+    result->simplify();
+    return result;
+}
+
+std::unique_ptr<Fractal> operator/(std::unique_ptr<Fractal> &&left, std::unique_ptr<Fractal> &&right)
+{
+    std::unique_ptr<Fractal> result = std::move(left);
+    result->setCoefficinet(result->getCoefficient() / right->getCoefficient());
+    auto right_fr = right->getFractal();
+    for (auto &it : *right_fr.second)
+        result->pushBackToNumerator(std::move(it));
+    for (auto &it : *right_fr.first)
+        result->pushBackToDenominator(std::move(it));
+    result->simplify();
+    return result;
+}
+
+std::unique_ptr<Fractal> operator*(const Fractal &left, const Fractal &right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(left));
+    result->setCoefficinet(result->getCoefficient() * right.getCoefficient());
+    auto right_fr = right.getFractal();
+    for (auto &it : *right_fr.first)
+        result->pushBackToNumerator(copy(it));
+    for (auto &it : *right_fr.second)
+        result->pushBackToDenominator(copy(it));
+    result->simplify();
+    return result;
+}
+
+std::unique_ptr<Fractal> operator*(Fractal &&left, const Fractal &right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(std::move(left)));
+    result->setCoefficinet(result->getCoefficient() * right.getCoefficient());
+    auto right_fr = right.getFractal();
+    for (auto &it : *right_fr.first)
+        result->pushBackToNumerator(copy(it));
+    for (auto &it : *right_fr.second)
+        result->pushBackToDenominator(copy(it));
+    result->simplify();
+    return result;
+}
+
+std::unique_ptr<Fractal> operator*(const Fractal &left, Fractal &&right)
+{
+    return std::move(right) * left;
+}
+
+std::unique_ptr<Fractal> operator*(Fractal &&left, Fractal &&right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(std::move(left)));
+    result->setCoefficinet(result->getCoefficient() * right.getCoefficient());
+    auto right_fr = right.getFractal();
+    for (auto &it : *right_fr.first)
+        result->pushBackToNumerator(std::move(it));
+    for (auto &it : *right_fr.second)
+        result->pushBackToDenominator(std::move(it));
+    result->simplify();
+    return result;
+}
+
+std::unique_ptr<Fractal> operator/(const Fractal &left, const Fractal &right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(left));
+    result->setCoefficinet(result->getCoefficient() / right.getCoefficient());
+    auto right_fr = right.getFractal();
+    for (auto &it : *right_fr.second)
+        result->pushBackToNumerator(copy(it));
+    for (auto &it : *right_fr.first)
+        result->pushBackToDenominator(copy(it));
+    result->simplify();
+    return result;
+}
+
+std::unique_ptr<Fractal> operator/(Fractal &&left, const Fractal &right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(std::move(left)));
+    result->setCoefficinet(result->getCoefficient() / right.getCoefficient());
+    auto right_fr = right.getFractal();
+    for (auto &it : *right_fr.second)
+        result->pushBackToNumerator(copy(it));
+    for (auto &it : *right_fr.first)
+        result->pushBackToDenominator(copy(it));
+    result->simplify();
+    return result;
+}
+
+std::unique_ptr<Fractal> operator/(const Fractal &left, Fractal &&right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(left));
+    result->setCoefficinet(result->getCoefficient() / right.getCoefficient());
+    auto right_fr = right.getFractal();
+    for (auto &it : *right_fr.second)
+        result->pushBackToNumerator(std::move(it));
+    for (auto &it : *right_fr.first)
+        result->pushBackToDenominator(std::move(it));
+    result->simplify();
+    return result;
+}
+
+std::unique_ptr<Fractal> operator/(Fractal &&left, Fractal &&right)
+{
+    std::unique_ptr<Fractal> result(new Fractal(std::move(left)));
+    result->setCoefficinet(result->getCoefficient() / right.getCoefficient());
+    auto right_fr = right.getFractal();
+    for (auto &it : *right_fr.second)
+        result->pushBackToNumerator(std::move(it));
+    for (auto &it : *right_fr.first)
+        result->pushBackToDenominator(std::move(it));
+    result->simplify();
+    return result;
 }

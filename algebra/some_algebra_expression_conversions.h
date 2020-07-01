@@ -11,7 +11,10 @@ class Fractal;
 bool has(const std::set<int> & set, int el);
 abs_ex copy(const AbstractExpression * arg);
 abs_ex copy(const abs_ex & arg);
-abs_ex copyWithLiftingIntegrationConstants(const abs_ex & expr);
+abs_ex copyWithLiftingIntegrationConstantsThatCanBeChanged(const abs_ex & expr);
+abs_ex copyWithLiftingIntegrationConstantsThatCanBeChanged(const AbstractExpression * expr);
+abs_ex licCopy(const AbstractExpression * expr);
+abs_ex licCopy(const abs_ex & expr);
 long long int factorial(long long int N);
 long long int gcd(long long int a, long long int b);
 //extended euclidean algorithm; returns {d, {x, y}} that d = x*a+y*b and d = gcd(a, b)
@@ -33,4 +36,5 @@ std::pair<bool, std::unique_ptr<Fractal>> getPiMember(abs_ex & expr);
 bool isPiMemberInTable(Number coe);
 bool isPiMemberOnAxis(Number coe);
 abs_ex toAbsEx( AbstractExpression * expr);
+void liftAllIntegratingConstants(abs_ex & expr);
 #endif // SOME_ALGEBRA_EXPRESSION_CONVERSIONS_H

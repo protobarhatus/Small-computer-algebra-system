@@ -79,7 +79,9 @@ if (this->is_fractional_coefficients_allowed)
     if (this->canBecameFractal())
     {
       //  qDebug() << this->makeStringOfExpression();
+      //  qDebug() << this->toString();
         auto frac = this->toCommonDenominator();
+       // qDebug() << frac->toString();
         this->monomials.clear();
         this->monomials.push_back(std::move(frac));
         while(this->monomials.size() != 1)
@@ -504,7 +506,8 @@ Number Polynomial::getMaxDegreeOfVariable(int id)
         return num;
     return 0;
 }
-std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::divide(Polynomial * _dividend)
+std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::divide(Polynomial * _dividend,
+                                                                                       bool can_return_fractional_coefficients)
 {
     //copys divider and dividend and sort them in descending order of degree of first met variable that have only numeric degree. if it hasn't variables but has trigonometrical functions,
     //it works with them
@@ -641,6 +644,8 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
         abs_ex degree_diff(new Number(deg_of_max - deg_of_div));
         Degree var_multiplier = Degree(arg_variable, degree_diff);
         Fractal multiplier = *((coe_of_max_degree / &coefficient_of_max_degree_in_dividend) * Fractal(&var_multiplier));
+        if (!multiplier.getFractal().second->empty())
+            return {nullptr, nullptr};
         Polynomial subtrahend = *dividends_monomials * &multiplier;
         //qDebug() << "SUBTRAHEND: " << subtrahend.makeStringOfExpression();
        // qDebug() << "DIVINDER: " << divinders_monomials->makeStringOfExpression();
@@ -745,7 +750,7 @@ Polynomial Polynomial::operator*(AbstractExpression * expr)
     std::unique_ptr<Fractal> frac(new Fractal(expr));
     for (auto &it : result.monomials)
     {
-        it = *it * frac;
+        it = std::move(it) * frac;
     }
     result.simplify();
     return result;
@@ -1320,7 +1325,7 @@ std::list<std::unique_ptr<Fractal>> getAddictivesInPolynom(std::list<std::list<s
     {
         if (!isFactorMatchingToAddictive(*it))
             continue;
-        auto result_of_dividing = *(*it->get() / root_as_number.get()) / degree_of_defined_addictive;
+        auto result_of_dividing = *(*it->get() / *root_as_number.get()) / *degree_of_defined_addictive;
         if (result_of_dividing->getSetOfPolyVariables() == vars)
             addictives_with_same_group.push_back(it);
         else
@@ -2095,9 +2100,11 @@ std::unique_ptr<Fractal> Polynomial::toCommonDenominator()
 
 //    qDebug() << "To Common: " << this->makeStringOfExpression();
    // qDebug();
+   // qDebug() << VariablesDistributor::amountOfVariable(1500000003);
     fractal_argument arg;
     abs_ex gcd(new Fractal(&arg, this->monomials.begin()->get()->getFractal().second, Number(1, this->monomials.begin()->get()->getCoefficient().getDenominator())));
     std::unique_ptr<Fractal> denom(new Fractal(gcd.get()));
+    //qDebug() << VariablesDistributor::amountOfVariable(1500000003);
     for (auto it = next(this->monomials.begin()); it != this->monomials.end(); ++it)
     {
         std::unique_ptr<Fractal> gcd_fr(new Fractal(gcd.get()));
@@ -2106,15 +2113,20 @@ std::unique_ptr<Fractal> Polynomial::toCommonDenominator()
         gcd = gcd_fr->findCommonPart(monom_fr.get());
         denom = *denom * *monom_fr;
     }
+    //qDebug() << VariablesDistributor::amountOfVariable(1500000003);
     Fractal one_f = Number(1);
-    denom = one_f / denom;
+    denom = one_f / std::move(*denom);
     denom = *denom / takeDegreeOf(gcd, Number(this->monomials.size() - 1));
     std::list<std::unique_ptr<Fractal>> numer;
+    //qDebug() << VariablesDistributor::amountOfVariable(1500000003);
     for (auto &it : this->monomials)
     {
-        numer.push_back(*it * *denom);
+       // qDebug() << it->toString();
+        //qDebug() << VariablesDistributor::amountOfVariable(1500000003);
+        numer.push_back(std::move(*it) * *denom);
     }
     abs_ex den(denom.release());
+
     return std::unique_ptr<Fractal>(new Fractal(abs_ex(new Polynomial(numer)), std::move(den)));
 }
 
@@ -2270,6 +2282,7 @@ abs_ex Polynomial::tryToDistinguishFullDegree() const
 void Polynomial::tryToDistingushFullDegreeOfVariablePolynomial(abs_ex &polynom,
                                                                Polynomial* polynom_ptr) const
 {
+   // qDebug() << polynom->toString();
     auto set = polynom_ptr->getSetOfVariables();
     if (set != polynom_ptr->getSetOfPolyVariables())
     {
@@ -2578,20 +2591,23 @@ bool Polynomial::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &seco
     if (second->getId() == POLYNOMIAL)
     {
         bool merged = false;
-        abs_ex its_second =  copy(second);
+       // abs_ex its_second =  copy(second);
         auto monoms = static_cast<Polynomial*>(second.get())->getMonoms();
         std::list<std::pair<std::list<std::unique_ptr<Fractal>>::iterator, std::unique_ptr<Fractal>>> originals;
+        std::map<int, abs_ex> replaced_integrating_constants_on_system_vars;
+
         for (auto it1 = this->monomials.begin(), it2 = monoms->begin();
              it1 != this->monomials.end() && it2 != monoms->end();)
         {
-            if (canBeConsideredAsConstantThatCanBeChanged(it1->get()) && canBeConsideredAsConstantThatCanBeChanged(it2->get()))
+            if (isIntegratingConstantAddictiveThatCanBeChanged(it1->get()) &&
+                    isIntegratingConstantAddictiveThatCanBeChanged(it2->get()))
             {
                 ++it1;
                 ++it2;
             }
-            else if (canBeConsideredAsConstantThatCanBeChanged(it1->get()))
+            else if (isIntegratingConstantAddictiveThatCanBeChanged(it1->get()))
                 ++it1;
-            else if (canBeConsideredAsConstantThatCanBeChanged(it2->get()))
+            else if (isIntegratingConstantAddictiveThatCanBeChanged(it2->get()))
                 ++it2;
             if (it1 == this->monomials.end() && it2 != monoms->end())
                 return false;
@@ -2607,19 +2623,28 @@ bool Polynomial::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &seco
                 ++it2;
                 continue;
             }
-            originals.push_back({it1, toFrac(copy(it1->get()))});
-            if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(copy(it2->get())))
+
+            if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(copyWithLiftingIntegrationConstantsThatCanBeChanged(it2->get())))
             {
                 for (auto &it : originals)
+                {
+                    replaceSystemVariablesBackOnIntegratingConstants(it.second.get(), replaced_integrating_constants_on_system_vars);
                     *it.first = std::move(it.second);
+                }
                 return false;
             }
             ++it1;
             ++it2;
             merged = true;
         }
-
+       // qDebug() << VariablesDistributor::amountOfVariable(1500000012);
+        //qDebug() << this->toString();
+       // qDebug() << second->toString();
+        //qDebug() << VariablesDistributor::amountOfVariable(1500000012);
+        abs_ex its_second = copyWithLiftingIntegrationConstantsThatCanBeChanged(second);
+        //qDebug() << its_second->toString();
         FunctionRange second_range = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(its_second);
+
         if (!(second_range.isPoint() && *second_range.getPoint() == *zero))
         {
             merged = true;

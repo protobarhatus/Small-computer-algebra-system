@@ -103,7 +103,8 @@ bool Degree::canDowncastTo()
     }
     if (this->degree->getId() == FRACTAL)
     {
-        if (static_cast<Fractal*>(this->degree.get())->getCoefficient().getNumerator() < 0)
+        if (static_cast<Fractal*>(this->degree.get())->getCoefficient().getNumerator() < 0 &&
+                !(this->degree->getPositionRelativelyZero() > 0))
             return true;
     }
     if (this->degree->getPositionRelativelyZero() < 0)
@@ -182,7 +183,8 @@ abs_ex Degree::downcastTo()
     }
     if (this->degree->getId() == FRACTAL)
     {
-        if (static_cast<Fractal*>(this->degree.get())->getCoefficient().getNumerator() < 0)
+        if (static_cast<Fractal*>(this->degree.get())->getCoefficient().getNumerator() < 0 &&
+                !(this->degree->getPositionRelativelyZero() > 0))
         {
             return one/pow(std::move(argument), -degree);
         }
@@ -298,7 +300,7 @@ abs_ex Degree::downcastTo()
     }
     if (this->degree->getPositionRelativelyZero() < 0)
     {
-        return one/takeDegreeOf(std::move(argument), -degree);
+        return one/takeDegreeOf(std::move(argument), -std::move(degree));
     }
 
     if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->tryToFindLogarithmInNumerator() != nullptr)
@@ -322,7 +324,8 @@ abs_ex Degree::downcastTo()
             return pow(argument, std::move(constant)) * pow(argument, std::move(degree));
         }
     }
-    if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL)
+    if (*this->argument == *getEuler() && this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->canTurnIntoPolynomWithOpeningParentheses(true) &&
+            static_cast<Fractal*>(this->degree.get())->turnIntoPolynomWithOpeningParentheses(true)->hasLogarithmicMonoms())
     {
         abs_ex cop = pow(argument, static_cast<Fractal*>(this->degree.get())->turnIntoPolynomWithOpeningParentheses(true));
       //  qDebug() << cop->makeStringOfExpression();
@@ -508,18 +511,19 @@ void Degree::simplify()
     }
     if (this->argument->getId() == POLYNOMIAL)
     {
+        abs_ex common_part = static_cast<Polynomial*>(this->argument.get())->reduceCommonPart();
+        if (*common_part != *one)
+            argument = std::move(argument) * common_part;
+    }
+    if (this->argument->getId() == POLYNOMIAL)
+    {
         bool has_vars = !static_cast<Polynomial*>(this->argument.get())->getSetOfVariables().empty();
         if (has_vars)
             this->reducePolynomialArgument();
         if (this->argument->getId() == POLYNOMIAL)
             this->transformPolynomialDegree(has_vars);
     }
-    if (this->argument->getId() == POLYNOMIAL)
-    {
-        abs_ex common_part = static_cast<Polynomial*>(this->argument.get())->reduceCommonPart();
-        if (*common_part != *one)
-            argument = std::move(argument) * common_part;
-    }
+
     if (this->argument->getId() == ABSOLUTE_VALUE && this->degree->getId() == NUMBER)
     {
         if (static_cast<Number*>(this->degree.get())->getNumerator() % 2 == 0)
@@ -673,7 +677,7 @@ void Degree::takeArgumentsMultipliersIntoDegree()
     {
         assert(static_cast<Number*>(this->argument.get())->isInteger());
         Number *arg = static_cast<Number*>(this->argument.get());
-        if (arg->isZero() || arg->isOne())
+        if (arg->isZero() || arg->isOne() || *arg == -1)
             return;
 
         bool is_negative = arg->getNumerator() < 0;
@@ -822,7 +826,7 @@ QString Degree::toString() const
     QString result;
     if (this->degree->getId() != NUMBER || static_cast<Number*>(this->degree.get())->isInteger())
     {
-        if (this->argument->getId() != POLYNOMIAL)
+        if (this->argument->getId() != POLYNOMIAL && this->argument->getId() != FRACTAL)
             result = this->argument->toString() + "^";
         else
             result = "(" + this->argument->toString() + ")^";
@@ -839,7 +843,7 @@ QString Degree::toString() const
             result = "cbrt(" + this->argument->toString() + ")";
         else
         {
-            if (argument->getId() == POLYNOMIAL)
+            if (argument->getId() == POLYNOMIAL || this->argument->getId() == FRACTAL)
                 result = "(" + argument->toString() + ")^(" + this->degree->toString() + ")";
             else
                 result = argument->toString() + "^(" + degree->toString() + ")";
@@ -1598,7 +1602,10 @@ abs_ex pow(abs_ex &&arg, const abs_ex &deg)
 {
     return takeDegreeOf(std::move(arg), deg);
 }
-
+abs_ex pow(const abs_ex & arg, abs_ex && deg)
+{
+    return takeDegreeOf(arg, std::move(deg));
+}
 abs_ex pow(abs_ex &&arg, abs_ex &&deg)
 {
     return takeDegreeOf(std::move(arg), std::move(deg));
@@ -1624,7 +1631,4 @@ bool isSqrt(const abs_ex &expr)
     return expr->getId() == DEGREE && *Degree::getDegreeOfExpression(expr.get()) == *half;
 }
 
-abs_ex pow(const abs_ex &arg, abs_ex &&deg)
-{
-    return takeDegreeOf(arg, std::move(deg));
-}
+

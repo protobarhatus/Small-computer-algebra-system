@@ -6,7 +6,10 @@ class Fractal;
 bool isPolynomOfAllVariables(const abs_ex & equation);
 std::list<abs_ex> solveEquation(const abs_ex & equation, int var);
 std::list<abs_ex> solveEquation(const abs_ex & equation, int var, const EquationRootsConditions & conditions);
+bool isIntegratingConstantAddictiveThatCanBeChanged(const Fractal *it);
 bool isIntegratingConstantAddictiveThatCanBeChanged(const std::unique_ptr<Fractal> & it);
+bool isIntegratingConstantAddictive(const std::unique_ptr<Fractal> & it);
+bool isIntegratingConstantAddictive(const Fractal * it);
 
 //в полиноме p[x] (с возможными буквенными коэффициентами) попытается выделить часть
 //(g[x])^n такую, что p[x] = (g[x])^n + a, где a - выражение, не зависящее от x, а x - переменная с id = var

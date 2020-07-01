@@ -45,6 +45,7 @@ private:
     friend class Variable;
     friend bool isIntegratingConstantAndCanChangeIt(int id);
 };
+int amountOfIntegratingConstant(int index);
 QString makeIntegratingConstantName(int id);
 bool isIntegratingConstant(int index);
 void deleteVariables();
