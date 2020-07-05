@@ -243,13 +243,19 @@ std::list<abs_ex> solveEquationOfSpecialCases(const abs_ex & var_expr, abs_ex &&
                 {
                     if (right_expr->getPositionRelativelyZero() < 0)
                         return res;
-                    return solveEquation(copy(arg) - pow(licCopy(right_expr), one/deg), var,
+                    auto right_pow = pow(licCopy(right_expr), one/deg);
+                    if (hasRadicalMultiplier(right_pow))
+                        return std::list<abs_ex>();
+                    return solveEquation(copy(arg) - std::move(right_pow), var,
                     { RootCondition(var, RootCondition::BIGGER_THAN_ZERO, copy(arg)),
                       RootCondition(var, RootCondition::BIGGER_THAN_ZERO, right_expr)});
                 }
 
             }
-            return solveEquation(copy(arg) - pow(std::move(right_expr), one/deg), var);
+            auto right_pow = pow(std::move(right_expr), one/deg);
+            if (hasRadicalMultiplier(right_pow))
+                return std::list<abs_ex>();
+            return solveEquation(copy(arg) - std::move(right_pow), var);
         }
         if (!arg->hasVariable(var) && deg->hasVariable(var))
         {
@@ -776,7 +782,7 @@ std::list<abs_ex > solveEquation(const abs_ex &equation, int var)
             it = pow(it, one/numToAbs(gcd_of_nums));
         return res;
     }
-   // qDebug() << AlgExpr(equation).toString();
+  //  qDebug() << AlgExpr(equation).toString();
     return _solveEquation(equation, var);
 }
 

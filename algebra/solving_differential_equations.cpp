@@ -312,6 +312,75 @@ std::pair<std::list<abs_ex>, bool> tryToSolveBernullyEquation(std::unique_ptr<Po
 
     return {std::move(res), true};
 }
+//https://portal.tpu.ru/SHARED/s/SHERSTNEVA/Study_work/Studentam_ETO/Lecture_documents_diff_ur/Tab/4.%20Уравнения%20в%20полных%20дифференц.pdf
+//https://1cov-edu.ru/differentsialnye-uravneniya/integriruyuschii_mnozhitel/
+abs_ex tryToFindIntegratingMultiplicator(const abs_ex & M, const abs_ex & N, int x, int y)
+{
+    abs_ex dM_dy = M->derivative(y);
+    abs_ex dN_dx = N->derivative(x);
+
+    abs_ex dm_dn_sub = dM_dy - dN_dx;
+    if (!((dm_dn_sub)/N)->hasVariable(y))
+    {
+        auto integr = integrate(one/N * (dm_dn_sub) * D(getVariableExpr(x)));
+        if (integr == nullptr)
+            return integr;
+        return pow(getEuler(), integr);
+    }
+    if (!((dm_dn_sub)/M)->hasVariable(x))
+    {
+        auto integr = integrate(one/M * dm_dn_sub * D(getVariableExpr(y)));
+        if (integr == nullptr)
+            return integr;
+        return pow(getEuler(), -integr);
+    }
+
+    auto isItFunctionOfSuchExpr = [x, y, &dm_dn_sub, &M, &N](const abs_ex & expr)->bool
+    {
+        auto f_expr = dm_dn_sub/(N*expr->antiderivative(x) - M*expr->antiderivative(y));
+        auto u = systemVarExpr();
+        auto eq_res = solveEquation(expr - u, x);
+        if (eq_res.size() == 0)
+            return false;
+        for (auto &it : eq_res)
+        {
+            auto cop = copy(f_expr);
+            setUpExpressionIntoVariable(cop, it, x);
+            if (cop->hasVariable(x) || cop->hasVariable(y))
+                return false;
+        }
+        return true;
+    };
+    auto getRes = [x, y, &dm_dn_sub, &M, &N](const abs_ex & expr)->abs_ex {
+        auto f_expr = dm_dn_sub/(N*expr->antiderivative(x) - M*expr->antiderivative(y));
+        auto u = systemVarExpr();
+        auto eq_res = solveEquation(expr - u, x);
+        setUpExpressionIntoVariable(f_expr, *eq_res.begin(), x);
+        auto integr = integrate(f_expr * D(u));
+        if (integr == nullptr)
+            return nullptr;
+        return pow(getEuler(), integr);
+    };
+    auto xv = getVariableExpr(x);
+    auto yv = getVariableExpr(y);
+    if (isItFunctionOfSuchExpr(xv + yv))
+    {
+        return getRes(xv + yv);
+    }
+    if (isItFunctionOfSuchExpr(xv * yv))
+        return getRes(xv * yv);
+    if (isItFunctionOfSuchExpr(xv*xv + yv*yv))
+        return getRes(xv*xv + yv*yv);
+    if (isItFunctionOfSuchExpr(xv/yv))
+        return getRes(xv/yv);
+    if (isItFunctionOfSuchExpr(pow(xv, 3) + pow(yv, 3)))
+        return getRes(pow(xv, 3) + pow(yv, 3));
+    if (isItFunctionOfSuchExpr(xv*xv + xv*yv + yv*yv))
+        return getRes(xv*xv + xv*yv + yv*yv);
+    if (isItFunctionOfSuchExpr(sqrt(xv) + sqrt(yv)))
+        return getRes(sqrt(xv) + sqrt(yv));
+    return nullptr;
+}
 std::pair<std::list<abs_ex>, bool> tryToSolveDifurInFullDifferential(const std::unique_ptr<Polynomial> & difur, int x, int y)
 {
     qDebug() << difur->toString();
@@ -340,7 +409,13 @@ std::pair<std::list<abs_ex>, bool> tryToSolveDifurInFullDifferential(const std::
   //  qDebug() << p->derivative(y)->toString();
  //   qDebug() << q->derivative(x)->toString();
     if (!subCompare(p->derivative(y), q->derivative(x)))
-        return {std::list<abs_ex>(), false};
+    {
+        auto integr_mult = tryToFindIntegratingMultiplicator(p, q, x, y);
+        if (integr_mult == nullptr)
+            return {std::list<abs_ex>(), false};
+        p = std::move(p) * integr_mult;
+        q = std::move(q) * std::move(integr_mult);
+    }
     //здесь есть два зеркальных пути. идем сначала по одному, а если не выходит, то по второму
 
     abs_ex p_x_integral = integrate(p*D(getVariableExpr(x)));

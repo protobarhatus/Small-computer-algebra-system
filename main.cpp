@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   //  auto res = solveDifur((3*x2 - 3*y2 + 4*x)*dx - (6*x*y + 4*y)*dy, x, y); //y = sqrt(2*C2 + 3*x^4 + 3*x*C2 + 4*x^2 + 8*x^3)*C7/(2 + 3*x)  and  C2 is in  R  and  C7 is in  { -1 } U { 1 }
    // auto res = solveDifur((6*y - 3*x2 + 3*y2)*dx + (6*x + 6*x*y)*dy, x, y);    //y =  (sqrt(x)*C7 + sqrt(x^3 + 3*x + C3)*C9) *C11/sqrt(x)  and  C3 is in  R  and  C7 is in  { -3 } U { sqrt(3) }  and  C9 is in  { sqrt(3) } U { 3 }  and  C11 is in  { -1/3 } U { 1/3 }
     //auto res = solveDifur(2*x*(1 - pow(euler(), y))*dx/pow(1 + x2, 2) + pow(euler(), y)*dy/(1 + x2), x, y);  //"y = ln(C13 + x^2*C13 + C14)  and  C13 is in  (-inf; 0)  and  C14 is in  { -1 } U { 1 }"  "y = ln(-1*C11 - x^2*C11 + 1)  and  C11 is in  (-inf; 0)"  "y = 0"
-    auto res = solveDifur((sin(2*x)/y + x)*dx + (y - sin(x)*sin(x)/y/y)*dy, x, y);
+    auto res = solveDifur((sin(2*x)/y + x)*dx + (y - sin(x)*sin(x)/y/y)*dy, x, y);  //(-1*cos((2*x)) + 1 + y^3 + y*x^2 + y*C) /y  = 0  and  C is in  R
 
     qDebug() << "RES: ";
     for (auto &it : res)
