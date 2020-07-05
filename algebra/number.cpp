@@ -394,6 +394,11 @@ abs_ex Number::tryToFindExponentialFunction(int var) const
     return nullptr;
 }
 
+void Number::getRidOfAbsoluteValues()
+{
+
+}
+
 Number abs(Number num)
 {
     if (num.compareWith(0) < 0)

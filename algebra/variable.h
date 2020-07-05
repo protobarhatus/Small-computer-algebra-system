@@ -44,6 +44,8 @@ public:
     bool hasDifferential() const override;
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
     abs_ex tryToFindExponentialFunction(int var) const override;
+
+    void getRidOfAbsoluteValues() override;
 private:
     friend Variable getVariable(int id);
     friend Variable integratingConstant();

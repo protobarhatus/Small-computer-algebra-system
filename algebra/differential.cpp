@@ -162,7 +162,7 @@ abs_ex Differential::changeSomePartOnExpression(QString part, abs_ex &on_what)
         return this->argument->changeSomePartOn(part, on_what);
 }
 
-abs_ex Differential::getArgumentsCopy()
+abs_ex Differential::getArgumentsCopy() const
 {
     return copy(this->argument);
 }
@@ -228,6 +228,15 @@ bool Differential::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &se
 abs_ex Differential::tryToFindExponentialFunction(int var) const
 {
     return nullptr;
+}
+
+void Differential::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->argument->getId() == ABSOLUTE_VALUE)
+        this->argument = getArgumentOfFunction(argument);
+    this->argument->getRidOfAbsoluteValues();
+    this->simplify();
 }
 
 bool Differential::operator<(const AbstractExpression &expr) const

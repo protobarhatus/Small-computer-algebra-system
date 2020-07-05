@@ -68,6 +68,7 @@ SOURCES += \
     algebra/Vector.inl \
     algebra/Vector2.cpp \
     algebra/Vector3.cpp \
+    algebra/absexmemorychecker.cpp \
     algebra/absolutevalue.cpp \
     algebra/abstractexpression.cpp \
     algebra/algexpr.cpp \
@@ -163,6 +164,7 @@ HEADERS += \
     algebra/Vector.h \
     algebra/Vector2.h \
     algebra/Vector3.h \
+    algebra/absexmemorychecker.h \
     algebra/absolutevalue.h \
     algebra/abstractexpression.h \
     algebra/algexpr.h \

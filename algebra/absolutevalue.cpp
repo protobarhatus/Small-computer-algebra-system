@@ -216,6 +216,16 @@ AbstractExpression *AbsoluteValue::getExpression()
     return this->expression.get();
 }
 
+abs_ex AbsoluteValue::getExpressionCopy() const
+{
+    return copy(this->expression);
+}
+
+abs_ex AbsoluteValue::getExpressionMoved()
+{
+    return std::move(this->expression);
+}
+
 void AbsoluteValue::setSimplified(bool simpl)
 {
     this->simplified = simpl;
@@ -279,6 +289,16 @@ bool AbsoluteValue::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &s
 abs_ex AbsoluteValue::tryToFindExponentialFunction(int var) const
 {
     return this->expression->tryToFindExponentialFunction(var);
+}
+
+void AbsoluteValue::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->expression->getId() == ABSOLUTE_VALUE)
+        this->expression = getArgumentOfFunction(expression);
+    this->expression->getRidOfAbsoluteValues();
+    this->simplify();
+
 }
 
 abs_ex abs(const abs_ex &expr)

@@ -9,6 +9,7 @@
 #include "constant.h"
 #include "difequationrootconditions.h"
 #include "differential.h"
+#include "absexmemorychecker.h"
 std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y,
                                              const DifursRootConditions & conditions);
 bool isDifferentialOf(abs_ex & expr, int x)
@@ -76,6 +77,8 @@ std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const 
     };
   //  qDebug() << left_frac->makeStringOfExpression();
   //  qDebug() << right_frac->makeStringOfExpression();
+   // qDebug() << left_frac->toString();
+   // qDebug() << right_frac->toString();
     takeMultipliersWithVariablesAwayToOtherFractal(right_frac->getFractal().first, left_frac->getFractal().second,
                                                    y, x, true);
     takeMultipliersWithVariablesAwayToOtherFractal(right_frac->getFractal().second, left_frac->getFractal().first,
@@ -134,20 +137,245 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHomoheneousDifur(abs_ex && difur, i
     abs_ex var_to_open_abs = systemVarExpr(zero, nullptr, true, false);
     setUpExpressionIntoVariable(difur, var_to_open_abs, x);
     setUpExpressionIntoVariable(difur, getVariableExpr(x), var_to_open_abs->getId());
-      qDebug() << difur->toString();
+
+     // qDebug() << difur->toString();
     auto res = solveDifur(difur, x, t->getId());
     if (res.empty())
         return {std::list<abs_ex>(), true};
     std::list<abs_ex> actual_res;
+    //for (auto &it : res)
+    //    qDebug() << it.toString();
+
     for (auto &it : res)
         actual_res.push_back(it.toCommonIntegral(x, t->getId()));
+  //  for (auto &it : actual_res)
+     //   qDebug() << it->toString();
     for (auto &it : actual_res)
         setUpExpressionIntoVariable(it, getVariableExpr(y)/getVariableExpr(x), t->getId());
 
 
     return {std::move(actual_res), true};
 }
+std::pair<std::list<abs_ex>, bool> tryToSolveHeterogeneousDifur(const std::unique_ptr<Polynomial> & difur, int x, int y)
+{
+    //ЛИНЕЙНОЕ
+    //неоднородное уравнение в справочниках имеет вид r(x)*y' + p(x)*y = q(x), а в нашем случае,
+    //  r(x)*dy + p(x)*y*dx +q(x)*dx = 0
+    abs_ex r = copy(zero);
+    abs_ex p = copy(zero);
+    abs_ex q = copy(zero);
+    auto monoms = difur->getMonoms();
+    for (auto &it : *monoms)
+    {
+        if (!it->hasVariable(y))
+        {
+            if (!it->hasDifferential())
+                return {std::list<abs_ex>(), false};
+            q = std::move(q) + it->downcast()/D(getVariableExpr(x));
+        }
+        else
+        {
+            auto fr_without_var = it->getFractalWithoutVariable(y);
+            auto fr_with_var = copy(it.get())->downcast()/copy(fr_without_var.get())->downcast();
+            if (fr_with_var->getId() == y)
+            {
+                if (!fr_without_var->hasDifferential())
+                    return {std::list<abs_ex>(), false};
+                p = std::move(p) + fr_without_var->downcast()/D(getVariableExpr(x));
+            }
+            else if (fr_with_var->getId() == DIFFERENTIAL)
+            {
+                r = std::move(r) + fr_without_var->downcast();
+            }
+            else
+                return {std::list<abs_ex>(), false};
+        }
+    }
+   // qDebug() << r->toString();
+   // qDebug() << p->toString();
+   // qDebug() << q->toString();
+    abs_ex antideriv = (-p/r)->antiderivative(x);
+    if (antideriv == nullptr)
+        return {std::list<abs_ex>(), true};
+    antideriv = getExpressionWithoutAbsoluteValues(antideriv);
+    abs_ex v = pow(getEuler(), antideriv);
+    abs_ex u = systemVarExpr();
 
+    //qDebug() << v->toString();
+   // qDebug() << (r*D(u)*v + q*D(getVariableExpr(x)))->toString();
+    auto second_eq_res = solveDifur(r*D(u)*v + q*D(getVariableExpr(x)), x, u->getId());
+    std::list<abs_ex> res;
+    for (auto &it1 : second_eq_res)
+    {
+       // qDebug() << it1.toString();
+        if (it1.getType() == DifurResult::SOLVED_FOR_Y)
+            res.push_back(getVariableExpr(y) - v * it1.expr());
+    }
+    return {std::move(res), true};
+
+}
+std::pair<std::list<abs_ex>, bool> tryToSolveBernullyEquation(std::unique_ptr<Polynomial> && difur, int x, int y)
+{
+    //уравнение бернулли имеет вид r(x)*y' + p(x)*y + q(x)*y^n = 0
+    //или, в случае этой алгебр. системы r(x)*dy + p(x)*y*dx + q(x)*y^n*dx = 0
+    //однако, если n < 0, то мы не сможем получить уравнение вида r(x)*dy + p(x)*y*dx + q(x) * 1/y^(-n) * dx = 0,
+    //мы получим уравнение вида r(x)*y^n*dy + p(x)*y^(n + 1)*dx + q(x) * dx = 0, поэтому это надо исправить
+    //почему я пишу "мы"  если я один?
+    auto monoms = difur->getMonoms();
+    abs_ex y_mult = nullptr;
+
+    for (auto &it : *monoms)
+    {
+        if (it->hasDifferentialOfVarAsMultiplier(y))
+        {
+            abs_ex frac_with_y = copy(it.get())/copy(it->getFractalWithoutVariable(y).get());
+            frac_with_y = std::move(frac_with_y) / D(getVariableExpr(y));
+            if (Degree::getArgumentOfDegree(frac_with_y.get())->getId() == y)
+            {
+                y_mult = std::move(frac_with_y);
+                break;
+            }
+            else if (frac_with_y->hasVariable(y))
+                return {std::list<abs_ex>(), false};
+            break;
+        }
+    }
+    if (y_mult != nullptr)
+    {
+        for (auto &it : *monoms)
+            it = toFrac(toAbsEx(std::move(it))/y_mult);
+    }
+  //  qDebug() << difur->toString();
+    abs_ex r = copy(zero);
+    abs_ex p = copy(zero);
+    abs_ex q = copy(zero);
+
+    abs_ex n = nullptr;
+    for (auto &it : *monoms)
+    {
+       // qDebug() << it->toString();
+        auto frac_without_y = (it->getFractalWithoutVariable(y));
+        auto frac_with_y = toAbsEx(it)/toAbsEx(frac_without_y);
+        if (frac_with_y->getId() == DIFFERENTIAL)
+            r = std::move(r) + std::move(frac_without_y);
+        else
+        {
+            if (!frac_without_y->hasDifferentialOfVarAsMultiplier(x))
+                return {std::list<abs_ex>(), false};
+            if (frac_with_y->getId() == y)
+                p = std::move(p) + toAbsEx(frac_without_y)/D(getVariableExpr(x));
+            else if (Degree::getArgumentOfDegree(frac_with_y.get())->getId() == y)
+            {
+                if (n == nullptr)
+                    n = Degree::getDegreeOfExpression(frac_with_y.get());
+                else if (*n != *Degree::getDegreeOfExpression(frac_with_y.get()))
+                    return {std::list<abs_ex>(), false};
+                q = std::move(q) + toAbsEx(frac_without_y)/D(getVariableExpr(x));
+            }
+            else if (Degree::getArgumentOfDegree(one/frac_with_y)->getId() == y)
+            {
+                if (n == nullptr)
+                    n = -Degree::getDegreeOfExpression(one/frac_with_y);
+                else if (*n != *-Degree::getDegreeOfExpression(one/frac_with_y))
+                    return {std::list<abs_ex>(), false};
+                q = std::move(q) + toAbsEx(frac_without_y)/D(getVariableExpr(x));
+            }
+            else
+                return {std::list<abs_ex>(), false};
+        }
+
+    }
+
+    std::list<abs_ex> res;
+    //y = 0 - решение практически любого уравнения Бернулли, которое теряется в ходе дальнейших преобразований
+    if (n->getPositionRelativelyZero() >= 0)
+        res.push_back(getVariableExpr(y));
+
+    // переделываем уравнение в вид r(x)dy/y^n + p(x)/y^(n-1) = -q(x), замена z(x) = 1/y^(n-1), dy/y^n = dz/(1-n)
+    abs_ex z = systemVarExpr();
+
+    //qDebug() << (r*D(z)/(one - n) + p*z*D(getVariableExpr(x)) + q*D(getVariableExpr(x)))->toString();
+    auto eq_res = solveDifur(r*D(z)/(one - n) + p*z*D(getVariableExpr(x)) + q*D(getVariableExpr(x)), x, z->getId());
+    for (auto &it : eq_res)
+    {
+       // qDebug() << it.toString();
+        if (it.getType() == DifurResult::SOLVED_FOR_Y)
+            res.push_back(one/pow(getVariableExpr(y), n - one) - it.expr());
+        else
+        {
+            auto expr = copy(it.expr());
+            setUpExpressionIntoVariable(expr, one/pow(getVariableExpr(y), n - one), z->getId());
+            res.push_back(std::move(expr));
+        }
+       // qDebug() << res.back()->toString();
+    }
+
+    return {std::move(res), true};
+}
+std::pair<std::list<abs_ex>, bool> tryToSolveDifurInFullDifferential(const std::unique_ptr<Polynomial> & difur, int x, int y)
+{
+    qDebug() << difur->toString();
+    abs_ex p = copy(zero);
+    abs_ex q = copy(zero);
+    auto monoms = difur->getMonoms();
+    for (auto &it : *monoms)
+    {
+        if (it->hasDifferentialOfVarAsMultiplier(x))
+        {
+            if ((toAbsEx(it) / D(getVariableExpr(x)))->hasDifferential())
+                return {std::list<abs_ex>(), false};
+            p = std::move(p) + toAbsEx(it)/D(getVariableExpr(x));
+        }
+        else if (it->hasDifferentialOfVarAsMultiplier(y))
+        {
+            if ((toAbsEx(it) / D(getVariableExpr(y)))->hasDifferential())
+                return {std::list<abs_ex>(), false};
+            q = std::move(q) + toAbsEx(it)/D(getVariableExpr(y));
+        }
+        else
+            return {std::list<abs_ex>(), false};
+    }
+  //  qDebug() << p->toString();
+  //  qDebug() << q->toString();
+  //  qDebug() << p->derivative(y)->toString();
+ //   qDebug() << q->derivative(x)->toString();
+    if (!subCompare(p->derivative(y), q->derivative(x)))
+        return {std::list<abs_ex>(), false};
+    //здесь есть два зеркальных пути. идем сначала по одному, а если не выходит, то по второму
+
+    abs_ex p_x_integral = integrate(p*D(getVariableExpr(x)));
+    if (p_x_integral != nullptr)
+    {
+        abs_ex p_y_deriv = p_x_integral->derivative(y);
+        abs_ex phita1 = q - p_y_deriv;
+
+        abs_ex phita_integral = integrate(phita1*D(getVariableExpr(y)));
+        if (phita_integral != nullptr)
+        {
+            std::list<abs_ex> res;
+            res.push_back(std::move(p_x_integral + phita_integral + integratingConstantExpr()));
+            return {std::move(res), true};
+        }
+
+    }
+
+    abs_ex q_y_integral = integrate(q*D(getVariableExpr(y)));
+    if (q_y_integral != nullptr)
+    {
+        abs_ex q_x_deriv = q_y_integral->derivative(x);
+        abs_ex phita2 = p - q_x_deriv;
+
+        abs_ex phita_integral = integrate(phita2 * D(getVariableExpr(x)));
+        if (phita_integral != nullptr)
+        {
+            std::list<abs_ex> res;
+            res.push_back(std::move(q_y_integral + phita_integral + integratingConstantExpr()));
+            return {std::move(res), true};
+        }
+    }
+    return {std::list<abs_ex>(), true};
+
+}
 std::list<abs_ex> solveDifurByMethods(const abs_ex & difur, int x, int y)
 {
     auto dif_pol = toPolynomialPointer(difur);
@@ -155,6 +383,15 @@ std::list<abs_ex> solveDifurByMethods(const abs_ex & difur, int x, int y)
     if (res.second)
         return std::move(res.first);
     res = tryToSolveHomoheneousDifur(copy(difur), x, y);
+    if (res.second)
+        return std::move(res.first);
+    res = tryToSolveHeterogeneousDifur(dif_pol, x, y);
+    if (res.second)
+        return std::move(res.first);
+    res = tryToSolveBernullyEquation(toPolynomialPointer(difur), x, y);
+    if (res.second)
+        return std::move(res.first);
+    res = tryToSolveDifurInFullDifferential(toPolynomialPointer(difur), x, y);
     if (res.second)
         return std::move(res.first);
     return std::list<abs_ex> ();
@@ -319,6 +556,8 @@ FunctionRange getRangeOfConstantMultipliersThatCanBeChanged(const AbstractExpres
     if (expr->getId() == FRACTAL)
     {
         auto fr = static_cast<const Fractal*>(expr)->getFractal();
+        if (fr.first->empty())
+            return FunctionRange(one, one, true, true);
         if (isIntegratingConstantAndCanChangeIt(fr.first->back()->getId()))
         {
             auto res = fr.first->back()->getRange();
@@ -326,7 +565,9 @@ FunctionRange getRangeOfConstantMultipliersThatCanBeChanged(const AbstractExpres
             return res;
         }
         bool initialized = false;
-        FunctionRange range;
+        Number coe = static_cast<const Fractal*>(expr)->getCoefficient();
+        FunctionRange range = coe.getRange();
+        initialized =  true;
         for (auto it = fr.first->begin(); it != fr.first->end();)
         {
             if (it->get()->getSetOfVariables().empty())
@@ -379,6 +620,13 @@ FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(Abstr
     if (expr->getId() == FRACTAL)
     {
         auto fr = static_cast<Fractal*>(expr)->getFractal();
+        if (fr.first->empty() && fr.second->empty())
+        {
+            Number coe = static_cast<const Fractal*>(expr)->getCoefficient();
+            FunctionRange range = coe.getRange();
+            static_cast<Fractal*>(expr)->setCoefficinet(1);
+            return range;
+        }
         if (isIntegratingConstantAndCanChangeIt(fr.first->back()->getId()))
         {
             auto res = fr.first->back()->getRange();
@@ -386,7 +634,10 @@ FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(Abstr
             return res;
         }
         bool initialized = false;
-        FunctionRange range;
+        Number coe = static_cast<const Fractal*>(expr)->getCoefficient();
+        FunctionRange range = coe.getRange();
+        initialized =  true;
+        static_cast<Fractal*>(expr)->setCoefficinet(1);
         for (auto it = fr.first->begin(); it != fr.first->end();)
         {
             if (it->get()->getSetOfVariables().empty())
@@ -513,16 +764,18 @@ void uniteSameResults(std::list<abs_ex> & list)
              //   it1 = list.erase(it1);
              //   continue;
             //}
-
+           // AbsExMemoryChecker::enableWritingMemory();
             if (subCompare(*it, *it1))
             {
                 it1 = list.erase(it1);
                 continue;
             }
-              qDebug() << amountOfIntegratingConstant(21);
-              qDebug() << amountOfIntegratingConstant(24);
-            qDebug() << it->get()->toString();
-            qDebug() << it1->get()->toString();
+           // AbsExMemoryChecker::debugObjectsInMemory();
+           // AbsExMemoryChecker::clear();
+           //   qDebug() << amountOfIntegratingConstant(21);
+           //   qDebug() << amountOfIntegratingConstant(24);
+          //  qDebug() << it->get()->toString();
+          //  qDebug() << it1->get()->toString();
            // qDebug() << VariablesDistributor::amountOfVariable(1500000000);
            /* if (isIntegratingConstantAndCanChangeIt(sub->getId()))
             {
@@ -689,9 +942,11 @@ std::list<DifurResult> solveDifur(const abs_ex &difur, int x, int y)
 
     uniteSameResults(res);
     uniteSameResults(solved_for_x);
-    qDebug() << amountOfIntegratingConstant(21);
-    qDebug() << amountOfIntegratingConstant(24);
     uniteSameResults(solved_for_y);
+
+    simplifyAndDowncast(res);
+    simplifyAndDowncast(solved_for_x);
+    simplifyAndDowncast(solved_for_y);
 
     std::list<DifurResult> result;
     for (auto &it : res)

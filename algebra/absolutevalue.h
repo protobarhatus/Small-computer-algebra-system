@@ -35,6 +35,8 @@ public:
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
     AbstractExpression* getExpression();
+    abs_ex getExpressionCopy() const;
+    abs_ex getExpressionMoved();
     virtual void setSimplified(bool simpl) override;
     virtual std::set<abs_ex > getTrigonometricalFunctions() const override;
     virtual long long int getLcmOfDenominatorsOfDegreesOfVariable(int var) const override;
@@ -43,6 +45,7 @@ public:
     virtual bool hasDifferential() const override;
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
     abs_ex tryToFindExponentialFunction(int var) const override;
+    void getRidOfAbsoluteValues() override;
 private:
     void checkIfNeedToCheckSignToLeadToTheAcceptedForm();
     virtual int getPositionRelativelyZeroIfHasVariables() override;

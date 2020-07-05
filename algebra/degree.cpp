@@ -36,12 +36,14 @@ Degree::Degree(const abs_ex &argument, abs_ex &&degree)
 {
     this->argument = copy(argument);
     this->degree = std::move(degree);
+    this->simplify();
 }
 
 Degree::Degree(abs_ex &&argument, const abs_ex &degree)
 {
     this->argument = std::move(argument);
     this->degree = copy(degree);
+    this->simplify();
 }
 Degree::Degree(const abs_ex & arg, Number deg)
 {
@@ -389,6 +391,52 @@ abs_ex Degree::downcastTo()
     return copy( this->argument.get());
 
 }
+
+abs_ex Degree::getArgumentCopyOfDegree(AbstractExpression *expr)
+{
+    if (expr->getId() == DEGREE)
+        return copy(static_cast<const Degree*>(expr)->argument);
+    else
+        return copy(expr);
+}
+
+abs_ex Degree::getArgumentOfDegreeMoved(abs_ex &expr)
+{
+    if (expr->getId() == DEGREE)
+        return std::move(static_cast<Degree*>(expr.get())->argument);
+    else
+        return std::move(expr);
+}
+
+abs_ex Degree::getDegreeOfExpressionMoved(abs_ex &expr)
+{
+    if (expr->getId() == DEGREE)
+        return std::move(static_cast<Degree*>(expr.get())->degree);
+    else
+        return abs_ex(new Number(1));
+}
+
+abs_ex Degree::getArgumentOfDegree(const abs_ex &expr)
+{
+    return copy(getArgumentOfDegree(expr.get()));
+}
+
+abs_ex Degree::getArgumentOfDegree(abs_ex &&expr)
+{
+    return getArgumentOfDegreeMoved(expr);
+}
+
+abs_ex Degree::getDegreeOfExpression(const abs_ex &expr)
+{
+    return getDegreeOfExpression(expr.get());
+}
+
+abs_ex Degree::getDegreeOfExpression(abs_ex &&expr)
+{
+    return getDegreeOfExpressionMoved(expr);
+}
+
+
 AbstractExpression * Degree::getArgumentOfDegree(AbstractExpression *expr)
 {
     if (expr->getId() == DEGREE)
@@ -511,18 +559,19 @@ void Degree::simplify()
     }
     if (this->argument->getId() == POLYNOMIAL)
     {
-        abs_ex common_part = static_cast<Polynomial*>(this->argument.get())->reduceCommonPart();
-        if (*common_part != *one)
-            argument = std::move(argument) * common_part;
-    }
-    if (this->argument->getId() == POLYNOMIAL)
-    {
         bool has_vars = !static_cast<Polynomial*>(this->argument.get())->getSetOfVariables().empty();
         if (has_vars)
             this->reducePolynomialArgument();
         if (this->argument->getId() == POLYNOMIAL)
             this->transformPolynomialDegree(has_vars);
     }
+    if (this->argument->getId() == POLYNOMIAL)
+    {
+        abs_ex common_part = static_cast<Polynomial*>(this->argument.get())->reduceCommonPart();
+        if (*common_part != *one)
+            argument = std::move(argument) * common_part;
+    }
+
 
     if (this->argument->getId() == ABSOLUTE_VALUE && this->degree->getId() == NUMBER)
     {
@@ -641,6 +690,8 @@ std::set<QString> Degree::getSetOfFunctions() const
 }
 Number Degree::getMaxDegreeOfVariable(int id)
 {
+    if (!this->hasVariable(id))
+        return 0;
     Number deg = this->argument->getMaxDegreeOfVariable(id);
     if (!deg.isCorrect())
         return deg;
@@ -961,6 +1012,8 @@ abs_ex Degree::changeSomePartOnExpression(QString part, abs_ex &on_what)
 
 abs_ex Degree::derivative(int var) const
 {
+    if (!degree->hasVariable(var))
+        return degree * pow(argument, degree - one) * this->argument->derivative(var);
     return takeDegreeOf(copy(this->argument), this->degree - one) * (this->argument * this->degree->derivative(var) * ln(this->argument) + this->degree * this->argument->derivative(var));
 }
 
@@ -1569,6 +1622,18 @@ abs_ex Degree::tryToFindExponentialFunction(int var) const
     if (checkIfItsLinearFunction(this->degree, var).first != nullptr)
         return copy(this);
     return this->degree->tryToFindExponentialFunction(var);
+}
+
+void Degree::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->argument->getId() == ABSOLUTE_VALUE)
+        this->argument = getArgumentOfFunction(argument);
+    this->argument->getRidOfAbsoluteValues();
+    if (this->degree->getId() == ABSOLUTE_VALUE)
+        this->degree = getArgumentOfFunction(degree);
+    this->degree->getRidOfAbsoluteValues();
+    this->simplify();
 }
 
 

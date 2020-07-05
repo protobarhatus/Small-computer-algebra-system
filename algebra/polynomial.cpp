@@ -14,6 +14,8 @@
 #include "random"
 #include "solving_equations.h"
 #include "solving_differential_equations.h"
+#include "sinus.h"
+#include "cosinus.h"
 Polynomial::Polynomial()
 {
 
@@ -93,6 +95,8 @@ if (this->is_fractional_coefficients_allowed)
     }
     if (!hasTrigonometryMultipliers())
     {
+        if (this->hasIntegratingConstantAddictiveThatCanBeChanged())
+            this->pullSomeMembersIntoOneIntegratingConstant();
         this->simplified = true;
         return;
     }
@@ -644,7 +648,7 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
         abs_ex degree_diff(new Number(deg_of_max - deg_of_div));
         Degree var_multiplier = Degree(arg_variable, degree_diff);
         Fractal multiplier = *((coe_of_max_degree / &coefficient_of_max_degree_in_dividend) * Fractal(&var_multiplier));
-        if (!multiplier.getFractal().second->empty())
+        if (!can_return_fractional_coefficients && !multiplier.getFractal().second->empty())
             return {nullptr, nullptr};
         Polynomial subtrahend = *dividends_monomials * &multiplier;
         //qDebug() << "SUBTRAHEND: " << subtrahend.makeStringOfExpression();
@@ -652,7 +656,8 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
         *divinders_monomials = *divinders_monomials - &subtrahend;
         //qDebug() << "DIFF: " << divinders_monomials->makeStringOfExpression();
         deg_of_max = divinders_monomials->getMaxDegreeOfVariable(argument_variables_id);
-        if ((last_deg_of_max - deg_of_max).compareWith(0) < 0)
+        if (last_deg_of_max == deg_of_max ||
+                (last_deg_of_max - deg_of_max).compareWith(0) < 0)
             return {nullptr, nullptr};
         last_deg_of_max = deg_of_max;
         result_list.push_back(std::unique_ptr<Fractal>(new Fractal(std::move(multiplier))));
@@ -1914,6 +1919,7 @@ int Polynomial::getPositionRelativelyZeroIfHasVariables()
 
     //теперь проверка на то, является ли это параболой или прямой и пересекает ли она 0 в области определения переменной, если да
     //РЕШЕНИЕ КВАДРАТНОГО УРАВНЕНИЯ ЗДЕСЬ ПЕРЕНЕСТИ В ОТДЕЛЬНЫЙ МОДУЛЬ ДЛЯ УРАВНЕНИЯ, НЕ ДУБЛИРОВАТЬ КОД. ЭТОТ ОГРОМНЫЙ БЛОК ЗДЕСЬ ВРЕМЕННО
+    //qDebug() << this->toString();
     if (vars.size() == 1 &&  this->getMaxDegreeOfVariable(*vars.begin()).isCorrect() && this->getMaxDegreeOfVariable(*vars.begin()).compareWith(2) == 0)
     {
         int var_id = *vars.begin();
@@ -2052,11 +2058,16 @@ std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > P
 {
     std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> params;
 
+    this->checkTrigonometricalFunctionsItHas(params);
+    return params;
+}
+
+void Polynomial::checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > &params)
+{
     for (auto &it : this->monomials)
     {
         it->checkTrigonometricalFunctionsItHas(params);
     }
-    return params;
 }
 
 abs_ex Polynomial::changeSomePartOn(QString part, abs_ex &on_what)
@@ -2098,7 +2109,7 @@ std::unique_ptr<Fractal> Polynomial::toCommonDenominator()
 {
     assert(this->canBecameFractal());
 
-//    qDebug() << "To Common: " << this->makeStringOfExpression();
+   // qDebug() << "To Common: " << this->makeStringOfExpression();
    // qDebug();
    // qDebug() << VariablesDistributor::amountOfVariable(1500000003);
     fractal_argument arg;
@@ -2116,7 +2127,10 @@ std::unique_ptr<Fractal> Polynomial::toCommonDenominator()
     //qDebug() << VariablesDistributor::amountOfVariable(1500000003);
     Fractal one_f = Number(1);
     denom = one_f / std::move(*denom);
-    denom = *denom / takeDegreeOf(gcd, Number(this->monomials.size() - 1));
+   // qDebug() << denom->toString();
+    //qDebug() << gcd->toString();
+    denom = *denom * takeDegreeOf(gcd, Number(this->monomials.size() - 1));
+    //qDebug() << denom->toString();
     std::list<std::unique_ptr<Fractal>> numer;
     //qDebug() << VariablesDistributor::amountOfVariable(1500000003);
     for (auto &it : this->monomials)
@@ -2309,6 +2323,8 @@ void Polynomial::tryToDistingushFullDegreeOfVariablePolynomial(abs_ex &polynom,
         return;
     }
     static_cast<Polynomial*>(deriv.get())->reduce();
+  //  qDebug() << polynom->toString();
+   // qDebug() << deriv->toString();
     auto gcf = gcd(polynom_ptr, static_cast<Polynomial*>(deriv.get()));
     if (!has(gcf->getSetOfPolyVariables(), var))
     {
@@ -2624,7 +2640,7 @@ bool Polynomial::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &seco
                 continue;
             }
 
-            if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(copyWithLiftingIntegrationConstantsThatCanBeChanged(it2->get())))
+            if (!it1->get()->tryToMergeIdenticalBehindConstantExpressions(copyWithLiftingIntegrationConstantsThatCanBeChanged(it2->get())->downcast()))
             {
                 for (auto &it : originals)
                 {
@@ -2667,6 +2683,33 @@ abs_ex Polynomial::tryToFindExponentialFunction(int var) const
             return res;
     }
     return nullptr;
+}
+
+void Polynomial::convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> &instructions)
+{
+    for (auto &it : this->monomials)
+        it->convertTrigonometricalFunctionsByFormulas(instructions);
+}
+
+void Polynomial::getRidOfAbsoluteValues()
+{
+    NONCONST
+    for (auto &it : this->monomials)
+    {
+        if (it->getId() == ABSOLUTE_VALUE)
+            it = toFrac(getArgumentOfFunction(toAbsEx(std::move(it))));
+        it->getRidOfAbsoluteValues();
+    }
+    this->simplify();
+}
+
+void Polynomial::eraseAllAddictiveWithoutVar(int var)
+{
+    for (auto it = this->monomials.begin(); it != this->monomials.end();)
+        if (!it->get()->hasVariable(var))
+            it = this->monomials.erase(it);
+        else
+            ++it;
 }
 
 bool Polynomial::hasIntegratingConstantAddictiveThatCanBeChanged() const
@@ -2779,8 +2822,7 @@ void Polynomial::castTrigonometricalFunctions()
             has_to_convert = true;
     if (!has_to_convert)
         return;
-    for (auto &it : this->monomials)
-        it->convertTrigonometricalFunctionsByFormulas(cast_types);
+    this->convertTrigonometricalFunctionsByFormulas(cast_types);
     this->casted_trigonometry = true;
 }
 std::unique_ptr<Polynomial> toPolynomialPointer(const abs_ex & expr)
@@ -2804,4 +2846,42 @@ std::unique_ptr<Polynomial> toPolynomialPointer(abs_ex && expr)
     {
         return std::unique_ptr<Polynomial>(new Polynomial(std::move(expr)));
     }
+}
+
+abs_ex checkIfItsSinusOrCosinusFormulaPolynomial(std::unique_ptr<Polynomial> &&polynom)
+{
+    auto monoms = polynom->getMonoms();
+    if (monoms->size() != 2)
+        return nullptr;
+    Number coe = polynom->reduce();
+    //степень синуса или косинуса после сортировки будет впереди цифры
+    bool minus;
+    Fractal* first = monoms->begin()->get();
+    if (first->getCoefficient() != 1 && first->getCoefficient() != -1)
+        return nullptr;
+    if (first->getCoefficient() == 1)
+        minus = true;
+    if (!first->getFractal().second->empty() || first->getFractal().first->size() != 1)
+        return nullptr;
+    if (first->getFractal().first->begin()->get()->getId() != DEGREE ||
+            *Degree::getDegreeOfExpression(first->getFractal().first->begin()->get()) != *two)
+        return nullptr;
+    bool sinus = false;
+    if (Degree::getArgumentOfDegree(first->getFractal().first->begin()->get())->getId() == COSINUS)
+        sinus = true;
+    else if (Degree::getArgumentOfDegree(first->getFractal().first->begin()->get())->getId() != SINUS)
+        return nullptr;
+
+    Fractal * second = next(monoms->begin())->get();
+    if (second->getCoefficient() != 1 && second->getCoefficient() != -1)
+        return nullptr;
+    if (minus && second->getCoefficient() == 1)
+        return nullptr;
+    if (!(second->getFractal().first->empty() && second->getFractal().second->empty()))
+        return nullptr;
+
+    auto arg = getArgumentOfFunction(*first->getFractal().first->begin());
+    if (sinus)
+        return sqr(sin(arg)) * toAbsEx(coe * (minus ? -1 : 1));
+    return sqr(cos(arg)) * toAbsEx(coe * (minus ? -1 : 1));
 }

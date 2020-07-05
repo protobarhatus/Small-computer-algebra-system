@@ -77,6 +77,7 @@ public:
     //пятое - имеет ли тангенс,
     //шестое - имеет ли котангенс квадрат, седьмое - имеет ли котангенс
     std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> checkTrigonometricalFunctions();
+    void checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > & params);
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
     virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
     std::unique_ptr<Fractal> toCommonDenominator();
@@ -109,6 +110,11 @@ public:
     abs_ex takeAwayIntegragingConstantThatCanBeChanged();
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
     abs_ex tryToFindExponentialFunction(int var) const override;
+    void convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> &instructions);
+
+    void getRidOfAbsoluteValues() override;
+
+    void eraseAllAddictiveWithoutVar(int var);
 private:
     bool hasIntegratingConstantAddictiveThatCanBeChanged() const;
     void pullSomeMembersIntoOneIntegratingConstant();
@@ -137,6 +143,7 @@ private:
     //for dividing
     bool is_fractional_coefficients_allowed = false;
 };
+abs_ex checkIfItsSinusOrCosinusFormulaPolynomial(std::unique_ptr<Polynomial> && polynom);
 std::unique_ptr<Polynomial> toPolynomialPointer(const abs_ex & expr);
 std::unique_ptr<Polynomial> toPolynomialPointer(abs_ex && expr);
 #endif // POLYNOMIAL_H

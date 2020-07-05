@@ -114,6 +114,8 @@ bool Sinus::canDowncastTo()
      //   return true;
     if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
+    if (this->argument->getId() == ARCSINUS)
+        return true;
     return false;
 }
 abs_ex Sinus::downcastTo()
@@ -158,6 +160,8 @@ abs_ex Sinus::downcastTo()
     {
         return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
+    if (this->argument->getId() == ARCSINUS)
+        return getArgumentOfFunction(this->argument);
     return abs_ex(nullptr);
 }
 std::set<int> Sinus::getSetOfPolyVariables() const
@@ -448,6 +452,15 @@ bool Sinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
 abs_ex Sinus::tryToFindExponentialFunction(int var) const
 {
     return this->argument->tryToFindExponentialFunction(var);
+}
+
+void Sinus::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->argument->getId() == ABSOLUTE_VALUE)
+        this->argument = getArgumentOfFunction(argument);
+    this->argument->getRidOfAbsoluteValues();
+    this->simplify();
 }
 
 abs_ex sin(const abs_ex &expr)

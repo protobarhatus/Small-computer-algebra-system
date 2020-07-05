@@ -351,6 +351,15 @@ abs_ex ArcSinus::tryToFindExponentialFunction(int var) const
     return this->argument->tryToFindExponentialFunction(var);
 }
 
+void ArcSinus::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->argument->getId() == ABSOLUTE_VALUE)
+        this->argument = getArgumentOfFunction(argument);
+    this->argument->getRidOfAbsoluteValues();
+    this->simplify();
+}
+
 bool ArcSinus::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == ARCSINUS);

@@ -317,6 +317,15 @@ abs_ex ArcTangent::tryToFindExponentialFunction(int var) const
     return this->argument->tryToFindExponentialFunction(var);
 }
 
+void ArcTangent::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->argument->getId() == ABSOLUTE_VALUE)
+        this->argument = getArgumentOfFunction(argument);
+    this->argument->getRidOfAbsoluteValues();
+    this->simplify();
+}
+
 bool ArcTangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == ARCTANGENT);

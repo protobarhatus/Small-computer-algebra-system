@@ -582,3 +582,23 @@ AlgExpr root(const AlgExpr &arg, int deg)
 {
     return root(arg, AlgExpr(deg));
 }
+
+AlgExpr acos(const AlgExpr &arg)
+{
+    return acos(arg.getExpr());
+}
+
+AlgExpr acos(AlgExpr &&arg)
+{
+    return acos(std::move(arg.getExpr()));
+}
+
+AlgExpr acot(const AlgExpr &arg)
+{
+    return acot(arg.getExpr());
+}
+
+AlgExpr acot(AlgExpr &&arg)
+{
+    return acot(std::move(arg.getExpr()));
+}

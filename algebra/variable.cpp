@@ -235,3 +235,8 @@ abs_ex Variable::tryToFindExponentialFunction(int var) const
 {
     return nullptr;
 }
+
+void Variable::getRidOfAbsoluteValues()
+{
+
+}

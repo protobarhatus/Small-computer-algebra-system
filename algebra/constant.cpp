@@ -65,7 +65,7 @@ std::set<QString> Constant::getSetOfFunctions() const
 
 Number Constant::getMaxDegreeOfVariable(int id)
 {
-    return Number::makeErrorNumber();
+    return 0;
 }
 
 void Constant::_qDebugOut()
@@ -166,6 +166,11 @@ bool Constant::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second
 abs_ex Constant::tryToFindExponentialFunction(int var) const
 {
     return nullptr;
+}
+
+void Constant::getRidOfAbsoluteValues()
+{
+
 }
 bool Constant::operator<(const AbstractExpression &right) const
 {

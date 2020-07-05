@@ -83,7 +83,7 @@ std::list<abs_ex> checkIfitsReturnEquationAndTryToSolve(abs_ex && equation, int 
             new_equation = std::move(new_equation) + std::move(pol[center + i])*coefs_expressions[i];
         }
     }
-    res = _solveEquation(equation, var);
+    res = solveEquation(equation, var);
     abs_ex t_expr = getVariableExpr(var) + ratio/getVariableExpr(var);
     std::list<abs_ex> actual_res;
     for (auto &it : res)
@@ -97,10 +97,15 @@ std::list<abs_ex> checkIfitsReturnEquationAndTryToSolve(abs_ex && equation, int 
 //имеются ввиду уравнения по типу 2^2x + 2^x + 2 == a
 std::list<abs_ex> checkIfItsExponentialSumEquationAndTryToSolve(abs_ex && equation, abs_ex && right, int var)
 {
+  //  qDebug() << equation->toString();
     std::list<abs_ex> res;
     auto monoms = static_cast<Polynomial*>(equation.get())->getMonomialsPointers();
-    auto downcasted_frac = monoms.begin()._Ptr->_Myval->downcast();
+
     auto var_degree = monoms.begin()._Ptr->_Myval->getPartWithVariable(var);
+    abs_ex temp_var = systemVarExpr();
+    abs_ex new_equation = monoms.begin()._Ptr->_Myval->getFractalWithoutVariable(var) * copy(temp_var);
+
+    auto downcasted_frac = monoms.begin()._Ptr->_Myval->downcast();
     auto basis = copy(Degree::getArgumentOfDegree(var_degree.get()));
     if (basis->hasVariable(var))
         return res;
@@ -113,8 +118,7 @@ std::list<abs_ex> checkIfItsExponentialSumEquationAndTryToSolve(abs_ex && equati
         right = -std::move(right);
     }
     auto deg = Degree::getDegreeOfExpression(var_degree.get());
-    abs_ex temp_var = systemVarExpr();
-    abs_ex new_equation = monoms.begin()._Ptr->_Myval->getFractalWithoutVariable(var) * copy(temp_var);
+
     for (auto it = next(monoms.begin()); it != monoms.end(); ++it)
     {
         auto monom = it._Ptr->_Myval->getPartWithVariable(var);
@@ -172,6 +176,7 @@ bool hasRadicalMultiplier(abs_ex & expr)
 }
 std::list<abs_ex> checkIfItsLogarithmicSumEquationAndTryToSolve(const abs_ex & equation, const abs_ex & right, int var)
 {
+   // qDebug() << equation->toString();
     std::list<abs_ex> res;
     auto monoms = static_cast<Polynomial*>(equation.get())->getMonomialsPointers();
     abs_ex new_equation = copy(one);
@@ -180,6 +185,9 @@ std::list<abs_ex> checkIfItsLogarithmicSumEquationAndTryToSolve(const abs_ex & e
     {
         auto fr_without_var = toAbsEx(it->getFractalWithoutVariable(var));
         auto fr_with_var = copy(it)/fr_without_var;
+     //   qDebug() << it->toString();
+       // qDebug() << fr_without_var->toString();
+      //  qDebug() << fr_with_var->toString();
         if (fr_with_var->getId() != LOGARITHM)
             return res;
         //думаю, этот иф бессмысленен, однако я не совсем уверен с тем, как степени там даункастятся
@@ -486,8 +494,8 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
     auto equation_copy = toPolynomialPointer(std::move(equation_copy_expr));
 
     auto monoms = equation_copy->getMonomialsPointers();
-   // qDebug() << equation->makeStringOfExpression();
-   // qDebug() << equation->toString();
+    //qDebug() << equation->makeStringOfExpression();
+    //qDebug() << equation->toString();
     for (auto &it : monoms)
     {
         if (it->hasVariable(var))
@@ -535,6 +543,7 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
         //уравнение общего вида, которое хер пойми как решать, либо
         //уравнение по типу 2^2x + 2^x + 2 = a, либо сумма логарифмов, либо тригонометрическое уравнение,
         //либо полином
+        //qDebug() << var_expr->toString();
         res = checkIfItsExponentialSumEquationAndTryToSolve(copy(var_expr), licCopy(right_expr), var);
         if (res.size() > 0)
             return res;
@@ -553,11 +562,13 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
     if (res.size() > 0)
         return res;
     var_expr = copy(zero);
-    right_expr = copy(equation.get());
+
     equation_copy_expr = copy(equation.get());
     liftAllIntegratingConstants(equation_copy_expr);
     equation_copy = toPolynomialPointer(std::move(equation_copy_expr));
+    right_expr = copy(equation_copy.get());
     monoms = equation_copy->getMonomialsPointers();
+  //  qDebug() << equation_copy->toString();
     for (auto &it : monoms)
     {
         auto var_monom = copy(it)/it->getFractalWithoutVariable(var);
@@ -577,6 +588,8 @@ std::list<abs_ex> solveEquationOfPolynom(const std::unique_ptr<Polynomial> & equ
         var_expr = var_expr / expr_without_var;
         right_expr = right_expr / expr_without_var;
     }
+    //qDebug() << var_expr->toString();
+    //qDebug() << right_expr->toString();
     res = solveEquationOfSpecialCases(var_expr, std::move(right_expr), var);
 
 
@@ -763,8 +776,7 @@ std::list<abs_ex > solveEquation(const abs_ex &equation, int var)
             it = pow(it, one/numToAbs(gcd_of_nums));
         return res;
     }
-  //  qDebug() << AlgExpr(equation).toString();
-   // qDebug() << amountOfIntegratingConstant(9);
+   // qDebug() << AlgExpr(equation).toString();
     return _solveEquation(equation, var);
 }
 
@@ -1077,6 +1089,12 @@ std::list<abs_ex> factorizePolynomOfOneVariable(const abs_ex & polynom, int var)
 }
 std::pair<std::list<abs_ex >, Number> factorizePolynom(const abs_ex &polynom)
 {
+    if (polynom->getId() > 0)
+    {
+        std::list<abs_ex> res;
+        res.push_back(copy(polynom));
+        return {std::move(res), 1};
+    }
     //в полиноме уже должно было произойти reduce и takeCommonPart
     Number reduced = static_cast<Polynomial*>(polynom.get())->reduce();
     auto set = polynom->getSetOfVariables();

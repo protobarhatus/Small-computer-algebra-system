@@ -22,6 +22,13 @@ public:
 
     virtual bool canDowncastTo() override;
     abs_ex downcastTo() override;
+    static abs_ex getArgumentCopyOfDegree(AbstractExpression * expr);
+    static abs_ex getArgumentOfDegreeMoved(abs_ex & expr);
+    static abs_ex getDegreeOfExpressionMoved(abs_ex & expr);
+    static abs_ex getArgumentOfDegree(const abs_ex & expr);
+    static abs_ex getArgumentOfDegree(abs_ex && expr);
+    static abs_ex getDegreeOfExpression(const abs_ex & expr);
+    static abs_ex getDegreeOfExpression(abs_ex && expr);
     static AbstractExpression * getArgumentOfDegree(AbstractExpression * expr);
     static abs_ex getDegreeOfExpression(AbstractExpression * expr);
     bool isZeroDegree();
@@ -60,6 +67,8 @@ public:
     virtual bool hasDifferential() const override;
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
     abs_ex tryToFindExponentialFunction(int var) const override;
+    void getRidOfAbsoluteValues() override;
+
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     void reducePolynomialArgument();

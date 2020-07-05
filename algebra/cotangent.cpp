@@ -137,6 +137,8 @@ bool Cotangent::canDowncastTo()
         return true;
     if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
+    if (this->argument->getId() == ARCTANGENT)
+        return true;
     return false;
 }
 
@@ -186,6 +188,8 @@ abs_ex Cotangent::downcastTo()
     {
         return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
+    if (this->argument->getId() == ARCTANGENT)
+        return one/getArgumentOfFunction(this->argument);
     return abs_ex(nullptr);
 }
 
@@ -414,6 +418,15 @@ bool Cotangent::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &secon
 abs_ex Cotangent::tryToFindExponentialFunction(int var) const
 {
     return this->argument->tryToFindExponentialFunction(var);
+}
+
+void Cotangent::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->argument->getId() == ABSOLUTE_VALUE)
+        this->argument = getArgumentOfFunction(argument);
+    this->argument->getRidOfAbsoluteValues();
+    this->simplify();
 }
 
 bool Cotangent::operator<(const AbstractExpression &right) const

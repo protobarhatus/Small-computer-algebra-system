@@ -153,11 +153,14 @@ abs_ex Logarithm::downcastTo()
     if (this->argument->getId() == DEGREE && Degree::getDegreeOfExpression(this->argument.get())->getId() == NUMBER &&
             static_cast<Number*>(Degree::getDegreeOfExpression(this->argument.get()).get())->getNumerator() % 2 == 0)
     {
-        AbstractExpression * arg = Degree::getArgumentOfDegree(this->argument.get());
-        return Degree::getDegreeOfExpression(this->argument.get()) * ln(abs(abs_ex(arg)));
+        abs_ex degree = Degree::getDegreeOfExpressionMoved(this->argument);
+        return std::move(degree) * ln(abs(Degree::getArgumentOfDegreeMoved(this->argument)));
     }
     if (this->argument->getId() == DEGREE)
-        return Degree::getDegreeOfExpression(this->argument.get()) * ln(Degree::getArgumentOfDegree(this->argument.get()));
+    {
+        abs_ex degree = Degree::getDegreeOfExpressionMoved(this->argument);
+        return std::move(degree) * ln(Degree::getArgumentOfDegreeMoved(this->argument));
+    }
     if (this->argument->getId() == FRACTAL)
     {
         Fractal* fr = static_cast<Fractal*>(this->argument.get());
@@ -171,6 +174,7 @@ abs_ex Logarithm::downcastTo()
             }
             for (auto &it : *fr_m.second)
             {
+               // qDebug() << ln(it)->toString();
                 res = res - ln(it);
             }
             return res;
@@ -416,6 +420,15 @@ bool Logarithm::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &secon
 abs_ex Logarithm::tryToFindExponentialFunction(int var) const
 {
     return this->argument->tryToFindExponentialFunction(var);
+}
+
+void Logarithm::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->argument->getId() == ABSOLUTE_VALUE)
+        this->argument = getArgumentOfFunction(argument);
+    this->argument->getRidOfAbsoluteValues();
+    this->simplify();
 }
 
 bool Logarithm::operator<(const AbstractExpression &right) const

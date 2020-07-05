@@ -140,6 +140,8 @@ bool Tangent::canDowncastTo()
         return true;
     if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
+    if (this->argument->getId() == ARCTANGENT)
+        return true;
     return false;
 }
 
@@ -189,6 +191,8 @@ abs_ex Tangent::downcastTo()
     {
         return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
+    if (this->argument->getId() == ARCTANGENT)
+        return getArgumentOfFunction(this->argument);
     return abs_ex(nullptr);
 }
 
@@ -431,6 +435,15 @@ bool Tangent::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
 abs_ex Tangent::tryToFindExponentialFunction(int var) const
 {
     return this->argument->tryToFindExponentialFunction(var);
+}
+
+void Tangent::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->argument->getId() == ABSOLUTE_VALUE)
+        this->argument = getArgumentOfFunction(argument);
+    this->argument->getRidOfAbsoluteValues();
+    this->simplify();
 }
 
 bool Tangent::operator<(const AbstractExpression &right) const

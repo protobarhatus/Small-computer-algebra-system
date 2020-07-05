@@ -15,6 +15,9 @@
 #define x2 pow(x, 2)
 #define x3 pow(x, 3)
 #define x4 pow(x, 4)
+#define y2 pow(y, 2)
+#define y3 pow(y, 3)
+#define y4 pow(y, 4)
 int rand(int min, int max)
 {
    static std::random_device rt;
@@ -45,7 +48,7 @@ void out(const Polynom & p)
 int main(int argc, char *argv[])
 {
 
-   // testAlgMod();
+  //  testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -122,18 +125,23 @@ int main(int argc, char *argv[])
     //!!разобраться с этой хренью. то же самое с логарифмами
     //c = sqrt(-x*y) / sqrt(-y); c = sqrt(-x*y) + sqrt(-y)
 
-
 //TODO: разобраться с ситуациями по типу
     //2log(cos(x)) - log(1-sin(x)^2)
     //ТАКЖЕ, если  синусы и косинусы раскрываются по сумме всегда сразу, то мы лишаемся
     //возможности взять интегралы вида 1/sin(ax+b),  1/(sin(ax+b)cos(ax+d)), 1/(sin(ax+b)^2cos(ax+d)) и т. д.
     //это надо исправить
 
+    //c = (sin(2*x)/y + x)*dx + (y - sin(x)*sin(x)/y/y)*dy;
 
 
+   // c = (1/x2) * abs(x);
+
+   //c = integral(pow(cos(x), 3)/cbrt(pow(sin(x), 4)), x);
+    //c = sin(acos(sqrt(1 - sin(x)*sin(x))));
+  //  c = integral(sin(x)/pow(cos(x), 2), x) - (2/((-1*tan((1*x/2)))+(1))/((1)+(tan((1*x/2)))));
 
     //auto res = solveEquation(ln(abs(x)) + ln(abs(y)) + c, y);
-    //auto res = solveEquation((2*pow(x, 4) - 3*pow(x, 3) - x*x -3*x + 2), x);
+   // auto res = solveEquation((2*pow(x, 4) - 3*pow(x, 3) - x*x -3*x + 2), x);
     //auto res = solveEquation((2*x4 - 15*x3 + 35*x2 - 30* x + 8 ), x);
    // auto res = solveEquation(x + 2*sqrt(x)-15, x);
     //auto res = solveEquation(x4 - 4*x2 + 3, x);
@@ -148,6 +156,7 @@ int main(int argc, char *argv[])
     //auto res = solveEquation(pow(euler(), a)/abs(x) - abs(y), y);
     //auto res = solveEquation(ln(abs(x)) - ln(abs(x+1)) - ln(abs(y - 3)) + integratingConstantExpr(), y);
 //auto res = solveEquation(ln(abs(ln(y))) + ln(abs(x)) + std::move(integratingConstantExpr()), y);
+ //  auto res = solveEquation(-ln(abs(-y+x)) - ln(abs(x)) + ln(abs(y)) + integratingConstantExpr(), y);
 //res.begin()->getExpr()->setSimplified(false);
 //res.begin()->getExpr()->simplify();
 
@@ -161,13 +170,39 @@ int main(int argc, char *argv[])
    // auto res = solveDifur(2*(x*y + y)*dy/dx + x*(pow(y, 4) + 1), x, y);  //-1*ln(|1 + x|) + x + atan(y^2) + C3  = 0  and  C3 is in  R
     //auto res = solveDifur(2*dy/dx *sin(y) *cos(y)*pow(sin(x), 2) + cos(x), x, y);
     //auto res = solveDifur((1 + pow(euler(), x))*y*dy - pow(euler(), y)*dx, x, y);               //(-1 - y - x*e^y + ln(1 + e^x)*e^y + e^y*C) /e^y  = 0  and  C is in  R
-    auto res = solveDifur(y - x*dy/dx - 3*(1 + x*x*dy/dx), x, y);
-    //auto res = solveDifur(x*dy/dx - (y - x*pow(euler(), y/x)), x, y);
+    //auto res = solveDifur(y - x*dy/dx - 3*(1 + x*x*dy/dx), x, y);      //y = -1 (-3*|1 + 3*x| + x*C28) /|1 + 3*x|  and  C28 is in  R
 
-  //  auto res = solveDifur(x*dy/dx - 2*sqrt(x*x + y*y) - y, x, y);
-   /* y = (pow(x, 4) - 1)/2/x;
-    dy = D(y);
-    c = x*dy/dx - 2*sqrt(x*x + y*y) - y;*/
+
+
+   // auto res = solveDifur(x*dy/dx - (y - x*pow(euler(), y/x)), x, y);      //y = -1*x*ln(ln(|x|) + C10)  and  C10 is in  R
+   // auto res = solveDifur(x*dy/dx - 2*sqrt(x*x + y*y) - y, x, y);
+ //  auto res = solveDifur(x*dy/dx + 2*sqrt(x*y) - y, x, y);    //НЕ хватает ограничения в системе, нужно будет дополнить позже
+  //  auto res = solveDifur((y*y - 2*x*y)*dx + x*x*dy, x, y);
+   // auto res = solveDifur(y*y + x2*dy/dx - x*y*dy/dx, x, y);
+
+
+  //  auto res = solveDifur(dy/dx - y - pow(euler(), x), x, y);
+   // auto res = solveDifur(dy/dx + y*tan(x)-1/cos(x), x, y);  //y = -1 (-1*sin(x) + cos(x)*C3)   and  C3 is in  R
+  //  auto res = solveDifur(dy/dx + y/x - 2*pow(euler(), x2), x, y);   //y = -1 (-1*e^x^2 + C5) /x  and  C5 is in  R
+   // auto res = solveDifur(dy/dx - 2*y/(x + 1) - pow(x + 1, 3), x, y);    //y = -1/2 (-5*x^2 - 4*x^3 - 2*x - x^4 + C5 + x^2*C5 + 2*x*C5)   and  C5 is in  R
+   // auto res = solveDifur(x2*dy/dx - 2*x*y - 3, x, y);            //y = -1 (1 + x^3*C6) /x  and  C6 is in  R
+    //auto res = solveDifur(x*dy/dx + (x + 1)*y - 3*x2*pow(euler(), -x), x, y);  //y = -1 (-1*x^3 + C5) /x/e^x  and  C5 is in  R
+
+    //почти на каждом здесь должно быть y = 0 в качестве корня
+    //auto res = solveDifur(dy/dx - 2*x*y - 2*x3*y2, x, y);  //y = -1*e^x^2/(-1*e^x^2 + e^x^2*x^2 + C5)  and  C5 is in  R
+    //auto res = solveDifur(dy/dx + y/(x + 1) + y2, x, y);   //y = 1/(ln(|1 + x|) + C3 + x*ln(|1 + x|) + x*C3)  and  C3 is in  R
+   // auto res = solveDifur(dy/dx - 2*y/x - 2*x*sqrt(y), x, y);    //y = -1/4*x^2 (-4*x^2 - C4^2 + 4*x*C4)   and  C4 is in  R
+    //auto res = solveDifur(x*dy/dx - 4*y -x2*sqrt(y), x, y);         //y = -1/4*x^4 (-1*ln(|x|)^2 - C4^2 + 2*ln(|x|)*C4)   and  C4 is in  R
+    //auto res = solveDifur(dy/dx + 3*y/x - x3*y3, x, y);          //y = -1/sqrt(1 + x^2*C5)/x^2  and  C5 is in  R
+    //auto res = solveDifur(2*dy/dx - 3*y*cos(x) + pow(euler(), -2*x) *(2+ 3*cos(x))/y, x, y); //y = e^(3/2*sin(x))*sqrt(e^(-3*sin(x) - 2*x) + C8)  and  C8 is in  R
+
+
+   // auto res = solveDifur((2*x - y + 1)*dx + (2*y - x - 1)*dy , x, y);  //y = 1/2 (1 + x + sqrt(-3*x^2 - 2*x + C3))   and  C3 is in  R"   "y = 1/2 (-1*sqrt(-3*x^2 - 2*x + C5) + 1 + x)   and  C5 is in  R
+  //  auto res = solveDifur((3*x2 - 3*y2 + 4*x)*dx - (6*x*y + 4*y)*dy, x, y); //y = sqrt(2*C2 + 3*x^4 + 3*x*C2 + 4*x^2 + 8*x^3)*C7/(2 + 3*x)  and  C2 is in  R  and  C7 is in  { -1 } U { 1 }
+   // auto res = solveDifur((6*y - 3*x2 + 3*y2)*dx + (6*x + 6*x*y)*dy, x, y);    //y =  (sqrt(x)*C7 + sqrt(x^3 + 3*x + C3)*C9) *C11/sqrt(x)  and  C3 is in  R  and  C7 is in  { -3 } U { sqrt(3) }  and  C9 is in  { sqrt(3) } U { 3 }  and  C11 is in  { -1/3 } U { 1/3 }
+    //auto res = solveDifur(2*x*(1 - pow(euler(), y))*dx/pow(1 + x2, 2) + pow(euler(), y)*dy/(1 + x2), x, y);  //"y = ln(C13 + x^2*C13 + C14)  and  C13 is in  (-inf; 0)  and  C14 is in  { -1 } U { 1 }"  "y = ln(-1*C11 - x^2*C11 + 1)  and  C11 is in  (-inf; 0)"  "y = 0"
+    auto res = solveDifur((sin(2*x)/y + x)*dx + (y - sin(x)*sin(x)/y/y)*dy, x, y);
+
     qDebug() << "RES: ";
     for (auto &it : res)
         qDebug() << it.toString();

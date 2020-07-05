@@ -120,6 +120,8 @@ bool Cosinus::canDowncastTo()
         return true;
     if (isIntegratingConstantAndCanChangeIt(argument->getId()))
         return true;
+    if (this->argument->getId() == ARCSINUS)
+        return true;
     return false;
 }
 abs_ex Cosinus::downcastTo()
@@ -162,6 +164,8 @@ abs_ex Cosinus::downcastTo()
     {
         return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
+    if (this->argument->getId() == ARCSINUS)
+        return sqrt(one - pow(getArgumentOfFunction(this->argument), 2));
     return abs_ex(nullptr);
 }
 std::set<int> Cosinus::getSetOfPolyVariables() const
@@ -459,6 +463,15 @@ bool Cosinus::tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second)
 abs_ex Cosinus::tryToFindExponentialFunction(int var) const
 {
     return this->argument->tryToFindExponentialFunction(var);
+}
+
+void Cosinus::getRidOfAbsoluteValues()
+{
+    NONCONST
+    if (this->argument->getId() == ABSOLUTE_VALUE)
+        this->argument = getArgumentOfFunction(argument);
+    this->argument->getRidOfAbsoluteValues();
+    this->simplify();
 }
 
 abs_ex cos(const abs_ex &expr)

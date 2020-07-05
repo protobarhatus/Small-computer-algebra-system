@@ -42,6 +42,7 @@ class VariablesDefinition;
 //almost all functions assumes that objects that call them are simplified.
 class AbstractExpression
 {
+   // int obj_id;
 public:
     AbstractExpression();
     AbstractExpression & operator=(const AbstractExpression & expr);
@@ -112,6 +113,9 @@ public:
     virtual bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex & second) = 0;
     virtual abs_ex tryToFindExponentialFunction(int var) const = 0;
     bool isOnlyVarsIntegratingConstantsThatCanBeChanged() const;
+
+    std::set<abs_ex> getUniqueTrigonometricalFunctions() const;
+    virtual void getRidOfAbsoluteValues() = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -130,6 +134,10 @@ bool lowerOrEquall(const abs_ex & left, const abs_ex & right);
 bool biggerOrEquall(const abs_ex & left, const abs_ex & right);
 bool subCompare(const abs_ex & a, const abs_ex & b);
 bool isDegreeOfSomeFunction(const abs_ex & expr);
+
+abs_ex getExpressionWithoutAddictiveWithoutVariable(const abs_ex & expr, int var);
+
+abs_ex getExpressionWithoutAbsoluteValues(const abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);
 //std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);
@@ -158,6 +166,8 @@ void replaceSystemVariablesToExpressions(abs_ex &expr, std::map<int, abs_ex> & f
 abs_ex getArgumentOfFunction(abs_ex && expr);
 abs_ex getArgumentOfFunction(const abs_ex & expr);
 abs_ex getArgumentOfFunction(AbstractExpression * expr);
+void setNewArgumentToFunction(abs_ex & expr, const abs_ex & new_arg);
+
 bool isDegreeOfTrigonometricalFunction(const abs_ex & expr);
 bool isDegreeOfArcTrigonometricalFunction(abs_ex & expr);
 //выражения a^f(x) считаются экспоненциальной ф-цией, а g(x)^f(x) - нет (x->getId() == var)

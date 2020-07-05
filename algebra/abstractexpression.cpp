@@ -13,9 +13,15 @@
 #include "arcsinus.h"
 #include "arctangent.h"
 #include "absolutevalue.h"
+#include "absexmemorychecker.h"
+#include "differential.h"
 AbstractExpression::AbstractExpression()
 {
-
+ /*   this->obj_id = AbsExMemoryChecker::addObject();
+    if (this->obj_id == 8941)
+    {
+        qDebug() << "Bamp";
+    }*/
 }
 
 AbstractExpression &AbstractExpression::operator=(const AbstractExpression &expr)
@@ -25,13 +31,13 @@ AbstractExpression &AbstractExpression::operator=(const AbstractExpression &expr
 
 AbstractExpression::AbstractExpression(const AbstractExpression &expr)
 {
-
+   // this->obj_id = AbsExMemoryChecker::addObject();
 }
 
 
 AbstractExpression::~AbstractExpression()
 {
-
+    //AbsExMemoryChecker::deleteObject(this->obj_id);
 }
 bool AbstractExpression::less(const AbstractExpression * left, const AbstractExpression * right)
 {
@@ -138,6 +144,22 @@ bool AbstractExpression::isOnlyVarsIntegratingConstantsThatCanBeChanged() const
     return true;
 }
 
+std::set<abs_ex> AbstractExpression::getUniqueTrigonometricalFunctions() const
+{
+    auto all_funcs = this->getTrigonometricalFunctions();
+    std::set<abs_ex> funcs;
+    for (auto &it : all_funcs)
+    {
+        bool add = true;
+        for (auto &it1 : funcs)
+            if (*it1 == *it)
+                add = false;
+        if (add)
+            funcs.insert(copy(it));
+    }
+    return funcs;
+}
+
 
 
 
@@ -167,14 +189,45 @@ QString getStringArgumentOfTrigonometricalFunction(AbstractExpression *expr)
 bool isDegreeOfSomeFunction(const abs_ex & expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
-    return (arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT ||
-           arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS);
+    return  (arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT ||
+           arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS ||
+           arg->getId() == ABSOLUTE_VALUE || arg->getId() == DIFFERENTIAL);
+}
+abs_ex getArgumentOfFunction(const abs_ex &expr)
+{
+    AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
+    assert(isDegreeOfSomeFunction(expr));
+    switch (arg->getId()) {
+    case ABSOLUTE_VALUE:
+        return copy(static_cast<AbsoluteValue*>(arg)->getExpression());
+    case SINUS:
+        return static_cast<Sinus*>(arg)->getArgumentsCopy();
+    case COSINUS:
+        return static_cast<Cosinus*>(arg)->getArgumentsCopy();
+    case TANGENT:
+        return static_cast<Tangent*>(arg)->getArgumentsCopy();
+    case COTANGENT:
+        return static_cast<Cotangent*>(arg)->getArgumentsCopy();
+    case LOGARITHM:
+        return static_cast<Logarithm*>(arg)->getArgumentsCopy();
+    case ARCTANGENT:
+        return static_cast<ArcTangent*>(arg)->getArgumentsCopy();
+    case ARCSINUS:
+        return static_cast<ArcSinus*>(arg)->getArgumentsCopy();
+    case DIFFERENTIAL:
+        return static_cast<Differential*>(arg)->getArgumentsCopy();
+    default:
+        assert(false);
+
+    }
 }
 abs_ex getArgumentOfFunction(abs_ex && expr)
 {
     AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
     assert(isDegreeOfSomeFunction(expr));
     switch (arg->getId()) {
+    case ABSOLUTE_VALUE:
+        return (static_cast<AbsoluteValue*>(arg))->getExpressionMoved();
     case SINUS:
         return static_cast<Sinus*>(arg)->getArgumentMoved();
     case COSINUS:
@@ -189,12 +242,72 @@ abs_ex getArgumentOfFunction(abs_ex && expr)
         return static_cast<ArcTangent*>(arg)->getArgumentMoved();
     case ARCSINUS:
         return static_cast<ArcSinus*>(arg)->getArgumentMoved();
+    case DIFFERENTIAL:
+        return static_cast<Differential*>(arg)->getArgumentMoved();
     default:
         assert(false);
 
     }
 }
+abs_ex getArgumentOfFunction(AbstractExpression *expr)
+{
+    AbstractExpression *arg = Degree::getArgumentOfDegree(expr);
+    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT
+           ||arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS ||
+           arg->getId() == ABSOLUTE_VALUE || arg->getId() == DIFFERENTIAL);
+    switch (arg->getId()) {
+    case SINUS:
+        return static_cast<Sinus*>(arg)->getArgumentsCopy();
+    case COSINUS:
+        return static_cast<Cosinus*>(arg)->getArgumentsCopy();
+    case TANGENT:
+        return static_cast<Tangent*>(arg)->getArgumentsCopy();
+    case COTANGENT:
+        return static_cast<Cotangent*>(arg)->getArgumentsCopy();
+    case LOGARITHM:
+        return static_cast<Logarithm*>(arg)->getArgumentsCopy();
+    case ARCTANGENT:
+        return static_cast<ArcTangent*>(arg)->getArgumentsCopy();
+    case ARCSINUS:
+        return static_cast<ArcSinus*>(arg)->getArgumentsCopy();
+    case ABSOLUTE_VALUE:
+        return copy(static_cast<AbsoluteValue*>(arg)->getExpression());
+    case DIFFERENTIAL:
+        return static_cast<Differential*>(arg)->getArgumentsCopy();
+    default:
+        assert(false);
 
+    }
+}
+void setNewArgumentToFunction(abs_ex &expr, const abs_ex & new_arg)
+{
+    auto deg = Degree::getDegreeOfExpression(expr);
+    auto arg = Degree::getArgumentOfDegree(expr);
+    assert(isDegreeOfSomeFunction(expr));
+    switch (arg->getId()) {
+    case SINUS:
+        expr = pow(sin(new_arg), deg);
+    case COSINUS:
+        expr = pow(cos(new_arg), deg);
+    case TANGENT:
+        expr = pow(tan(new_arg), deg);
+    case COTANGENT:
+        expr = pow(cot(new_arg), deg);
+    case LOGARITHM:
+        expr = pow(ln(new_arg), deg);
+    case ARCTANGENT:
+        expr = pow(atan(new_arg), deg);
+    case ARCSINUS:
+        expr = pow(asin(new_arg), deg);
+    case ABSOLUTE_VALUE:
+        expr = pow(abs(new_arg), deg);
+    case DIFFERENTIAL:
+        expr = pow(D(new_arg), deg);
+    default:
+        assert(false);
+
+    }
+}
 bool isDegreeOfTrigonometricalFunction(const abs_ex &expr)
 {
     auto arg = Degree::getArgumentOfDegree(expr.get())->getId();
@@ -220,6 +333,18 @@ std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex &expr, std::ma
 }
 void replaceSystemVariablesBackToFunctions(abs_ex &expr, std::map<int, abs_ex> & funcs)
 {
+    if (expr->getId() > 0)
+    {
+        for (auto &it : funcs)
+        {
+            if (it.first == expr->getId())
+            {
+                expr = copy(it.second);
+                break;
+            }
+        }
+        return ;
+    }
     replaceSystemVariablesBackToFunctions(expr.get(), funcs);
 }
 std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression *expr, std::map<QString, int> &funcs)
@@ -248,6 +373,7 @@ void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<in
     //qDebug() << "WITH: " << expr->makeStringOfExpression();
     for (auto &it : funcs)
     {
+
         expr->changeSomePartOn(systemVar(it.first).makeStringOfExpression(), it.second);
     }
 
@@ -265,6 +391,18 @@ void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int,
 }
 void replaceSystemVariablesToExpressions(abs_ex & expr, std::map<int, abs_ex> & funcs)
 {
+    if (expr->getId() > 0)
+    {
+        for (auto &it : funcs)
+        {
+            if (it.first == expr->getId())
+            {
+                expr = copy(it.second);
+                break;
+            }
+        }
+        return ;
+    }
     replaceSystemVariablesToExpressions(expr.get(), funcs);
 }
 /*
@@ -276,34 +414,7 @@ void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex > &
     }
 }
 */
-abs_ex getArgumentOfFunction(const abs_ex &expr)
-{
-    AbstractExpression *arg = Degree::getArgumentOfDegree(expr.get());
-    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT ||
-           arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS ||
-           arg->getId() == ABSOLUTE_VALUE);
-    switch (arg->getId()) {
-    case ABSOLUTE_VALUE:
-        return copy(static_cast<AbsoluteValue*>(arg)->getExpression());
-    case SINUS:
-        return static_cast<Sinus*>(arg)->getArgumentsCopy();
-    case COSINUS:
-        return static_cast<Cosinus*>(arg)->getArgumentsCopy();
-    case TANGENT:
-        return static_cast<Tangent*>(arg)->getArgumentsCopy();
-    case COTANGENT:
-        return static_cast<Cotangent*>(arg)->getArgumentsCopy();
-    case LOGARITHM:
-        return static_cast<Logarithm*>(arg)->getArgumentsCopy();
-    case ARCTANGENT:
-        return static_cast<ArcTangent*>(arg)->getArgumentsCopy();
-    case ARCSINUS:
-        return static_cast<ArcSinus*>(arg)->getArgumentsCopy();
-    default:
-        assert(false);
 
-    }
-}
 
 abs_ex absEx(int num)
 {
@@ -354,6 +465,10 @@ std::pair<abs_ex, abs_ex > checkIfItsFunctionOfLinearArgument(const AbstractExpr
         return checkIfItsLinearFunction(static_cast<const ArcTangent*>(func)->getArgument(), var);
     case ARCSINUS:
         return checkIfItsLinearFunction(static_cast<const ArcSinus*>(func)->getArgument(), var);
+    case ABSOLUTE_VALUE:
+        return checkIfItsLinearFunction(static_cast<const AbsoluteValue*>(func)->getExpressionCopy(), var);
+    case DIFFERENTIAL:
+        return checkIfItsLinearFunction(static_cast<const Differential*>(func)->getArgumentsCopy(), var);
     default:
         return {nullptr, nullptr};
     }
@@ -469,31 +584,6 @@ abs_ex operator-(abs_ex &&arg)
     return minus_one * std::move(arg);
 }
 
-abs_ex getArgumentOfFunction(AbstractExpression *expr)
-{
-    AbstractExpression *arg = Degree::getArgumentOfDegree(expr);
-    assert(arg->getId() == SINUS || arg->getId() == COSINUS || arg->getId() == TANGENT || arg->getId() == COTANGENT
-           ||arg->getId() == LOGARITHM || arg->getId() == ARCTANGENT || arg->getId() == ARCSINUS);
-    switch (arg->getId()) {
-    case SINUS:
-        return static_cast<Sinus*>(arg)->getArgumentsCopy();
-    case COSINUS:
-        return static_cast<Cosinus*>(arg)->getArgumentsCopy();
-    case TANGENT:
-        return static_cast<Tangent*>(arg)->getArgumentsCopy();
-    case COTANGENT:
-        return static_cast<Cotangent*>(arg)->getArgumentsCopy();
-    case LOGARITHM:
-        return static_cast<Logarithm*>(arg)->getArgumentsCopy();
-    case ARCTANGENT:
-        return static_cast<ArcTangent*>(arg)->getArgumentsCopy();
-    case ARCSINUS:
-        return static_cast<ArcSinus*>(arg)->getArgumentsCopy();
-    default:
-        assert(false);
-
-    }
-}
 
 std::vector<abs_ex > checkIfItsPolynom(const AbstractExpression *func, int var)
 {
@@ -648,8 +738,11 @@ void setUpExpressionIntoVariable(abs_ex & func, const abs_ex &expr, int var)
     std::map<int, abs_ex> repl_vars;
     repl_vars.insert({var, copy(expr)});
    // qDebug() << func->makeStringOfExpression();
+   // qDebug() << func->toString();
+   // qDebug() << expr->toString();
     replaceSystemVariablesToExpressions(func, repl_vars);
     //qDebug() << func->makeStringOfExpression();
+   // qDebug() << func->toString();
     func->setSimplified(false);
     func->simplify();
     func = func->downcast();
@@ -796,21 +889,21 @@ abs_ex operator*(const abs_ex & left, const abs_ex & right)
     if (left->getId() == NUMBER && right->getId() == NUMBER)
         return toAbsEx(*static_cast<Number*>(left.get()) * *static_cast<Number*>(right.get()));
     if (isOne(left))
-        return copy(right);
-    if (*left == *minus_one && right->getId() == FRACTAL)
+        return copy(right)->downcast();
+    /*if (*left == *minus_one && right->getId() == FRACTAL)
     {
         abs_ex res = copy(right);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     if (isOne(right))
-        return copy(left);
-    if (*right == *minus_one && left->getId() == FRACTAL)
+        return copy(left)->downcast();
+    /*if (*right == *minus_one && left->getId() == FRACTAL)
     {
         abs_ex res = copy(left);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     fractal_argument arg, den;
     arg.push_back(copy(left));
     arg.push_back(copy(right));
@@ -822,13 +915,13 @@ abs_ex operator/(const abs_ex & left, const abs_ex & right)
     if (left->getId() == NUMBER && right->getId() == NUMBER)
         return toAbsEx(*static_cast<Number*>(left.get()) / *static_cast<Number*>(right.get()));
     if (isOne(right))
-        return copy(left);
-    if (*right == *minus_one && left->getId() == FRACTAL)
+        return copy(left)->downcast();
+    /*if (*right == *minus_one && left->getId() == FRACTAL)
     {
         abs_ex res = copy(left);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     fractal_argument arg, den;
     arg.push_back(copy(left));
     den.push_back(copy(right));
@@ -857,21 +950,21 @@ abs_ex operator*(abs_ex &&left, const abs_ex &right)
     if (left->getId() == NUMBER && right->getId() == NUMBER)
         return toAbsEx(*static_cast<Number*>(left.get()) * *static_cast<Number*>(right.get()));
     if (isOne(left))
-        return copy(right);
-    if (*left == *minus_one && right->getId() == FRACTAL)
+        return copy(right)->downcast();
+    /*if (*left == *minus_one && right->getId() == FRACTAL)
     {
         abs_ex res = copy(right);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     if (isOne(right))
-        return std::move(left);
-    if (*right == *minus_one && left->getId() == FRACTAL)
+        return std::move(left)->downcast();
+   /* if (*right == *minus_one && left->getId() == FRACTAL)
     {
         abs_ex res = std::move(left);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     fractal_argument arg, den;
     arg.push_back(std::move(left));
     arg.push_back(copy(right));
@@ -884,13 +977,13 @@ abs_ex operator/(abs_ex &&left, const abs_ex &right)
     if (left->getId() == NUMBER && right->getId() == NUMBER)
         return toAbsEx(*static_cast<Number*>(left.get()) / *static_cast<Number*>(right.get()));
     if (isOne(right))
-        return std::move(left);
-    if (*right == *minus_one && left->getId() == FRACTAL)
+        return std::move(left)->downcast();
+    /*if (*right == *minus_one && left->getId() == FRACTAL)
     {
         abs_ex res = std::move(left);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     fractal_argument arg, den;
     arg.push_back(std::move(left));
     den.push_back(copy(right));
@@ -920,21 +1013,21 @@ abs_ex operator*(const abs_ex & left, abs_ex && right)
     if (left->getId() == NUMBER && right->getId() == NUMBER)
         return toAbsEx(*static_cast<Number*>(left.get()) * *static_cast<Number*>(right.get()));
     if (isOne(left))
-        return std::move(right);
-    if (*left == *minus_one && right->getId() == FRACTAL)
+        return std::move(right)->downcast();
+   /* if (*left == *minus_one && right->getId() == FRACTAL)
     {
         abs_ex res = std::move(right);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     if (isOne(right))
-        return copy(left);
-    if (*right == *minus_one && left->getId() == FRACTAL)
+        return copy(left)->downcast();
+   /* if (*right == *minus_one && left->getId() == FRACTAL)
     {
         abs_ex res = copy(left);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     fractal_argument arg, den;
     arg.push_back(copy(left));
     arg.push_back(std::move(right));
@@ -947,13 +1040,13 @@ abs_ex operator/(const abs_ex & left, abs_ex && right)
         return toAbsEx(*static_cast<Number*>(left.get()) / *static_cast<Number*>(right.get()));
 
     if (isOne(right))
-        return copy(left);
-    if (*right == *minus_one && left->getId() == FRACTAL)
+        return copy(left)->downcast();
+    /*if (*right == *minus_one && left->getId() == FRACTAL)
     {
         abs_ex res = copy(left);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     fractal_argument arg, den;
     arg.push_back(copy(left));
     den.push_back(std::move(right));
@@ -982,21 +1075,21 @@ abs_ex operator*(abs_ex && left, abs_ex && right)
     if (left->getId() == NUMBER && right->getId() == NUMBER)
         return toAbsEx(*static_cast<Number*>(left.get()) * *static_cast<Number*>(right.get()));
     if (isOne(left))
-        return std::move(right);
-    if (*left == *minus_one && right->getId() == FRACTAL)
+        return std::move(right)->downcast();
+    /*if (*left == *minus_one && right->getId() == FRACTAL)
     {
         abs_ex res = std::move(right);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     if (isOne(right))
-        return std::move(left);
-    if (*right == *minus_one && left->getId() == FRACTAL)
+        return std::move(left)->downcast();
+    /*if (*right == *minus_one && left->getId() == FRACTAL)
     {
         abs_ex res = std::move(left);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     fractal_argument arg, den;
     arg.push_back(std::move(left));
     arg.push_back(std::move(right));
@@ -1008,13 +1101,13 @@ abs_ex operator/(abs_ex && left, abs_ex && right)
     if (left->getId() == NUMBER && right->getId() == NUMBER)
         return toAbsEx(*static_cast<Number*>(left.get()) / *static_cast<Number*>(right.get()));
     if (isOne(right))
-        return std::move(left);
-    if (*right == *minus_one && left->getId() == FRACTAL)
+        return std::move(left)->downcast();
+    /*if (*right == *minus_one && left->getId() == FRACTAL)
     {
         abs_ex res = std::move(left);
         static_cast<Fractal*>(res.get())->setCoefficinet(static_cast<Fractal*>(res.get())->getCoefficient() * -1);
-        return res;
-    }
+        return res->downcast();
+    }*/
     fractal_argument arg, den;
     arg.push_back(std::move(left));
     den.push_back(std::move(right));
@@ -1097,3 +1190,24 @@ void replaceSystemVariablesBackOnIntegratingConstants(AbstractExpression *expr, 
     expr->setSimplified(false);
     expr->simplify();
 }
+
+abs_ex getExpressionWithoutAbsoluteValues(const abs_ex &expr)
+{
+
+    abs_ex cop = copy(expr);
+    cop->getRidOfAbsoluteValues();
+    if (cop->getId() == ABSOLUTE_VALUE)
+        cop = getArgumentOfFunction(expr);
+    return cop->downcast();
+}
+
+abs_ex getExpressionWithoutAddictiveWithoutVariable(const abs_ex &expr, int var)
+{
+    if (expr->getId() != POLYNOMIAL)
+        return copy(expr);
+    abs_ex cop = copy(expr);
+    static_cast<Polynomial*>(cop.get())->eraseAllAddictiveWithoutVar(var);
+    return cop->downcast();
+}
+
+

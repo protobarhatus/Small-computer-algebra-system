@@ -389,13 +389,13 @@ void testAlgMod()
             []()->bool {
             AlgExpr a = var();
             AlgExpr b = var();
-            qDebug() << root(a*a+2*a*b+b*b, 2).toString();
+          //  qDebug() << root(a*a+2*a*b+b*b, 2).toString();
             return root(a*a+2*a*b+b*b, 2) == abs(a + b);
 },
             []()->bool {
             AlgExpr a = var();
             AlgExpr b = var();
-            qDebug() << root(9*a*a+30*a*b+25*b*b, 2).toString();
+           // qDebug() << root(9*a*a+30*a*b+25*b*b, 2).toString();
             return root(9*a*a+30*a*b+25*b*b, 2) == abs(3*a + 5*b);
 },
             []()->bool { //65
@@ -1240,7 +1240,7 @@ void testAlgMod()
 },
 []()->bool {
     AlgExpr x = var();
-    return integral(sin(x)/pow(cos(x), 2), x) == (2/((-1*tan((1*x/2)))+(1))/((1)+(tan((1*x/2)))));
+    return integral(sin(x)/pow(cos(x), 2), x) == 1/cos(x);
 },
 []()->bool {
     AlgExpr x = var(), a = var(), b = var();
@@ -1294,7 +1294,7 @@ void testAlgMod()
     AlgExpr x = var();
     return integral(sqrt(x - 2)/x/x, x) == (((-1*sqrt((-2)+(x))*sqrt(2))+(x*atan((sqrt((-2)+(x))/sqrt(2)))))/x/sqrt(2));
 },
-[]()->bool { //280
+[]()->bool { //275
     AlgExpr x = var();
 
     return integral((2*x + 3)/pow(x*x + 2*x + 2, 3), x) == (((3*x*x*x)+(3*atan((1)+(x))*x*x*x*x)+(4)+(9*x*x)+(12*atan((1)+(x)))+(12*atan((1)+(x))*x*x*x)+(14*x)+(24*x*atan((1)+(x)))+(24*atan((1)+(x))*x*x))/pow((x*x)+(2)+(2*x), 2))/8;
@@ -1316,7 +1316,7 @@ void testAlgMod()
     return integral(x*x*x/(pow(x, 4) - pow(x, 2) + 1), x) ==
              (ln(-1*x*x + 1 + pow(x, 4))*sqrt(3) + 2*atan( (-1 + 2*x*x) /sqrt(3)))/4 /sqrt(3);
 },
-[]()->bool { //285
+[]()->bool { //280
     AlgExpr x = var();
     return integral(x*x*x*x*x/(pow(x, 4) - pow(x, 2) + 1), x) ==
              (-2*atan( (-1 + 2*x*x) /sqrt(3)) + ln(-1*x*x + 1 + x*x*x*x)*sqrt(3) + 2*sqrt(3)*x*x)/4 /sqrt(3);
@@ -1329,6 +1329,27 @@ void testAlgMod()
     AlgExpr a = var();
     AlgExpr b = var();
     return pow(a, log(b, a)) == b;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return (1 - sin(x)*sin(x))/cos(x)/sin(x) == cos(x)/sin(x);
+},
+[]()->bool {
+    AlgExpr x = var();
+  //  qDebug() << integral(sin(x)/cos(x), x).toString();
+    return integral(sin(x)/cos(x), x) == -ln(abs(cos(x)));
+},
+[]()->bool { //285
+    AlgExpr x = var();
+    return integral(cos(x)/pow(sin(x), 3), x) == -1/sin(x)/sin(x)/2;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(pow(cos(x), 3)/cbrt(pow(sin(x), 4)), x) == -3*(sin(x)*sin(x) + 5)/5/cbrt(sin(x));
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral((2 + 3*cos(x))/pow(euler(), 2*x + 3*sin(x)), x) == -1/pow(euler(), 2*x + 3*sin(x));
 }
     };
 

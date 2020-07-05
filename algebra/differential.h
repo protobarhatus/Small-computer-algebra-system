@@ -33,7 +33,7 @@ public:
     abs_ex getArgumentMoved();
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
     virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
-    abs_ex getArgumentsCopy();
+    abs_ex getArgumentsCopy() const;
     virtual abs_ex derivative(int var) const override;
     AbstractExpression* getArgument();
     virtual abs_ex antiderivative(int var) const override;
@@ -45,6 +45,7 @@ public:
     virtual bool hasDifferential() const override;
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
     abs_ex tryToFindExponentialFunction(int var) const override;
+    void getRidOfAbsoluteValues() override;
 private:
     virtual bool operator<(const AbstractExpression & expr) const override;
 };

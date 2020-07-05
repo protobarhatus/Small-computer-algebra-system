@@ -112,12 +112,14 @@ public:
     bool hasTrigonometricalMultipliers() const;
     FunctionRange getRange() const override;
     virtual bool hasDifferential() const override;
+    bool hasDifferentialOfVarAsMultiplier(int var);
     //отличие от hasIntegratingConstantMultiplier в том, что последний вызывается в simplify()
     //и ищет константу по всей дроби, а этот вызывается извне на уже упрощенную дробь
     bool hasIntegratingConstantThatCanBeChanged() const;
     abs_ex takeAwayConstantMultiplierThatCanBeChanged();
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
     abs_ex tryToFindExponentialFunction(int var) const override;
+    void getRidOfAbsoluteValues() override;
 private:
     void takeAwayAbsoluteValues();
     bool hasIntegratingConstantMultiplierThatCanBeChanged() const;
@@ -131,6 +133,8 @@ private:
     abs_ex getAntiderivativeOfIrrationalFunction(int var) const;
     abs_ex getAntiderivativeOfFunctionWithRootOfLinearFunction(int var) const;
     abs_ex getAntiderivativeOfFunctionThatHaveExponentialExpression(int var) const;
+    abs_ex tryToGetAntiderivativeOfTrigonometricalFunctionByReplacements(int var) const;
+    abs_ex tryToGetAntiderivativeByChangingNonLinearArgumentOfFunction(int var) const;
 
     bool casted_trigonometry;
     void castTrigonometry();
