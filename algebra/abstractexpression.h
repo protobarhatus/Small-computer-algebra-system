@@ -31,6 +31,7 @@ enum AlgebraExpression
     DIFFERENTIAL = -19,
     ARCTANGENT = -12,
     ARCSINUS = -13,
+    DERIVATIVE_OBJECT = -14,
     NUMBER = 0
 };
 

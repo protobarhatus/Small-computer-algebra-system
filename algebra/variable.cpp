@@ -208,11 +208,15 @@ std::set<abs_ex > Variable::getTrigonometricalFunctions() const
 
 long long Variable::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
 {
+    if (var != id)
+        return 0;
     return 1;
 }
 
 long long Variable::getGcdOfNumeratorsOfDegrees(int var) const
 {
+    if (var != id)
+        return 0;
     return 1;
 }
 

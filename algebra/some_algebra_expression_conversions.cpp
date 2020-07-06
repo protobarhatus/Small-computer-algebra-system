@@ -20,6 +20,7 @@
 #include "differential.h"
 #include "arctangent.h"
 #include "arcsinus.h"
+#include "derivativeobject.h"
 
 std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, const AbstractExpression * argument)
 {
@@ -56,6 +57,8 @@ std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression typ
         return std::unique_ptr<AbstractExpression>(new ArcTangent(*static_cast<const ArcTangent*>(argument)));
     case ARCSINUS:
         return std::unique_ptr<AbstractExpression> (new ArcSinus(*static_cast<const ArcSinus*>(argument)));
+    case DERIVATIVE_OBJECT:
+        return std::unique_ptr<AbstractExpression> (new DerivativeObject(*static_cast<const DerivativeObject*>(argument)));
     default:
         assert(false);
 

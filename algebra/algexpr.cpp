@@ -12,6 +12,7 @@
 #include "arcsinus.h"
 #include "solving_equations.h"
 #include "solving_differential_equations.h"
+#include "derivativeobject.h"
 AlgExpr::AlgExpr()
 {
 
@@ -601,4 +602,9 @@ AlgExpr acot(const AlgExpr &arg)
 AlgExpr acot(AlgExpr &&arg)
 {
     return acot(std::move(arg.getExpr()));
+}
+
+AlgExpr deriv(const AlgExpr &arg, AlgExpr arg_var, int id)
+{
+    return AlgExpr(derivative(arg.getExpr(), arg_var.getExpr()->getId(), id));
 }
