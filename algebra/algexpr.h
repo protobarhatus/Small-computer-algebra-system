@@ -179,7 +179,9 @@ AlgExpr acot(const AlgExpr & arg);
 AlgExpr acot(AlgExpr && arg);
 AlgExpr cbrt(const AlgExpr & arg);
 AlgExpr cbrt(AlgExpr && arg);
-AlgExpr deriv(const AlgExpr & arg, AlgExpr arg_var, int id);
+AlgExpr deriv(const AlgExpr & arg, AlgExpr arg_var, int order);
+AlgExpr derivObj(const AlgExpr & func_var, int arg_var, int order);
+AlgExpr derivObj(const AlgExpr & func_var, const AlgExpr & arg_var, int order);
 std::list<AlgExpr> solveEquation(const AlgExpr & equation, const AlgExpr & var);
 std::list<DifurResult> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
 #endif // ALGEXPR_H

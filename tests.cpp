@@ -1350,6 +1350,14 @@ void testAlgMod()
 []()->bool {
     AlgExpr x = var();
     return integral((2 + 3*cos(x))/pow(euler(), 2*x + 3*sin(x)), x) == -1/pow(euler(), 2*x + 3*sin(x));
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(pow(euler(), 2*x)*sin(x), x) == pow(euler(), 2*x)*(2*sin(x) - cos(x))/5;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(pow(euler(), -x/2)*sin(5*x), x) == -2 *(sin(5*x) + 10*cos((5*x))) /pow(euler(), (1/2*x))/101;
 }
     };
 

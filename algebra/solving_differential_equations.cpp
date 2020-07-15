@@ -10,6 +10,14 @@
 #include "difequationrootconditions.h"
 #include "differential.h"
 #include "absexmemorychecker.h"
+#include "derivativeobject.h"
+#include "sinus.h"
+#include "cosinus.h"
+int getOrderOfHighOrderEquation(const abs_ex & difur, int x, int y);
+bool isItFirstOrderExpression(const abs_ex & difur, int x, int y);
+bool isEquationOfAppropriateForm(const abs_ex & difur, int x, int y);
+bool hasDerivativeObject(const abs_ex & difur, int x, int y);
+std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y);
 std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y,
                                              const DifursRootConditions & conditions);
 bool isDifferentialOf(abs_ex & expr, int x)
@@ -95,8 +103,8 @@ std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const 
         return {std::list<abs_ex> (), false};
     auto left_integr = integrate(toAbsEx(left_frac));
     auto right_integr = integrate(toAbsEx(right_frac));
-   // qDebug() << left_integr->toString();
-   // qDebug() << right_integr->toString();
+  //  qDebug() << left_integr->toString();
+ //   qDebug() << right_integr->toString();
     if (left_integr == nullptr || right_integr == nullptr)
         return {std::list<abs_ex> (), true};
     auto ic = integratingConstantExpr();
@@ -104,9 +112,11 @@ std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const 
     res.push_back(left_integr - right_integr + std::move(ic));
    // qDebug() << difur->toString();
    // qDebug() << res.back()->toString();
+   // for (auto &it : res)
+     //   qDebug() << it->toString();
     return {std::move(res), true};
 }
-std::pair<std::list<abs_ex>, bool> tryToSolveHomoheneousDifur(abs_ex && difur, int x, int y)
+std::pair<std::list<abs_ex>, bool> tryToSolveFirstOrderHomoheneousDifur(abs_ex && difur, int x, int y)
 {
     assert(difur->getId() == POLYNOMIAL);
     auto alpha = systemVarExpr(zero, nullptr, true, false);
@@ -138,7 +148,7 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHomoheneousDifur(abs_ex && difur, i
     setUpExpressionIntoVariable(difur, var_to_open_abs, x);
     setUpExpressionIntoVariable(difur, getVariableExpr(x), var_to_open_abs->getId());
 
-     // qDebug() << difur->toString();
+    //  qDebug() << difur->toString();
     auto res = solveDifur(difur, x, t->getId());
     if (res.empty())
         return {std::list<abs_ex>(), true};
@@ -147,6 +157,9 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHomoheneousDifur(abs_ex && difur, i
     //    qDebug() << it.toString();
 
     for (auto &it : res)
+        if (it.getType() != DifurResult::SOLVED_FOR_X &&
+                !(it.getType() == DifurResult::COMMON_INTEGRAL &&
+                  !it.expr()->hasVariable(y)))
         actual_res.push_back(it.toCommonIntegral(x, t->getId()));
   //  for (auto &it : actual_res)
      //   qDebug() << it->toString();
@@ -383,7 +396,7 @@ abs_ex tryToFindIntegratingMultiplicator(const abs_ex & M, const abs_ex & N, int
 }
 std::pair<std::list<abs_ex>, bool> tryToSolveDifurInFullDifferential(const std::unique_ptr<Polynomial> & difur, int x, int y)
 {
-    qDebug() << difur->toString();
+    //qDebug() << difur->toString();
     abs_ex p = copy(zero);
     abs_ex q = copy(zero);
     auto monoms = difur->getMonoms();
@@ -451,13 +464,15 @@ std::pair<std::list<abs_ex>, bool> tryToSolveDifurInFullDifferential(const std::
     return {std::list<abs_ex>(), true};
 
 }
-std::list<abs_ex> solveDifurByMethods(const abs_ex & difur, int x, int y)
+
+
+std::list<abs_ex> solveFirstOrderDifurByMethods(const abs_ex & difur, int x, int y)
 {
     auto dif_pol = toPolynomialPointer(difur);
     auto res = tryToSolveDifurWithSeparableVariables(dif_pol, x, y);
     if (res.second)
         return std::move(res.first);
-    res = tryToSolveHomoheneousDifur(copy(difur), x, y);
+    res = tryToSolveFirstOrderHomoheneousDifur(copy(difur), x, y);
     if (res.second)
         return std::move(res.first);
     res = tryToSolveHeterogeneousDifur(dif_pol, x, y);
@@ -471,12 +486,323 @@ std::list<abs_ex> solveDifurByMethods(const abs_ex & difur, int x, int y)
         return std::move(res.first);
     return std::list<abs_ex> ();
 }
+
+std::pair<std::list<abs_ex>, bool> tryToSolveDifurByReintegration(const abs_ex & difur, int x, int y)
+{
+    bool can_solve_by_reintegration = true;
+    int order = getOrderOfHighOrderEquation(difur, x, y);
+    difur->doSomethingInDerivativeObject([&can_solve_by_reintegration, order](int, int, int ord){
+        if (ord != order)
+            can_solve_by_reintegration = false;
+    });
+    if (!can_solve_by_reintegration)
+        return {std::list<abs_ex>(), false};
+
+    abs_ex cop = copy(difur);
+    abs_ex t = systemVarExpr();
+    cop->changeSomePartOn(derivative(getVariableExpr(y), x, order)->makeStringOfExpression(), t);
+
+    auto eq_res = solveEquation(cop, t->getId());
+
+    std::list<abs_ex> res;
+    for (auto &it : eq_res)
+    {
+        auto integr = std::move(it);
+        for (int i = 0; i < order && integr != nullptr; ++i)
+        {
+            integr = integrate(integr * D(getVariableExpr(x)));
+            if (integr != nullptr)
+                integr = std::move(integr) + integratingConstantExpr();
+        }
+        if (integr != nullptr)
+            res.push_back(std::move(getVariableExpr(y) - integr));
+    }
+    return {std::move(res), true};
+}
+
+std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderDifurByLoweringOrder(const abs_ex & difur, int x, int y)
+{
+    int min_order = std::numeric_limits<int>::max();
+  //  qDebug() << difur->toString();
+    difur->doSomethingInDerivativeObject([&min_order, y](int var, int, int order) {
+        if (var == y)
+             min_order = std::min(min_order, order);
+    });
+    if (min_order == 0)
+        return {std::list<abs_ex>(), false};
+
+    abs_ex z = systemVarExpr();
+    int max_order = getOrderOfHighOrderEquation(difur, x, y);
+    abs_ex cop = copy(difur);
+    for (int i = min_order; i <= max_order; ++i)
+    {
+        abs_ex change = derivative(z, x, i - min_order);
+        cop->changeSomePartOn(derivative(getVariableExpr(y), x, i)->toString(), change);
+    }
+    cop->setSimplified(false);
+    cop = cop->downcast();
+
+    auto pre_res = solveDifurInCommonIntegral(cop, x, z->getId());
+
+    std::list<abs_ex> res;
+    for (auto &it : pre_res)
+    {
+        setUpExpressionIntoVariable(it, derivative(getVariableExpr(y), x, min_order), z->getId());
+        res.splice(res.end(), solveDifurInCommonIntegral(it, x, y));
+    }
+    return {std::move(res), true};
+}
+
+std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderDifurWithoutX(const abs_ex & difur, int x, int y)
+{
+    if (difur->hasVariable(x))
+        return {std::list<abs_ex>(), false};
+
+    if (getOrderOfHighOrderEquation(difur,x ,y) > 2)
+        return {std::list<abs_ex>(), false};
+
+    abs_ex cop = copy(difur);
+
+    abs_ex z = systemVarExpr();
+    cop->changeSomePartOn(derivative(getVariableExpr(y), x, 1)->toString(), z);
+    abs_ex z_der = derivative(z, y, 1)*z;
+    cop->changeSomePartOn(derivative(getVariableExpr(y), x, 2)->toString(), z_der);
+   // qDebug() << cop->toString();
+    auto pre_res = solveDifurInCommonIntegral(cop, y, z->getId());
+
+    std::list<abs_ex> res;
+    for (auto &it : pre_res)
+    {
+        qDebug() << it->toString();
+        setUpExpressionIntoVariable(it, D(getVariableExpr(y))/D(getVariableExpr(x)), z->getId());
+        res.splice(res.end(), solveDifurInCommonIntegral(it, x, y));
+    }
+    return {std::move(res), true};
+}
+std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderLinearHomogeneousDifur(const abs_ex & difur, int x, int y)
+{
+    int order = getOrderOfHighOrderEquation(difur, x, y);
+    std::vector<abs_ex> coefs(order + 1);
+    for (auto &it : coefs)
+        it = copy(zero);
+    auto difur_pol = toPolynomialPointer(difur);
+    auto monoms = difur_pol->getMonoms();
+    for (auto &it : *monoms)
+    {
+        if (!it->hasVariable(y) || it->hasVariable(x))
+            return {std::list<abs_ex>(), false};
+        auto frac_without_y = it->getFractalWithoutVariable(y);
+        auto frac_with_y = toAbsEx(it)/toAbsEx(frac_without_y);
+        if (frac_with_y->getId() == y)
+            coefs[0] = std::move(coefs[0]) + std::move(frac_without_y);
+        else if (frac_with_y->getId() == DERIVATIVE_OBJECT)
+        {
+            int ord  = getOrderOfHighOrderEquation(frac_with_y, x, y);
+            coefs[ord] = std::move(coefs[ord]) + std::move(frac_without_y);
+        }
+        else
+            return {std::list<abs_ex>(), false};
+    }
+    auto t = systemVarExpr();
+    abs_ex charasteristic_equation = copy(zero);
+    for (int i = 0; i < coefs.size(); ++i)
+        charasteristic_equation = std::move(charasteristic_equation) + std::move(coefs[i]) * pow(t, i);
+ //   qDebug() << charasteristic_equation->toString();
+    auto roots = solvePolynomialEquationInComplexNumber(charasteristic_equation, t->getId());
+    if (!roots.second)
+        return {std::list<abs_ex>(), true};
+    abs_ex result = copy(zero);
+    abs_ex x_var = getVariableExpr(x);
+    for (auto &it : roots.first)
+    {
+        for (int i = 0; i < it.second; ++i)
+        {
+           // qDebug() << result->toString();
+           // qDebug() << (integratingConstantExpr() * pow(getEuler(), it.first.a()*x_var) * pow(x_var, i))->toString();
+            if (it.first.isReal())
+                result = std::move(result) + integratingConstantExpr() * pow(getEuler(), it.first.a()*x_var) * pow(x_var, i);
+            else
+                result = std::move(result) + pow(getEuler(), it.first.a()*x_var) * pow(x_var, i) *
+                        (integratingConstantExpr() * sin(it.first.b() * x_var) + integratingConstantExpr() * cos(it.first.b() * x_var));
+        }
+    }
+    result = getVariableExpr(y) - std::move(result);
+    std::list<abs_ex> res;
+    res.push_back(std::move(result));
+    return {std::move(res), true};
+}
+std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderHeterogeneousDifur(const abs_ex & difur, int x, int y)
+{
+    int order = getOrderOfHighOrderEquation(difur, x, y);
+    std::vector<abs_ex> coefs(order + 1);
+    for (auto &it : coefs)
+        it = copy(zero);
+    auto difur_pol = toPolynomialPointer(difur);
+    auto monoms = difur_pol->getMonoms();
+    for (auto it = monoms->begin(); it != monoms->end(); ++it)
+    {
+        if (it->get()->hasVariable(x) && it->get()->hasVariable(y))
+        {
+            auto frac_with_x = *it /  it->get()->getFractalWithoutVariable(x);
+           // qDebug() << it->get()->toString();
+           // qDebug() << it->get()->getFractalWithoutVariable(x)->toString();
+           // qDebug() << frac_with_x->toString();
+            if (frac_with_x->hasVariable(y))
+                return {std::list<abs_ex>(), false};
+            for (auto &it : *monoms)
+                it = it / frac_with_x;
+            break;
+        }
+    }
+    auto f_x = copy(zero);
+    auto related_homogeneous_difur = copy(zero);
+    for (auto &it : *monoms)
+    {
+        if (it->hasVariable(y))
+        {
+            if (it->hasVariable(x))
+                return {std::list<abs_ex>(), false};
+            auto frac_without_y = it->getFractalWithoutVariable(y);
+            auto frac_with_y = toAbsEx(it)/toAbsEx(frac_without_y);
+            if (frac_with_y->getId() == y)
+                coefs[0] = std::move(coefs[0]) + std::move(frac_without_y);
+            else if (frac_with_y->getId() == DERIVATIVE_OBJECT)
+            {
+                int ord  = getOrderOfHighOrderEquation(frac_with_y, x, y);
+                coefs[ord] = std::move(coefs[ord]) + std::move(frac_without_y);
+            }
+            else
+                return {std::list<abs_ex>(), false};
+            related_homogeneous_difur = std::move(related_homogeneous_difur) + toAbsEx(it);
+        }
+        else
+        {
+            f_x = std::move(f_x) + toAbsEx(it);
+        }
+    }
+    //a_0 * y''.. + a_1 * ...... + a_n * y = f_x
+    f_x = -std::move(f_x);
+
+    auto common_solving_list = solveDifur(related_homogeneous_difur, x, y);
+    assert(common_solving_list.size() == 1 &&
+           common_solving_list.begin()->getType() == DifurResult::SOLVED_FOR_Y);
+    auto common_solving_expr = copy(common_solving_list.begin()->expr());
+    assert(common_solving_expr->getId() == POLYNOMIAL || common_solving_expr->getId() == FRACTAL);
+    std::unique_ptr<Polynomial> common_solving;
+    if (common_solving_expr->getId() == POLYNOMIAL)
+        common_solving = toPolynomialPointer(std::move(common_solving_expr));
+    else
+    {
+        auto fr = static_cast<Fractal*>(common_solving_expr.get());
+        assert(fr->canTurnIntoPolynomWithOpeningParentheses(true));
+        common_solving = fr->turnIntoPolynomWithOpeningParentheses(true);
+    }
+    //qDebug()<< common_solving->toString();
+    std::vector<abs_ex> y_coefs (order);
+    for (auto &it : y_coefs)
+        it = copy(zero);
+    int y_coefs_counter = 0;
+    std::map<int, int> integrating_constants_to_y_coefs_indexes;
+    for (auto &it : *common_solving->getMonoms())
+    {
+
+        auto set = it->getSetOfVariables();
+        assert(set.size() > 0 && isIntegratingConstant(*set.rbegin()));
+        if (set.size() > 0 && isIntegratingConstant(*(++set.rbegin())))
+            assert(false);
+        abs_ex it_without_mult = toAbsEx(it)/getVariableExpr(*set.rbegin());
+        assert(!it_without_mult->hasVariable(*set.rbegin()));
+        int vec_index;
+        auto dict_it = integrating_constants_to_y_coefs_indexes.find(*set.rbegin());
+        if (dict_it == integrating_constants_to_y_coefs_indexes.end())
+        {
+            vec_index = y_coefs_counter;
+            ++y_coefs_counter;
+            integrating_constants_to_y_coefs_indexes.insert({*set.rbegin(), vec_index});
+        }
+        else
+            vec_index = dict_it->second;
+        y_coefs[vec_index] = std::move(y_coefs[vec_index]) + std::move(it_without_mult);
+    }
+    std::vector<int> variables(order);
+    for (auto &it : variables)
+        it = systemVarExpr()->getId();
+    std::vector<abs_ex> equations(order);
+    for (auto &it : equations)
+        it = copy(zero);
+    std::vector<abs_ex> coefs_derivs(order);
+    for (int i = 0; i < coefs_derivs.size(); ++i)
+        coefs_derivs[i] = copy(y_coefs[i]);
+    for (int i = 0; i < order; ++i)
+    {
+        for (int j = 0; j < order; ++j)
+        {
+            equations[i] = std::move(equations[i]) + getVariableExpr(variables[j])*coefs_derivs[j];
+            coefs_derivs[j] = coefs_derivs[j]->derivative(x);
+        }
+        if (i == order - 1)
+            equations[i] = std::move(equations[i]) - f_x/coefs[order];
+    }
+    auto equations_result = solveSystemOfEquations(equations, variables);
+    if (equations_result.size() == 0)
+        return {std::list<abs_ex>(), true};
+    auto answer = copy(zero);
+    for (int i = 0; i < order; ++i)
+    {
+        auto integr = integrate(equations_result[i][0]*D(getVariableExpr(x)));
+        //qDebug() << equations_result[i][0]->toString();
+        if (integr == nullptr)
+            return {std::list<abs_ex>(), true};
+        answer = std::move(answer) + y_coefs[i] * (std::move(integr) + integratingConstantExpr());
+    }
+    answer = getVariableExpr(y) - answer;
+    std::list<abs_ex> res;
+    res.push_back(std::move(answer));
+    return {std::move(res), true};
+
+}
+std::list<abs_ex> solveHighOrderDifurByMethods(const abs_ex & difur, int x, int y)
+{
+    auto reintegr_res = tryToSolveDifurByReintegration(difur, x, y);
+    if (reintegr_res.second)
+        return std::move(reintegr_res.first);
+
+
+    auto homogen_res = tryToSolveHighOrderLinearHomogeneousDifur(difur, x, y);
+    if (homogen_res.second)
+        return std::move(homogen_res.first);
+
+
+    auto lowerord_res = tryToSolveHighOrderDifurByLoweringOrder(difur, x, y);
+    if (lowerord_res.second)
+        return std::move(lowerord_res.first);
+
+    auto without_x_res = tryToSolveHighOrderDifurWithoutX(difur, x, y);
+    if (without_x_res.second)
+        return std::move(without_x_res.first);
+
+    auto heterogen_res = tryToSolveHighOrderHeterogeneousDifur(difur, x, y);
+    if (heterogen_res.second)
+        return std::move(heterogen_res.first);
+    return std::list<abs_ex>();
+}
+
+
+
+
+
+
 std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y)
 {
     std::list<abs_ex> res;
     if (isZero(difur))
     {
         res.push_back(copy(zero));
+        return res;
+    }
+    if (difur->getId() > 0)
+    {
+        res.push_back(copy(difur));
         return res;
     }
     if (difur->getId() == NUMBER || difur->getId() == CONSTANT)
@@ -519,7 +845,34 @@ std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y
         return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - getPi()/two - getPi()*systemVarExpr(), x, y);
     if (difur->getId() == LOGARITHM)
         return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - one, x, y);
-    return solveDifurByMethods(difur, x, y);
+    if (isEquationOfAppropriateForm(difur, x, y))
+    {
+        if (isItFirstOrderExpression(difur, x, y))
+        {
+          //  qDebug() << difur->toString();
+            if (hasDerivativeObject(difur, x, y))
+            {
+                abs_ex y_der = D(getVariableExpr(y))/D(getVariableExpr(x));
+                difur->changeSomePartOn(derivative(getVariableExpr(y), x, 1)->makeStringOfExpression(), y_der);
+                difur->setSimplified(false);
+                difur->simplify();
+
+                return solveDifurInCommonIntegral(difur->downcast(), x, y);
+            }
+            return solveFirstOrderDifurByMethods(difur, x, y);
+        }
+        return solveHighOrderDifurByMethods(difur, x, y);
+    }
+    abs_ex difur_with_try_to_change_differentials = copy(difur);
+    abs_ex dy_on_change = D(getVariableExpr(x))*derivative(getVariableExpr(y), x, 1);
+    difur_with_try_to_change_differentials->changeSomePartOn(D(getVariableExpr(y))->makeStringOfExpression(),
+                                                             dy_on_change);
+    difur_with_try_to_change_differentials = (std::move(difur_with_try_to_change_differentials)/D(getVariableExpr(x))) +
+            zero;
+    if (isEquationOfAppropriateForm(difur, x, y))
+    {
+        return solveHighOrderDifurByMethods(difur, x, y);
+    }
 }
 std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y,
                                              const DifursRootConditions & conditions)
@@ -1006,6 +1359,10 @@ std::list<DifurResult> solveDifur(const abs_ex &difur, int x, int y)
         else
             ++it;
     }
+    //for (auto &it : solved_for_x)
+    //    qDebug() << it->toString();
+   // for (auto &it : solved_for_y)
+     //   qDebug() << it->toString();
     std::set<int> used_constants;
     setDifferentIntegratingConstantInDifferentExpressions(used_constants, res);
     setDifferentIntegratingConstantInDifferentExpressions(used_constants, solved_for_x);
@@ -1032,6 +1389,66 @@ std::list<DifurResult> solveDifur(const abs_ex &difur, int x, int y)
         result.push_back(DifurResult(std::move(it), DifurResult::SOLVED_FOR_Y));
     return result;
 }
+
+
+
+bool isEquationOfAppropriateForm(const abs_ex & difur, int x, int y)
+{
+    bool has_wrong_deriv = false;
+    difur->doSomethingInDerivativeObject([&has_wrong_deriv, &y, &x](int _y, int _x, int order){
+        if (order > 0)
+        {
+            if (_y != y || _x != x)
+                has_wrong_deriv = true;
+        }
+    });
+    if (has_wrong_deriv)
+        return false;
+    if (!isItFirstOrderExpression(difur, x, y))
+        if (difur->hasDifferential())
+            return false;
+    return true;
+}
+bool isItFirstOrderExpression(const abs_ex & difur, int x, int y)
+{
+    bool has_non_first_order_deriv = false;
+    difur->doSomethingInDerivativeObject([&has_non_first_order_deriv](int y, int x, int order){
+        if (order > 1)
+            has_non_first_order_deriv = true;
+    });
+    return !has_non_first_order_deriv;
+
+}
+int getOrderOfHighOrderEquation(const abs_ex & difur, int x, int y)
+{
+    int order = 0;
+    difur->doSomethingInDerivativeObject([&order](int y, int x, int _order){
+        order = std::max(order, _order);
+    });
+    return order;
+}
+bool hasDerivativeObject(const abs_ex & difur, int x, int y)
+{
+    bool has_object = false;
+    difur->doSomethingInDerivativeObject([&has_object](int, int, int order) {
+        if (order > 0)
+            has_object = true;
+    });
+    return has_object;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 DifurResult::DifurResult(abs_ex &&expr, DifurResult::Type type) : result(std::move(expr)), type(type)
 {

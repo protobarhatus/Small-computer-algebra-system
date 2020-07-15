@@ -2140,7 +2140,8 @@ std::unique_ptr<Fractal> Polynomial::toCommonDenominator()
         numer.push_back(std::move(*it) * *denom);
     }
     abs_ex den(denom.release());
-
+   // qDebug() << numer.begin()->get()->toString();
+   // qDebug() << den->toString();
     return std::unique_ptr<Fractal>(new Fractal(abs_ex(new Polynomial(numer)), std::move(den)));
 }
 
@@ -2205,17 +2206,16 @@ std::array<abs_ex, 3> Polynomial::checkQuadraticFunction(int var_id) const
     c = abs_ex(new Number(0));
     for (auto &it : this->monomials)
     {
-        //может возникнуть подозрение, что узнавать так о степени переменной некоректно, ведь это запрос на максимальную степень. Однако в дроби может быть только одно вхождение
-        //переменной
-        Number degr = it->getMaxDegreeOfVariable(var_id);
-        if (!degr.isCorrect())
-            return {nullptr, nullptr, nullptr};
-        if (degr.compareWith(2) == 0)
-            a = a + it->getFractalWithoutVariable(var_id);
-        else if (degr.isOne())
-            b = b + it->getFractalWithoutVariable(var_id);
-        else if (degr.isZero())
-            c = c + copy( it.get());
+        auto frac_without_var = it->getFractalWithoutVariable(var_id);
+        auto frac_with_var = toAbsEx(it) / toAbsEx(frac_without_var);
+        if (frac_with_var->getId() == DEGREE &&
+                Degree::getArgumentOfDegree(frac_with_var)->getId() == var_id
+                && *Degree::getDegreeOfExpression(frac_with_var) == *two)
+            a = std::move(a) + std::move(frac_without_var);
+        else if (frac_with_var->getId() == var_id)
+            b = std::move(b) + std::move(frac_without_var);
+        else if (*frac_with_var == *one)
+            c = std::move(c) + std::move(frac_without_var);
         else
         {
             return {nullptr, nullptr, nullptr};
@@ -2353,9 +2353,21 @@ void Polynomial::tryToDistingushFullDegreeOfVariablePolynomial(abs_ex &polynom,
         std::unique_ptr<Fractal> pow_res_fr(new Fractal(pow_res.get()));
         pow_res.reset(pow_res_fr->toPolynomWithFractionalCoefficients().release());
     }*/
+   // qDebug() << polynom->toString();
+    //qDebug() << pow_res->toString();
     auto addictive_multiplier = polynom / pow_res;
+   // qDebug() << addictive_multiplier->toString();
     polynom.reset(lowest_deg.first.release());
+    bool minus = false;
+    if (lower(addictive_multiplier, zero) && deg % 2 == 0)
+    {
+        addictive_multiplier = -std::move(addictive_multiplier);
+        minus = true;
+    }
+
     polynom = pow(pow(addictive_multiplier, Number(1)/deg)*polynom, deg);
+    if (minus)
+        polynom = -std::move(polynom);
 }
 
 std::pair<std::list<abs_ex> , Number> Polynomial::tryToFactorizeByDistingushesOfFullDegree() const
@@ -2454,8 +2466,8 @@ long long int Polynomial::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
     for (auto &it : monomials)
     {
         int mon_res = it->getLcmOfDenominatorsOfDegreesOfVariable(var);
-        if (mon_res == 0)
-            return 0;
+        if (mon_res != 0)
+            //return 0;
         res = lcm(res, mon_res);
     }
     return res;
@@ -2710,6 +2722,12 @@ void Polynomial::eraseAllAddictiveWithoutVar(int var)
             it = this->monomials.erase(it);
         else
             ++it;
+}
+
+void Polynomial::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    for (auto &it : this->monomials)
+        it->doSomethingInDerivativeObject(func);
 }
 
 bool Polynomial::hasIntegratingConstantAddictiveThatCanBeChanged() const

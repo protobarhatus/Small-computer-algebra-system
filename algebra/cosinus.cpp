@@ -474,6 +474,11 @@ void Cosinus::getRidOfAbsoluteValues()
     this->simplify();
 }
 
+void Cosinus::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->argument->doSomethingInDerivativeObject(func);
+}
+
 abs_ex cos(const abs_ex &expr)
 {
     return abs_ex(new Cosinus(expr))->downcast();

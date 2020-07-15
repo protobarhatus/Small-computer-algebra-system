@@ -326,6 +326,11 @@ void ArcTangent::getRidOfAbsoluteValues()
     this->simplify();
 }
 
+void ArcTangent::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->argument->doSomethingInDerivativeObject(func);
+}
+
 bool ArcTangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == ARCTANGENT);

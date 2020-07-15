@@ -120,6 +120,8 @@ public:
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
     abs_ex tryToFindExponentialFunction(int var) const override;
     void getRidOfAbsoluteValues() override;
+
+    void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
 private:
     void takeAwayAbsoluteValues();
     bool hasIntegratingConstantMultiplierThatCanBeChanged() const;
@@ -135,7 +137,7 @@ private:
     abs_ex getAntiderivativeOfFunctionThatHaveExponentialExpression(int var) const;
     abs_ex tryToGetAntiderivativeOfTrigonometricalFunctionByReplacements(int var) const;
     abs_ex tryToGetAntiderivativeByChangingNonLinearArgumentOfFunction(int var) const;
-
+    abs_ex tryToGetAntiderivativeBySelfReduction(int var) const;
     bool casted_trigonometry;
     void castTrigonometry();
     void castTrigonometryArguments();

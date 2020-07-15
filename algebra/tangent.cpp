@@ -446,6 +446,11 @@ void Tangent::getRidOfAbsoluteValues()
     this->simplify();
 }
 
+void Tangent::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->argument->doSomethingInDerivativeObject(func);
+}
+
 bool Tangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == TANGENT);

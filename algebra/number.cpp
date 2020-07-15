@@ -399,6 +399,11 @@ void Number::getRidOfAbsoluteValues()
 
 }
 
+void Number::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+
+}
+
 Number abs(Number num)
 {
     if (num.compareWith(0) < 0)

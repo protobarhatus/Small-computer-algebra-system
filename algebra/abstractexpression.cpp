@@ -287,22 +287,31 @@ void setNewArgumentToFunction(abs_ex &expr, const abs_ex & new_arg)
     switch (arg->getId()) {
     case SINUS:
         expr = pow(sin(new_arg), deg);
+        break;
     case COSINUS:
         expr = pow(cos(new_arg), deg);
+        break;
     case TANGENT:
         expr = pow(tan(new_arg), deg);
+        break;
     case COTANGENT:
         expr = pow(cot(new_arg), deg);
+        break;
     case LOGARITHM:
         expr = pow(ln(new_arg), deg);
+        break;
     case ARCTANGENT:
         expr = pow(atan(new_arg), deg);
+        break;
     case ARCSINUS:
         expr = pow(asin(new_arg), deg);
+        break;
     case ABSOLUTE_VALUE:
         expr = pow(abs(new_arg), deg);
+        break;
     case DIFFERENTIAL:
         expr = pow(D(new_arg), deg);
+        break;
     default:
         assert(false);
 
@@ -724,7 +733,7 @@ bool isDegreeOfArcTrigonometricalFunction(abs_ex &expr)
     return false;
 }
 
-bool isExponentialFunction(abs_ex& expr, int var)
+bool isExponentialFunction(const abs_ex& expr, int var)
 {
     if (expr->getId() != DEGREE)
         return false;

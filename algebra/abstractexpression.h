@@ -117,12 +117,15 @@ public:
 
     std::set<abs_ex> getUniqueTrigonometricalFunctions() const;
     virtual void getRidOfAbsoluteValues() = 0;
+
+    virtual void doSomethingInDerivativeObject(const std::function<void (int, int, int)> & func) const = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
 protected:
     bool simplified = false;
     virtual int getPositionRelativelyZeroIfHasVariables() = 0;
+
 
 };
 bool canBeConsideredAsConstant(const AbstractExpression * expr);
@@ -172,7 +175,7 @@ void setNewArgumentToFunction(abs_ex & expr, const abs_ex & new_arg);
 bool isDegreeOfTrigonometricalFunction(const abs_ex & expr);
 bool isDegreeOfArcTrigonometricalFunction(abs_ex & expr);
 //выражения a^f(x) считаются экспоненциальной ф-цией, а g(x)^f(x) - нет (x->getId() == var)
-bool isExponentialFunction(abs_ex& expr, int var);
+bool isExponentialFunction(const abs_ex& expr, int var);
 abs_ex absEx(int num);
 //проверяет, является ли func линейной функцией относительно переменной var
 //если да, то возвращает коэффициенты a и b в выражении ax+b. Если нет, то возвращает пару nullptr, nullptr. b может быть нулем

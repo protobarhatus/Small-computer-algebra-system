@@ -115,6 +115,8 @@ public:
     void getRidOfAbsoluteValues() override;
 
     void eraseAllAddictiveWithoutVar(int var);
+
+    void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
 private:
     bool hasIntegratingConstantAddictiveThatCanBeChanged() const;
     void pullSomeMembersIntoOneIntegratingConstant();

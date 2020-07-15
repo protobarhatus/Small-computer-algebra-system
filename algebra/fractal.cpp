@@ -944,7 +944,7 @@ bool Fractal::canTurnIntoPolynomWithOpeningParentheses() const
 
 bool Fractal::canTurnIntoPolynomWithOpeningParentheses(bool is_fractional_coefficient_allowed)
 {
-    if (!this->denominator.empty() || (this->coefficient.getDenominator() != 1 && !is_fractional_coefficient_allowed))
+    if ((!this->denominator.empty() && !is_fractional_coefficient_allowed) || (this->coefficient.getDenominator() != 1 && !is_fractional_coefficient_allowed))
         return false;
     for (auto &it : this->numerator)
     {
@@ -2297,6 +2297,97 @@ abs_ex Fractal::tryToGetAntiderivativeByChangingNonLinearArgumentOfFunction(int 
     setUpExpressionIntoVariable(integr, func_without_free_addictives, t->getId());
     return integr;
 }
+abs_ex tryToGetAntiderivativeOfFractalWithExpronentialAndTrigonometry(Fractal & frac, int var)
+{
+    abs_ex u = nullptr;
+    auto fr = frac.getFractal();
+    for (auto &it : *fr.first)
+        if (isExponentialFunction(it, var))
+        {
+            u = copy(it);
+            break;
+        }
+    if (u == nullptr)
+        for (auto &it : *fr.second)
+        {
+            if (isExponentialFunction(it, var))
+            {
+                u = one/copy(it);
+                break;
+            }
+        }
+    abs_ex dv = copy(&frac)/u;
+    abs_ex v = integrate(dv*D(getVariableExpr(var)));
+    if (v == nullptr)
+        return nullptr;
+    abs_ex first_summ = u*v;
+    abs_ex under_integral = v*u->derivative(var);
+
+    assert(under_integral->getId() == FRACTAL);
+    auto fr_2 = static_cast<Fractal*>(under_integral.get())->getFractal();
+    abs_ex u2;
+    for (auto &it : *fr_2.first)
+        if (isExponentialFunction(it, var))
+        {
+            u2 = copy(it);
+            break;
+        }
+    if (u2 == nullptr)
+    {
+        for (auto &it : *fr_2.second)
+            if (isExponentialFunction(it, var))
+            {
+                u2 = one/it;
+                break;
+            }
+    }
+    if (u2==nullptr)
+        return nullptr;
+    auto dv2 = under_integral/u2;
+    auto v2 = integrate(dv2 * D(getVariableExpr(var)));
+    auto second_summ = -u2*v2;
+    auto under_second_integr = v2*u2->derivative(var);
+    assert(under_second_integr->getId() == FRACTAL);
+    auto mult = toAbsEx(static_cast<Fractal*>(under_second_integr.get())->getFractalWithoutVariable(var));
+    under_second_integr = under_second_integr/mult;
+    if (!subCompare(copy(&frac), under_second_integr))
+        return nullptr;
+    //I = first_summ - (u2 * v2 - mult*I) = first_summ + second_summ + mult * I
+    if (*mult == *one)
+        return nullptr;
+    return (first_summ + second_summ)/(one - mult);
+}
+abs_ex Fractal::tryToGetAntiderivativeBySelfReduction(int var) const
+{
+    //пока рассматриваем только пр-е тригонометрических и экспененциальных функций
+    bool has_exponential = false;
+    bool has_trigonometry = false;
+    for (auto &it : this->numerator)
+    {
+
+        if (isExponentialFunction(it, var))
+            has_exponential = true;
+        if (it->getId() == SINUS || it->getId() == COSINUS)
+            has_trigonometry = true;
+    }
+    for (auto &it : this->denominator)
+    {
+
+        if (isExponentialFunction(it, var))
+            has_exponential = true;
+        if (it->getId() == SINUS || it->getId() == COSINUS)
+            has_trigonometry = true;
+    }
+    if (has_exponential && has_trigonometry)
+    {
+        Fractal cop = *this;
+        auto integr = tryToGetAntiderivativeOfFractalWithExpronentialAndTrigonometry(cop, var);
+        if (integr != nullptr)
+            return integr;
+    }
+    return nullptr;
+
+}
 
 //да, это будет очередная большая функция. Здесь нет сложного поведения, только проверка на различные табличные интегралы
 //рассчитываем на то, что сработало takeCommonPartOfPolynomial()
@@ -2373,6 +2464,9 @@ abs_ex Fractal::antiderivative(int var) const
     auto p_int = this->getAntiderivativeByParts(var);
     if (p_int != nullptr)
         return p_int;
+    auto self_red_int = this->tryToGetAntiderivativeBySelfReduction(var);
+    if (self_red_int != nullptr)
+        return self_red_int;
     auto ds_int = this->getAntiderivariveByBriningFunctionIntoDifferential(var);
     if (ds_int != nullptr)
         return ds_int;
@@ -2460,6 +2554,7 @@ abs_ex Fractal::antiderivative(int var) const
         }
 
     }
+
     return nullptr;
 }
 
@@ -2662,7 +2757,12 @@ long long int Fractal::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
                 return 0;
         }
         else
-            res = lcm(res, it->getLcmOfDenominatorsOfDegreesOfVariable(var));
+        {
+            auto mult_res = it->getLcmOfDenominatorsOfDegreesOfVariable(var);
+            if (mult_res != 0)
+               // return 0;
+            res = lcm(res, mult_res);
+        }
     }
     for (auto &it : this->denominator)
     {
@@ -2675,7 +2775,12 @@ long long int Fractal::getLcmOfDenominatorsOfDegreesOfVariable(int var) const
                 return 0;
         }
         else
-            res = lcm(res, it->getLcmOfDenominatorsOfDegreesOfVariable(var));
+        {
+            auto mult_res = it->getLcmOfDenominatorsOfDegreesOfVariable(var);
+            if (mult_res != 0)
+                //return 0;
+            res = lcm(res, mult_res);
+        }
     }
     return res;
 }
@@ -4011,6 +4116,14 @@ void Fractal::getRidOfAbsoluteValues()
         it->getRidOfAbsoluteValues();
     }
     this->simplify();
+}
+
+void Fractal::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    for (auto &it : this->numerator)
+        it->doSomethingInDerivativeObject(func);
+    for (auto &it : this->denominator)
+        it->doSomethingInDerivativeObject(func);
 }
 
 void Fractal::pullSomeMultipliersIntoIntegratingConstant()

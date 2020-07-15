@@ -47,6 +47,8 @@ public:
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
     abs_ex tryToFindExponentialFunction(int var) const override;
     void getRidOfAbsoluteValues() override;
+
+    void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
 private:
     abs_ex argument;
     //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может

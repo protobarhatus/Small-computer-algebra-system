@@ -239,6 +239,11 @@ void Differential::getRidOfAbsoluteValues()
     this->simplify();
 }
 
+void Differential::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->argument->doSomethingInDerivativeObject(func);
+}
+
 bool Differential::operator<(const AbstractExpression &expr) const
 {
     assert(expr.getId() == DIFFERENTIAL);

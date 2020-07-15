@@ -360,6 +360,11 @@ void ArcSinus::getRidOfAbsoluteValues()
     this->simplify();
 }
 
+void ArcSinus::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->argument->doSomethingInDerivativeObject(func);
+}
+
 bool ArcSinus::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == ARCSINUS);

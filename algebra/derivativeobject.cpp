@@ -87,7 +87,8 @@ bool DerivativeObject::operator==(AbstractExpression &right)
     if (right.getId() != DERIVATIVE_OBJECT)
         return false;
     auto der_obj = static_cast<DerivativeObject*>(&right);
-    return der_obj->argument == this->argument && this->order == der_obj->order;
+    return *der_obj->argument == *this->argument && this->order == der_obj->order &&
+            der_obj->func_argument_var == this->func_argument_var;
 }
 
 std::set<int> DerivativeObject::getSetOfVariables() const
@@ -136,6 +137,7 @@ QString DerivativeObject::makeWolframString() const
     for (int i = 0; i < order; ++i)
         string += '\'';
     string += "[" + getVariableExpr(func_argument_var)->makeWolframString() + "]";
+    return string;
 }
 
 double DerivativeObject::getApproximateValue()
@@ -235,6 +237,11 @@ void DerivativeObject::getRidOfAbsoluteValues()
     argument->getRidOfAbsoluteValues();
 }
 
+void DerivativeObject::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    func(this->argument->getId(), this->func_argument_var, this->order);
+}
+
 int DerivativeObject::getPositionRelativelyZeroIfHasVariables()
 {
     return 0;
@@ -252,10 +259,10 @@ bool DerivativeObject::operator<(const AbstractExpression &expr) const
 
 abs_ex derivative(const abs_ex &argument, int var, int order)
 {
-    return abs_ex (new DerivativeObject(argument, var, order));
+    return abs_ex (new DerivativeObject(argument, var, order))->downcast();
 }
 
 abs_ex derivative(abs_ex &&argument, int var, int order)
 {
-    return abs_ex (new DerivativeObject(std::move(argument), var, order));
+    return abs_ex (new DerivativeObject(std::move(argument), var, order))->downcast();
 }

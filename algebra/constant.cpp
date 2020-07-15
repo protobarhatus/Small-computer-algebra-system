@@ -172,6 +172,11 @@ void Constant::getRidOfAbsoluteValues()
 {
 
 }
+
+void Constant::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+
+}
 bool Constant::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == CONSTANT);

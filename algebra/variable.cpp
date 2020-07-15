@@ -244,3 +244,8 @@ void Variable::getRidOfAbsoluteValues()
 {
 
 }
+
+void Variable::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    func(id, 0, 0);
+}

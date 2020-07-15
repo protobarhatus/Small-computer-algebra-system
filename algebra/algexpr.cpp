@@ -604,7 +604,17 @@ AlgExpr acot(AlgExpr &&arg)
     return acot(std::move(arg.getExpr()));
 }
 
-AlgExpr deriv(const AlgExpr &arg, AlgExpr arg_var, int id)
+AlgExpr deriv(const AlgExpr &arg, AlgExpr arg_var, int order)
 {
-    return AlgExpr(derivative(arg.getExpr(), arg_var.getExpr()->getId(), id));
+    return AlgExpr(derivative(arg.getExpr(), arg_var.getExpr()->getId(), order));
+}
+
+AlgExpr derivObj(const AlgExpr &var, int arg_var, int order)
+{
+    return AlgExpr(abs_ex(new DerivativeObject(var.getExpr(), arg_var, order)));
+}
+
+AlgExpr derivObj(const AlgExpr &func_var, const AlgExpr &arg_var, int order)
+{
+    return derivObj(func_var, arg_var.getExpr()->getId(), order);
 }

@@ -431,6 +431,11 @@ void Logarithm::getRidOfAbsoluteValues()
     this->simplify();
 }
 
+void Logarithm::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->argument->doSomethingInDerivativeObject(func);
+}
+
 bool Logarithm::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == LOGARITHM);

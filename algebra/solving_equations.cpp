@@ -198,6 +198,14 @@ std::list<abs_ex> checkIfItsLogarithmicSumEquationAndTryToSolve(const abs_ex & e
         conditions.addCondition(RootCondition(var, RootCondition::BIGGER_THAN_ZERO, getArgumentOfFunction(fr_with_var)));
         conditions.addCondition(RootCondition(var, RootCondition::DONT_EQUAL_ZERO, getArgumentOfFunction(fr_with_var)));
     }
+   // qDebug() << right->toString();
+   // qDebug() << pow(getEuler(), licCopy(right))->toString();
+    //qDebug() << (new_equation - pow(getEuler(), licCopy(right)))->toString();
+    //qDebug() << equation->toString();
+   // qDebug() << right->toString();
+   // qDebug() << new_equation->toString();
+    //qDebug() << pow(getEuler(), licCopy(right))->toString();
+   // qDebug() << (new_equation - pow(getEuler(), licCopy(right)))->toString();
     return solveEquation(new_equation - pow(getEuler(), licCopy(right)), var, conditions);
 
 }
@@ -670,6 +678,7 @@ std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
     auto qc_f = checkIfItsQuadraticFunction(equation, var);
     if (qc_f[0] != nullptr)
     {
+        //qDebug() << equation->toString();
         auto D = sqr(qc_f[1]) - four*qc_f[0]*qc_f[2];
         if (*D == *zero)
         {
@@ -829,11 +838,17 @@ std::pair<abs_ex, int> getLinearCoeffientOfVariable(AbstractExpression * monom, 
 
 }
 //последний коэффициент - свободный член. result[0] == nullptr значит что уравнение не линейно относительно этого набора переменных
-std::vector<abs_ex> checkIfEquationIsLinearAnsGetCoefficients(const abs_ex & equation, const std::vector<int> & vars)
+std::vector<abs_ex> checkIfEquationIsLinearAnsGetCoefficients(const abs_ex & in_equation, const std::vector<int> & vars)
 {
     std::vector<abs_ex> result(vars.size() + 1);
     for (auto &it : result)
         it = copy(zero);
+    abs_ex equation;
+    if (in_equation->getId() == FRACTAL &&
+             static_cast<Fractal*>(in_equation.get())->canTurnIntoPolynomWithOpeningParentheses(true))
+        equation = toAbsEx(static_cast<Fractal*>(in_equation.get())->turnIntoPolynomWithOpeningParentheses(true).release());
+    else
+        equation = copy(in_equation);
     if (equation->getId() == POLYNOMIAL)
     {
         auto pol = static_cast<Polynomial*>(equation.get())->getMonomialsPointers();
@@ -1195,4 +1210,330 @@ bool isIntegratingConstantAddictive(const Fractal * it)
             it->getFractal().first->size() == 1 && isIntegratingConstant(it->getFractal().first->begin()->get()->getId()))
         return true;
     return false;
+}
+
+ComplexNum::ComplexNum(const abs_ex &a, const abs_ex &b)
+{
+    this->_a = copy(a);
+    this->_b = copy(b);
+}
+
+ComplexNum::ComplexNum(abs_ex &&a, abs_ex &&b)
+{
+    this->_a = std::move(a);
+    this->_b = std::move(b);
+}
+
+ComplexNum::ComplexNum(const abs_ex &a)
+{
+    this->_a = copy(a);
+    this->_b = copy(zero);
+}
+
+ComplexNum::ComplexNum(abs_ex &&a)
+{
+    this->_a = std::move(a);
+    this->_b = copy(zero);
+}
+
+bool ComplexNum::isReal() const
+{
+    return isZero(_b);
+}
+
+ComplexNum::ComplexNum(const ComplexNum &num)
+{
+    this->_a = copy(num._a);
+    this->_b = copy(num._b);
+}
+
+ComplexNum::ComplexNum(ComplexNum &&num)
+{
+    this->_a = std::move(num._a);
+    this->_b = std::move(num._b);
+}
+
+ComplexNum &ComplexNum::operator=(const ComplexNum &num)
+{
+    this->_a = copy(num._a);
+    this->_b = copy(num._b);
+    return *this;
+}
+
+ComplexNum &ComplexNum::operator=(ComplexNum &&num)
+{
+    this->_a = std::move(num._a);
+    this->_b = std::move(num._b);
+    return *this;
+}
+
+QString ComplexNum::toString() const
+{
+    return  this->a()->toString()  + "  +  i * (" + this->b()->toString() + ")";
+}
+
+const abs_ex &ComplexNum::a() const
+{
+    return _a;
+}
+
+const abs_ex &ComplexNum::b() const
+{
+    return _b;
+}
+std::list<std::pair<ComplexNum, int> > solveQuadraticEquationInComplexNumbers(std::vector<abs_ex> && polynom)
+{
+    std::list<std::pair<ComplexNum, int>> res;
+    auto D = sqr(polynom[1]) - four*polynom[0]*polynom[2];
+    if (D->getPositionRelativelyZero() >= 0)
+    {
+        if (isZero(D))
+            res.push_back({(-polynom[1])/two/polynom[2], 2});
+        else
+        {
+            res.push_back({(-polynom[1] + sqrt(D))/two/polynom[2], 1});
+            res.push_back({(-polynom[1] - sqrt(D))/two/polynom[2], 1});
+        }
+    }
+    else
+        //опять же, суем только один корень, так как второй - комплексно сопряженный, присутствует неявно
+        res.push_back({ComplexNum(-polynom[1]/two/polynom[2], sqrt(-D)/two/polynom[2]), 1});
+    return res;
+}
+std::list<std::pair<ComplexNum, int> > solveCubicEquationInComplexNumbers(std::vector<abs_ex> &&polynom)
+{
+    auto a = std::move(polynom[3]);
+    auto b = std::move(polynom[2]);
+    auto c = std::move(polynom[1]);
+    auto d = std::move(polynom[0]);
+
+    auto p = (three * a * c - sqr(b))/three/sqr(a);
+    auto q = (two * pow(b, 3) - numToAbs(9)*a*b*c + numToAbs(27)*a*a*d)/numToAbs(27)/pow(a, 3);
+
+    auto Q = pow(p, 3)/numToAbs(27) + sqr(q) / numToAbs(4);
+
+    std::list<std::pair<ComplexNum, int> > preres;
+    if (isZero(Q))
+    {
+        if (isZero(p) && isZero(q))
+        {
+            preres.push_back({copy(zero), 3});
+        }
+        else
+        {
+            preres.push_back({two*pow(-q/two, one/three), 1});
+            preres.push_back({-pow(-q/two, one/three), 2});
+        }
+    }
+    else if (Q->getPositionRelativelyZero() >= 0)
+    {
+        auto alpha = pow(-q/two + sqrt(Q), one/three);
+        auto beta = pow(-q/two - sqrt(Q), one/three);
+
+        preres.push_back({alpha + beta, 1});
+        preres.push_back({ComplexNum(-(alpha + beta)/two, (alpha - beta)/two * sqrt(three)), 1});
+    }
+    else
+    {
+        abs_ex angle_arg = acos(three * q / two / p * sqrt(-three / p)) / three;
+        abs_ex mult = two * sqrt(-p/three);
+        for (int i = 0; i < 3; ++i)
+            preres.push_back({mult * cos(angle_arg - numToAbs(i) * two*getPi()/three), 1});
+    }
+
+    for (auto &it : preres)
+    {
+        it = {ComplexNum(it.first.a() - b/three/a, copy(it.first.b())), it.second};
+    }
+    return std::move(preres);
+}
+//https://studwork.org/spravochnik/matematika/reshenie-uravneniy-3-y-i-4-y-stepeni
+std::list<std::pair<ComplexNum, int> > solveForthDegreeEquationInComplexNumbers(std::vector<abs_ex> && polynom)
+{
+    auto a1 = polynom[3] / polynom[4];
+    auto a2 = polynom[2] / polynom[4];
+    auto a3 = polynom[1] / polynom[4];
+    auto a4 = polynom[0] / polynom[4];
+
+    auto A = a2 - three * sqr(a1)/numToAbs(8);
+    auto B = a3 - a1*a2/two + pow(a1, 3)/numToAbs(8);
+    auto C = a4 - a1*a3/four + sqr(a1)*a2/numToAbs(16) - three*pow(a1, 4)/numToAbs(256);
+
+    std::vector<abs_ex> resolventa(4);
+    resolventa[3] = copy(one);
+    resolventa[2] = two * A;
+    resolventa[1] = sqr(A) - four * C;
+    resolventa[0] = -sqr(B);
+
+    auto resolventa_roots = solveCubicEquationInComplexNumbers(std::move(resolventa));
+
+    abs_ex t = nullptr;
+    for (auto &it : resolventa_roots)
+        if (it.first.isReal() && it.first.a()->getPositionRelativelyZero() >= 0)
+            t = copy(it.first.a());
+    assert(t != nullptr);
+
+    auto t_sqrt = sqrt(t);
+    auto a = copy(t_sqrt);
+    auto b = (A + t - B/t_sqrt)/two;
+    auto c = (A + t + B/t_sqrt)/two;
+
+    std::list<std::pair<ComplexNum, int> > preres;
+
+    std::vector<abs_ex> mult1(3);
+    mult1[2] = copy(one);
+    mult1[1] = copy(a);
+    mult1[0] = copy(b);
+
+    preres.splice(preres.end(),  solveQuadraticEquationInComplexNumbers(std::move(polynom)));
+
+    std::vector<abs_ex> mult2(3);
+    mult2[2] = copy(one);
+    mult2[1] = -a;
+    mult2[0] = copy(c);
+
+    preres.splice(preres.end(),  solveQuadraticEquationInComplexNumbers(std::move(polynom)));
+
+    std::list<std::pair<ComplexNum, int> > res;
+    for (auto &it : preres)
+    {
+        bool found_match = false;
+        for (auto &it1 : res)
+        {
+            if (it1.first == it.first)
+            {
+                found_match = true;
+                it1.second += it.second;
+                break;
+            }
+        }
+        if (!found_match)
+            res.push_back(std::move(it));
+    }
+    for (auto &it : res)
+        it.first = ComplexNum(it.first.a() - a1/four, copy(it.first.b()));
+    return res;
+
+}
+bool isNonHighestDegreesZeroes(const std::vector<abs_ex> & polynom)
+{
+    for (int i = 1; i < polynom.size() - 1; ++i)
+        if (!isZero(polynom[i]))
+            return false;
+    return true;
+}
+//полиномиальность должна гарантироваться
+//не решает кубические уравнения, возвращает всегда n корней. в листе первое - корень, второе - кратность корня
+//булевое значение - удалось ли полностью решить уравнение (найти все n комплексных корней)
+//при этом, если корень комлексный, то один объект complexnum идет за два сопряженных корня
+//число рядом с ним будет означать количество таких комплексно сопряженных ПАР
+std::pair<std::list<std::pair<ComplexNum, int> >, bool> solvePolynomialEquationInComplexNumber(const abs_ex &equation, int var)
+{
+    int gcd_of_nums = equation->getGcdOfNumeratorsOfDegrees(var);
+    if (gcd_of_nums > 1)
+    {
+        abs_ex temp_var;
+        if (gcd_of_nums % 2 == 0)
+            temp_var = abs_ex(new Variable(systemVar(0, std::numeric_limits<int>::max())));
+        else
+            temp_var = systemVarExpr();
+        abs_ex repl_equation = copy(equation);
+        setUpExpressionIntoVariable(repl_equation, pow(temp_var, Number(1, gcd_of_nums)), var);
+
+        auto preres = solvePolynomialEquationInComplexNumber(repl_equation, temp_var->getId());
+        if (!preres.second)
+            return {std::list<std::pair<ComplexNum, int>>(), false};
+        for (auto &it : preres.first)
+            if (!it.first.isReal())
+                return {std::list<std::pair<ComplexNum, int>>(), false};
+        if (gcd_of_nums % 2 == 1)
+        {
+            std::list<std::pair<ComplexNum, int>> res;
+            for (auto &it : preres.first)
+                res.push_back({pow(it.first.a(), Number(1)/Number(gcd_of_nums)), it.second * gcd_of_nums});
+            return {std::move(res), true};
+        }
+
+        std::list<std::pair<ComplexNum, int>> res;
+        for (auto &it : preres.first)
+        {
+            if (it.first.a()->getPositionRelativelyZero() >= 0)
+            {
+                res.push_back({pow(it.first.a(), Number(1) / Number(gcd_of_nums)), it.second * (gcd_of_nums / 2)});
+                res.push_back({-pow(it.first.a(), Number(1)/Number(gcd_of_nums)), it.second * (gcd_of_nums / 2)});
+            }
+            else
+            {
+                //суем только один такой корень, потому что второй - комплексно сопряженный, будет присутствовать неявно
+                res.push_back({ComplexNum(zero, pow(-it.first.a(), Number(1) / Number(gcd_of_nums))), it.second * (gcd_of_nums / 2)});
+            }
+        }
+        return {std::move(res), true};
+    }
+    auto polynom = checkIfItsPolynom(equation, var);
+    assert(polynom.size() >= 2);
+    if (isNonHighestDegreesZeroes(polynom))
+    {//если размер вектора четен, то степень уравнения - нечетна
+        std::list<std::pair<ComplexNum, int>> res;
+        if (polynom.size() % 2 == 0)
+        {
+            res.push_back({pow(-polynom[0], Number(1)/Number(polynom.size() - 1)), polynom.size() - 1});
+        }
+        else
+        {
+            auto right = -polynom[0];
+            if (right->getPositionRelativelyZero() >= 0)
+            {
+                res.push_back({pow(right, Number(1)/Number(polynom.size() - 1)), (polynom.size() - 1)/2});
+                res.push_back({-pow(right, Number(1)/Number(polynom.size() - 1)), (polynom.size() - 1)/2});
+            }
+            else
+                res.push_back({ComplexNum(zero, pow(-right, Number(1)/Number(polynom.size() - 1))), (polynom.size() - 1)/2});
+        }
+        return {std::move(res), true};
+    }
+    if (polynom.size() == 3)
+    {
+        return {solveQuadraticEquationInComplexNumbers(std::move(polynom)), true};
+    }
+    auto factors = factorizePolynom(equation);
+    if (factors.first.size() > 1 || factors.first.begin()->get()->getId() == DEGREE)
+    {
+        std::list<std::pair<ComplexNum, int> > res;
+        for (auto &it : factors.first)
+        {
+            int deg = static_cast<Number*>(Degree::getDegreeOfExpression(it).get())->getNumerator();
+
+            auto preres = solvePolynomialEquationInComplexNumber(Degree::getArgumentOfDegree(it), var);
+            if (!preres.second)
+                return {std::list<std::pair<ComplexNum, int> >(), false};
+
+            for (auto &it1: preres.first)
+            {
+                bool found_match = false;
+                for (auto &it2 : res)
+                    if (it2 == it1)
+                    {
+                        found_match = true;
+                        it2.second += it1.second * deg;
+                        break;
+                    }
+                if (!found_match)
+                    res.push_back(std::move(it1));
+            }
+
+        }
+        return {std::move(res), true};
+    }
+    if (polynom.size() == 4)
+        return {solveCubicEquationInComplexNumbers(std::move(polynom)), true};
+    if (polynom.size() == 5)
+        return {solveForthDegreeEquationInComplexNumbers(std::move(polynom)), true};
+
+    return {std::list<std::pair<ComplexNum, int> >(), false};
+}
+
+bool operator==(const ComplexNum &a, const ComplexNum &b)
+{
+    return subCompare(a.a(), b.a()) && (subCompare(a.b(), b.b()) || subCompare(a.b(), -b.b()));
 }

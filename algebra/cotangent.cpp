@@ -429,6 +429,11 @@ void Cotangent::getRidOfAbsoluteValues()
     this->simplify();
 }
 
+void Cotangent::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->argument->doSomethingInDerivativeObject(func);
+}
+
 bool Cotangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == COTANGENT);

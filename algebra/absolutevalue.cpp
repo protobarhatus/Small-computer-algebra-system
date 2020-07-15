@@ -301,6 +301,11 @@ void AbsoluteValue::getRidOfAbsoluteValues()
 
 }
 
+void AbsoluteValue::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->expression->doSomethingInDerivativeObject(func);
+}
+
 abs_ex abs(const abs_ex &expr)
 {
     return abs_ex(new AbsoluteValue(expr))->downcast();

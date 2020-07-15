@@ -463,6 +463,11 @@ void Sinus::getRidOfAbsoluteValues()
     this->simplify();
 }
 
+void Sinus::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->argument->doSomethingInDerivativeObject(func);
+}
+
 abs_ex sin(const abs_ex &expr)
 {
     return abs_ex(new Sinus(expr))->downcast();

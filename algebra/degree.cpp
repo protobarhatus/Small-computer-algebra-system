@@ -1529,14 +1529,24 @@ FunctionRange Degree::getRange() const
         if (deg.min() == nullptr)
             segm.setMin(zero, false);
         else if (deg.canBeLowerThanZero())
-            segm.setMin(pow(arg.max(), deg.min()), arg.isMaxIncluded() && deg.isMinIncluded());
+        {
+            if (arg.max() != nullptr)
+                segm.setMin(pow(arg.max(), deg.min()), arg.isMaxIncluded() && deg.isMinIncluded());
+            else
+                segm.setMin(zero, false);
+        }
         else
             segm.setMin(pow(arg.min(), deg.min()), arg.isMinIncluded() && deg.isMinIncluded());
 
         if (deg.max() == nullptr)
             segm.setMax(nullptr, false);
         else if (deg.canBeBiggerThanZero())
-            segm.setMax(pow(arg.max() , deg.max()), arg.isMaxIncluded() && deg.isMaxIncluded());
+        {
+            if (arg.max() != nullptr)
+                segm.setMax(pow(arg.max() , deg.max()), arg.isMaxIncluded() && deg.isMaxIncluded());
+            else
+                segm.setMax(nullptr, false);
+        }
         else
             segm.setMax(pow(arg.min(), deg.max()), arg.isMinIncluded() && deg.isMaxIncluded());
         return segm;
@@ -1558,7 +1568,9 @@ FunctionRange Degree::getRange() const
             min = copy(zero);
             is_min_included = true;
         }
-        bool max_lower_one = lower(it.max(), one);
+        if (it.max() != nullptr && bigger(it.max(), min))
+            continue;
+        bool max_lower_one = it.max() != nullptr && lower(it.max(), one);
         bool min_lower_one = lower(it.min(), one);
         for (auto &it1 : deg_range.getSegments())
         {
@@ -1634,6 +1646,12 @@ void Degree::getRidOfAbsoluteValues()
         this->degree = getArgumentOfFunction(degree);
     this->degree->getRidOfAbsoluteValues();
     this->simplify();
+}
+
+void Degree::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
+{
+    this->argument->doSomethingInDerivativeObject(func);
+    this->degree->doSomethingInDerivativeObject(func);
 }
 
 
