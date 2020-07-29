@@ -177,6 +177,11 @@ void Constant::doSomethingInDerivativeObject(const std::function<void (int, int,
 {
 
 }
+
+bool Constant::canBeZero() const
+{
+    return this->value == 0;
+}
 bool Constant::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == CONSTANT);

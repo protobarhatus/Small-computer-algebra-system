@@ -404,6 +404,11 @@ void Number::doSomethingInDerivativeObject(const std::function<void (int, int, i
 
 }
 
+bool Number::canBeZero() const
+{
+    return this->numerator == 0;
+}
+
 Number abs(Number num)
 {
     if (num.compareWith(0) < 0)
@@ -442,4 +447,10 @@ Number pow(Number a, int deg)
     for (int i = 0; i < deg; ++i)
         r = r*a;
     return r;
+}
+
+int toIntegerNumber(const abs_ex &expr)
+{
+    assert(isIntegerNumber(expr));
+    return static_cast<const Number*>(expr.get())->getNumerator();
 }

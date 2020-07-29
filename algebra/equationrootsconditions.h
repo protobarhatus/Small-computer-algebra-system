@@ -11,7 +11,9 @@ public:
         BIGGER_THAN_ZERO,
         DONT_EQUAL_ZERO,
         EQUAL_ZERO,
-        EQUAL_TWO_PI_INTEGER
+        EQUAL_TWO_PI_INTEGER,
+        LESS_OR_EQUAL_ZERO,
+        BIGGER_OR_EQUAL_ZERO
     };
     RootCondition();
     RootCondition(const RootCondition & cop);
@@ -20,7 +22,17 @@ public:
     RootCondition(int var, ConditionType condition, abs_ex &&expression);
     RootCondition &operator=(const RootCondition & cop);
     RootCondition &operator=(RootCondition && cop);
+    RootCondition(ConditionType condition, const abs_ex & expr);
     bool check(const abs_ex & root) const;
+    enum StrongCheckResult
+    {
+        UNDEFINED,
+        WRONG,
+        TRUE
+    };
+
+    StrongCheckResult strongCheck(const abs_ex & root, int var) const;
+    QString toString() const;
 private:
     int var;
     bool is_expr_independent_of_var;

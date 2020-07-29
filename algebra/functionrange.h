@@ -57,6 +57,7 @@ public:
     QString toString() const;
     bool isSymmetricRelativelyZero() const;
     bool isEmpty();
+    bool containsZero() const;
 private:
     void deleteEmptySegments();
     bool valid = true;

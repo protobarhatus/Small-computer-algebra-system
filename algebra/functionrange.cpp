@@ -377,6 +377,14 @@ bool FunctionRange::isEmpty()
     return this->segments.empty();
 }
 
+bool FunctionRange::containsZero() const
+{
+    for (auto &it : this->segments)
+        if (it.containsZero())
+            return true;
+    return false;
+}
+
 void FunctionRange::deleteEmptySegments()
 {
     for (auto it = this->segments.begin(); it != this->segments.end();)

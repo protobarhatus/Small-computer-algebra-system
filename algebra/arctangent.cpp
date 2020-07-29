@@ -246,10 +246,47 @@ abs_ex ArcTangent::antiderivative(int var) const
         }
     }
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
-    if (ln_f.first == nullptr)
+    if (ln_f.first != nullptr)
+    {
+        abs_ex& a = ln_f.first;
+        return -(ln(sqr(this->argument) + one) - two * this->argument * atan(this->argument))/two/a;
+    }
+    int lcm_of_denoms = this->getLcmOfDenominatorsOfDegreesOfVariable(var);
+    if (lcm_of_denoms > 1)
+    {
+        abs_ex t;
+        if (lcm_of_denoms % 2 == 0)
+            t = systemVarExpr(zero, nullptr, true, false);
+        else
+            t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, pow(t, lcm_of_denoms), var);
+        cop = std::move(cop) * pow(t, lcm_of_denoms)->derivative(t->getId());
+       // qDebug() << cop->toString();
+        auto integr = cop->antiderivative(t->getId());
+
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, pow(getVariableExpr(var), one/numToAbs(lcm_of_denoms)), t->getId());
+            return integr;
+        }
+
+    }
+    auto ln_deg = checkIfItsDegreeOfLinearFunction(argument, var);
+    if (ln_deg.first != nullptr)
+    {
+        abs_ex t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, (t - ln_deg.second) / ln_deg.first, var);
+        auto integr = cop->antiderivative(t->getId());
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, ln_deg.first * getVariableExpr(var) + ln_deg.second, t->getId());
+            return integr / ln_deg.first;
+        }
         return nullptr;
-    abs_ex& a = ln_f.first;
-    return -(ln(sqr(this->argument) + one) - two * this->argument * atan(this->argument))/two/a;
+    }
+    return nullptr;
 }
 
 const abs_ex &ArcTangent::getArgument() const
@@ -329,6 +366,11 @@ void ArcTangent::getRidOfAbsoluteValues()
 void ArcTangent::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
 {
     this->argument->doSomethingInDerivativeObject(func);
+}
+
+bool ArcTangent::canBeZero() const
+{
+    return this->argument->canBeZero();
 }
 
 bool ArcTangent::operator<(const AbstractExpression &right) const

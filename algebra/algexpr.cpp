@@ -13,6 +13,7 @@
 #include "solving_equations.h"
 #include "solving_differential_equations.h"
 #include "derivativeobject.h"
+#include "polynomials_factorization.h"
 AlgExpr::AlgExpr()
 {
 
@@ -84,22 +85,46 @@ AlgExpr &AlgExpr::operator=(abs_ex &&expr)
 
 AlgExpr& AlgExpr::operator+=(const AlgExpr & expr)
 {
-    this->expression = this->expression + expr.expression;
+    this->expression = std::move(this->expression) + expr.expression;
     return *this;
 }
 AlgExpr& AlgExpr::operator-=(const AlgExpr & expr)
 {
-    this->expression = this->expression - expr.expression;
+    this->expression = std::move(this->expression) - expr.expression;
     return *this;
 }
 AlgExpr& AlgExpr::operator*=(const AlgExpr & expr)
 {
-    this->expression = this->expression * expr.expression;
+    this->expression = std::move(this->expression) * expr.expression;
     return *this;
 }
 AlgExpr& AlgExpr::operator/=(const AlgExpr & expr)
 {
-    this->expression = this->expression / expr.expression;
+    this->expression = std::move(this->expression) / expr.expression;
+    return *this;
+}
+
+AlgExpr &AlgExpr::operator+=(AlgExpr &&expr)
+{
+    this->expression = std::move(this->expression) + std::move(expr.expression);
+    return *this;
+}
+
+AlgExpr &AlgExpr::operator-=(AlgExpr &&expr)
+{
+    this->expression = std::move(this->expression) - std::move(expr.expression);
+    return *this;
+}
+
+AlgExpr &AlgExpr::operator*=(AlgExpr &&expr)
+{
+    this->expression = std::move(this->expression) * std::move(expr.expression);
+    return *this;
+}
+
+AlgExpr &AlgExpr::operator/=(AlgExpr &&expr)
+{
+    this->expression = std::move(this->expression) / std::move(expr.expression);
     return *this;
 }
 
@@ -564,7 +589,7 @@ std::list<AlgExpr> solveEquation(const AlgExpr &equation, const AlgExpr &var)
     return res;
 }
 
-std::list<DifurResult> solveDifur(const AlgExpr &difur, const AlgExpr &x, const AlgExpr &y)
+std::pair<std::list<DifurResult>, std::vector<QString>> solveDifur(const AlgExpr &difur, const AlgExpr &x, const AlgExpr &y)
 {
    return solveDifur(difur.getExpr(), x.getExpr()->getId(), y.getExpr()->getId());
 }
@@ -617,4 +642,118 @@ AlgExpr derivObj(const AlgExpr &var, int arg_var, int order)
 AlgExpr derivObj(const AlgExpr &func_var, const AlgExpr &arg_var, int order)
 {
     return derivObj(func_var, arg_var.getExpr()->getId(), order);
+}
+
+AlgExpr factorize(const AlgExpr &expr)
+{
+    auto facts = factorizePolynom(toPolynomialPointer(expr.getExpr()));
+    AlgExpr res = toAbsEx(facts.second);
+    for (auto &it : facts.first)
+        res += std::move(it);
+    return res;
+}
+
+AlgExpr expand(const AlgExpr &expr)
+{
+    return expr + 0;
+}
+
+AlgExpr var(const QString &name)
+{
+    return  abs_ex(new Variable(VariablesDistributor::createVariable(VariablesDefinition(), name)));
+}
+
+bool isDifferentialEquation(const AlgExpr &eq)
+{
+    return eq.getExpr()->hasDifferential() || eq.getExpr()->hasDerivativeObject();
+}
+
+void downgradeIntegratingConstantsIndexes(abs_ex &expr)
+{
+    auto vars_set = expr->getSetOfVariables();
+    int actual_indexes = 0;
+    for (auto &it : vars_set)
+    {
+        if (isIntegratingConstant(it))
+        {
+            abs_ex new_var = integratingConstantExpr();
+            if (actual_indexes == 0)
+                static_cast<Variable*>(new_var.get())->setName("C");
+            else
+            {
+                QString num;
+                num.setNum(actual_indexes);
+                static_cast<Variable*>(new_var.get())->setName("C<sub>" + num + "</sub>");
+            }
+            static_cast<Variable*>(new_var.get())->setRange(getVariable(it).getRange());
+            //qDebug() << expr->toString();
+           // qDebug() << new_var->toString();
+            if (expr->getId() == it)
+                expr = std::move(new_var);
+            else
+                expr->changeSomePartOn(getVariable(it).makeStringOfExpression(), new_var);
+           // qDebug() << expr->toString();
+            ++actual_indexes;
+        }
+    }
+}
+
+void downgradeIntegratingConstantsIndexes(AlgExpr &expr)
+{
+    downgradeIntegratingConstantsIndexes(expr.getExpr());
+}
+
+std::pair<std::vector<AlgExpr>, std::vector<RootCondition> > selectRootsAndConditions(const std::vector<AlgExpr> &roots, const std::vector<RootCondition> &conditions, int var)
+{
+    std::vector<std::vector<RootCondition::StrongCheckResult>> checkres(roots.size(), std::vector<RootCondition::StrongCheckResult>(conditions.size()));
+    for (int i = 0; i < roots.size(); ++i)
+    {
+        for (int j = 0; j < conditions.size(); ++j)
+        {
+            checkres[i][j] = conditions[j].strongCheck(roots[i].getExpr(), var);
+        }
+    }
+    std::vector<AlgExpr> exprs;
+    for (int i = 0; i < roots.size(); ++i)
+    {
+        bool has_wrong = false;
+        for (int j = 0; j < conditions.size(); ++j)
+            if (checkres[i][j] == RootCondition::WRONG)
+            {
+                has_wrong = true;
+                break;
+            }
+        if (!has_wrong)
+            exprs.push_back(roots[i]);
+    }
+    std::vector<RootCondition> conds;
+    for (int i = 0; i < conditions.size(); ++i)
+    {
+        bool has_undefined = false;
+        for (int j = 0; j < roots.size(); ++j)
+            if (checkres[j][i] == RootCondition::UNDEFINED)
+            {
+                has_undefined = true;
+                break;
+            }
+        if (has_undefined)
+            conds.push_back(conditions[i]);
+    }
+    return {std::move(exprs), std::move(conds)};
+}
+
+std::pair<std::vector<DifurResult>, std::vector<RootCondition> > selectRootsAndConditions(const std::vector<DifurResult> &roots, const std::vector<RootCondition> &conditions,
+                                                                                          int y)
+{
+    for (auto &it : roots)
+        if (it.getType() == DifurResult::COMMON_INTEGRAL || it.getType() == DifurResult::SOLVED_FOR_X)
+            return {roots, conditions};
+    std::vector<AlgExpr> rts(roots.size());
+    for (int i = 0; i < roots.size(); ++i)
+        rts[i] = roots[i].expr();
+    auto preres = selectRootsAndConditions(rts, conditions, y);
+    std::vector<DifurResult> res;
+    for (auto &it : preres.first)
+        res.push_back(DifurResult(copy(it.getExpr()), DifurResult::SOLVED_FOR_Y));
+    return {std::move(res), std::move(preres.second)};
 }

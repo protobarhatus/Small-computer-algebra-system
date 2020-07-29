@@ -571,7 +571,30 @@ void Degree::simplify()
         if (*common_part != *one)
             argument = std::move(argument) * common_part;
     }
+    if (this->degree->getId() == NUMBER && !static_cast<Number*>(this->degree.get())->isInteger())
+    {
 
+        if (this->argument->getId() == POLYNOMIAL)
+        {
+           // qDebug() << this->toString();
+            // qDebug() << argument->toString();
+            auto check_f = checkIfItsSinusOrCosinusFormulaPolynomial(toPolynomialPointer(argument));
+            if (check_f != nullptr)
+            {
+                argument = std::move(check_f);
+                this->simplify();
+            }
+        }
+        if (this->argument->getId() == POLYNOMIAL)
+        {
+            auto check_f = checkIfItsTangentOrCotangentFormulaPolynomial(toPolynomialPointer(argument));
+            if (check_f != nullptr)
+            {
+                argument = std::move(check_f);
+                this->simplify();
+            }
+        }
+    }
 
     if (this->argument->getId() == ABSOLUTE_VALUE && this->degree->getId() == NUMBER)
     {
@@ -686,7 +709,11 @@ std::set<int> Degree::getSetOfVariables() const
 
 std::set<QString> Degree::getSetOfFunctions() const
 {
-    return this->argument->getSetOfFunctions();
+    std::set<QString> set = this->argument->getSetOfFunctions();
+    auto deg_set = this->degree->getSetOfFunctions();
+    for (auto &it : deg_set)
+        set.insert(std::move(it));
+    return set;
 }
 Number Degree::getMaxDegreeOfVariable(int id)
 {
@@ -951,6 +978,8 @@ double Degree::getApproximateValue()
 }
 int Degree::getPositionRelativelyZeroIfHasVariables()
 {
+    if (bigger(this->argument, zero))
+        return 1;
     if (this->degree->getId() != NUMBER)
         return 0;
 
@@ -1001,13 +1030,30 @@ abs_ex Degree::changeSomePartOn(QString part, abs_ex &on_what)
 abs_ex Degree::changeSomePartOnExpression(QString part, abs_ex &on_what)
 {
     NONCONST
-        if (this->argument->makeStringOfExpression() == part)
-        {
-            abs_ex cop = copy(on_what);
-            this->argument.swap(cop);
-            return cop;
-        }
-        return this->argument->changeSomePartOn(part, on_what);
+            abs_ex ret = nullptr;
+            if (this->argument->makeStringOfExpression() == part)
+            {
+                abs_ex cop = copy(on_what);
+                this->argument.swap(cop);
+                ret = std::move(cop);
+            }
+            if (this->degree->makeStringOfExpression() == part)
+            {
+                abs_ex cop = copy(on_what);
+                this->degree.swap(cop);
+                ret = std::move(cop);
+            }
+            if (ret != nullptr)
+                return ret;
+            ret = this->argument->changeSomePartOn(part, on_what);
+            if (ret == nullptr)
+                return this->degree->changeSomePartOn(part, on_what);
+            else
+            {
+                this->degree->changeSomePartOn(part, on_what);
+                return ret;
+            }
+            return ret;
 }
 
 abs_ex Degree::derivative(int var) const
@@ -1033,6 +1079,20 @@ abs_ex Degree::antiderivative(int var) const
     ln_f = checkIfItsLinearFunction(this->degree, var);
     if (ln_f.first != nullptr && !this->argument->hasVariable(var))
         return one / ln_f.first * takeDegreeOf(this->argument, this->degree) / ln(this->argument);
+
+    abs_ex x = getVariableExpr(var);
+    if (*this->degree == *half)
+    {
+        auto qc_f = checkIfItsQuadraticFunction(argument, var);
+        if (qc_f[0] != nullptr)
+        {
+            abs_ex a = std::move(qc_f[0]);
+            abs_ex b = std::move(qc_f[1]);
+            abs_ex c = std::move(qc_f[2]);
+            return ((b + two* a* x)* copy(this)/(four* a) - ((sqr(b) - four* a* c)* ln(abs(b + two* a* x + two* sqrt(a)* copy(this))))/(numToAbs(8)* pow(a, Number(3)/2)));
+        }
+    }
+
     if (isSqrt(this->degree) && !this->argument->hasVariable(var))
     {
         auto ln_f = checkIfItsLinearFunction(Degree::getArgumentOfDegree(this->degree.get()), var);
@@ -1177,31 +1237,33 @@ abs_ex Degree::antiderivative(int var) const
 
         auto qc_f = checkIfItsQuadraticFunction(argument, var);
         auto x = abs_ex(new Variable(getVariable(var)));
-
-        if (*qc_f[1] == *zero)
+        if (qc_f[0] != nullptr)
         {
-            int pos = qc_f[0]->getPositionRelativelyZero();
-            if (pos > 0)
+            if (*qc_f[1] == *zero)
             {
-                auto div = std::move(qc_f[0]);
-                qc_f[0] = copy(one);
-                qc_f[2] = qc_f[2]/div;
-                int pos_a = qc_f[2]->getPositionRelativelyZero();
-                if (pos_a > 0)
-                    return sqrt(div) * (x/two * sqrt(argument) + qc_f[2]/two * ln(abs(x + sqrt(argument))));
-                if (pos_a < 0)
-                    return sqrt(div) * (x/two * sqrt(argument) - qc_f[2]/two * ln(abs(x + sqrt(argument))));
-                return nullptr;
-            }
-            if (pos < 0)
-            {
-                auto div = -std::move(qc_f[0]);
-                qc_f[0] = copy(minus_one);
-                qc_f[2] = qc_f[2]/div;
-                int pos_a = qc_f[2]->getPositionRelativelyZero();
-                if (pos_a > 0)
-                    return sqrt(div) * (x/two * sqrt(argument) + qc_f[2]/two * asin(x/sqrt(qc_f[2])));
-                return nullptr;
+                int pos = qc_f[0]->getPositionRelativelyZero();
+                if (pos > 0)
+                {
+                    auto div = std::move(qc_f[0]);
+                    qc_f[0] = copy(one);
+                    qc_f[2] = qc_f[2]/div;
+                    int pos_a = qc_f[2]->getPositionRelativelyZero();
+                    if (pos_a > 0)
+                        return sqrt(div) * (x/two * sqrt(argument) + qc_f[2]/two * ln(abs(x + sqrt(argument))));
+                    if (pos_a < 0)
+                        return sqrt(div) * (x/two * sqrt(argument) - qc_f[2]/two * ln(abs(x + sqrt(argument))));
+                    return nullptr;
+                }
+                if (pos < 0)
+                {
+                    auto div = -std::move(qc_f[0]);
+                    qc_f[0] = copy(minus_one);
+                    qc_f[2] = qc_f[2]/div;
+                    int pos_a = qc_f[2]->getPositionRelativelyZero();
+                    if (pos_a > 0)
+                        return sqrt(div) * (x/two * sqrt(argument) + qc_f[2]/two * asin(x/sqrt(qc_f[2])));
+                    return nullptr;
+                }
             }
         }
     }
@@ -1652,6 +1714,11 @@ void Degree::doSomethingInDerivativeObject(const std::function<void (int, int, i
 {
     this->argument->doSomethingInDerivativeObject(func);
     this->degree->doSomethingInDerivativeObject(func);
+}
+
+bool Degree::canBeZero() const
+{
+    return this->argument->canBeZero();
 }
 
 

@@ -117,6 +117,12 @@ RootCondition &RootCondition::operator=(RootCondition &&cop)
     return *this;
 }
 
+RootCondition::RootCondition(RootCondition::ConditionType condition, const abs_ex &expr)
+{
+    this->type = condition;
+    this->condition_expression = copy(expr);
+}
+
 RootCondition::RootCondition(int _var, RootCondition::ConditionType condition, const abs_ex &expression) :
     var(_var), condition_expression(licCopy(expression)), type(condition),
     is_expr_independent_of_var(false)
@@ -178,3 +184,97 @@ bool RootCondition::check(const abs_ex &root) const
         assert(false);
     }
 }
+
+RootCondition::StrongCheckResult RootCondition::strongCheck(const abs_ex &root, int var) const
+{
+    abs_ex expr = copy(this->condition_expression);
+    setUpExpressionIntoVariable(expr, root, var);
+   // qDebug() << expr->toString();
+    int pos = expr->getPositionRelativelyZero();
+    switch (this->type) {
+    case LESS_THAN_ZERO:
+            if (pos < 0)
+            {
+                if (!expr->canBeZero())
+                    return TRUE;
+                return UNDEFINED;
+            }
+            if (pos == 0)
+                return UNDEFINED;
+            return WRONG;
+        break;
+    case LESS_OR_EQUAL_ZERO:
+        if (pos < 0 || isZero(expr))
+            return TRUE;
+        if (pos == 0)
+            return UNDEFINED;
+        if (!expr->canBeZero())
+            return WRONG;
+        return UNDEFINED;
+    case EQUAL_ZERO:
+        if (isZero(expr))
+            return TRUE;
+        return WRONG;
+    case DONT_EQUAL_ZERO:
+        if (isZero(expr))
+            return WRONG;
+        if (expr->getSetOfVariables().empty())
+            return TRUE;
+        if (!expr->canBeZero())
+            return TRUE;
+        return UNDEFINED;
+    case BIGGER_THAN_ZERO:
+        if (isZero(expr))
+            return WRONG;
+        if (pos < 0)
+            return WRONG;
+        if (pos == 0)
+            return UNDEFINED;
+        if (!expr->canBeZero())
+            return TRUE;
+        return UNDEFINED;
+    case BIGGER_OR_EQUAL_ZERO:
+        if (pos > 0)
+            return TRUE;
+        if (pos == 0)
+            return UNDEFINED;
+        return WRONG;
+    default:
+        //сюда никогда не должно входить
+        throw;
+    }
+
+}
+
+QString RootCondition::toString() const
+{
+    QString res = this->condition_expression->toString() + " ";
+    switch (type) {
+    case LESS_THAN_ZERO:
+        res += "<";
+        break;
+    case LESS_OR_EQUAL_ZERO:
+        res += QString(QChar(8804));
+        break;
+    case EQUAL_ZERO:
+        res += "=";
+        break;
+    case DONT_EQUAL_ZERO:
+        res += QString(QChar(8800));
+        break;
+    case BIGGER_OR_EQUAL_ZERO:
+        res += QString(QChar(8805));
+        break;
+    case BIGGER_THAN_ZERO:
+        res += ">";
+        break;
+    case EQUAL_TWO_PI_INTEGER:
+        res += "= 2*" + QString(QChar(960)) + "*k, k " + QString(QChar(8712)) + " " + QString(QChar(8469));
+        return res;
+        break;
+    }
+    return res + " 0";
+
+}
+
+

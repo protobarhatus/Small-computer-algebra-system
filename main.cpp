@@ -5,6 +5,7 @@
 #include "algebra\some_algebra_expression_conversions.h"
 #include "random"
 #include "QDataStream"
+#include <mainapplicationspace.h>
 //#define IN_MOSCOW
 #ifdef IN_MOSCOW
 #include <G:\QTProjects\mo2\ExprMake\texpr_builder.h>
@@ -34,6 +35,7 @@ int rand(int min, int max)
 #include "algebra/polynomials_factorization.h"
 #include "algebra/solving_differential_equations.h"
 #include "algebra/solving_equations.h"
+#include "parser.h"
 void out(const Polynom & p)
 {
     auto debug = qDebug();
@@ -49,7 +51,7 @@ void out(const Polynom & p)
 int main(int argc, char *argv[])
 {
 
- //   testAlgMod();
+    testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -123,7 +125,7 @@ int main(int argc, char *argv[])
    // TExpr_Builder builder;
    // auto expr = builder.BuildExpr("x^2+x+1");
 
-
+    c = integral(1/(3-5*cos(x)), x);
 
     //!!разобраться с этой хренью. то же самое с логарифмами
     //c = sqrt(-x*y) / sqrt(-y); c = sqrt(-x*y) + sqrt(-y)
@@ -136,7 +138,7 @@ int main(int argc, char *argv[])
 
     //c = (sin(2*x)/y + x)*dx + (y - sin(x)*sin(x)/y/y)*dy;
 
-
+   // c = integral(x*x*sqrt(1+x2), x);
    // c = (1/x2) * abs(x);
 
    //c = integral(pow(cos(x), 3)/cbrt(pow(sin(x), 4)), x);
@@ -163,11 +165,13 @@ int main(int argc, char *argv[])
 //res.begin()->getExpr()->setSimplified(false);
 //res.begin()->getExpr()->simplify();
 
-   //  auto res = solveDifur(dx*y - dy*x, x, y);
-   // auto res = solveDifur(y - dy*x/dx, x, y);
+    // auto res = solveDifur(dx*y - dy*x, x, y);
+    //auto res = solveDifur(y - dy*x/dx, x, y);
+    // auto  res = solveDifur(x * derivObj(y, x, 1) - y, x, y);
+
    // auto res = solveDifur(dy/dx + 2*y, x, y);                       //y = C/e^(2x),  C in R
    // auto res = solveDifur(dy/dx + (2*y + 1)*cot(x), x, y);             // y = -1/2 (sin(x)^2 + C)/sin(x)^2,  C in R
-   // auto res = solveDifur(y*ln(y) + x*dy/dx, x, y);                // y = 1/C^(1/|x|), C in (1; inf), y = C^(1/|x|), C in (1; inf), y = 1
+    //auto res = solveDifur(y*ln(y) + x*dy/dx, x, y);                // y = 1/C^(1/|x|), C in (1; inf), y = C^(1/|x|), C in (1; inf), y = 1
    // auto res = solveDifur(pow(euler(),(y - x*x))*dy -2*x*dx, x, y);   //ln(e^x^2 + C), C in R
    // auto res = solveDifur(sqrt(x*y - 2*x)*dy/dx + x*y*y + 5*y*y, x, y);
    // auto res = solveDifur(2*(x*y + y)*dy/dx + x*(pow(y, 4) + 1), x, y);  //-1*ln(|1 + x|) + x + atan(y^2) + C3  = 0  and  C3 is in  R
@@ -200,7 +204,7 @@ int main(int argc, char *argv[])
     //auto res = solveDifur(2*dy/dx - 3*y*cos(x) + pow(euler(), -2*x) *(2+ 3*cos(x))/y, x, y); //y = e^(3/2*sin(x))*sqrt(e^(-3*sin(x) - 2*x) + C8)  and  C8 is in  R
 
 
-   // auto res = solveDifur((2*x - y + 1)*dx + (2*y - x - 1)*dy , x, y);  //y = 1/2 (1 + x + sqrt(-3*x^2 - 2*x + C3))   and  C3 is in  R"   "y = 1/2 (-1*sqrt(-3*x^2 - 2*x + C5) + 1 + x)   and  C5 is in  R
+    auto res = solveDifur((2*x - y + 1)*dx + (2*y - x - 1)*dy , x, y);  //y = 1/2 (1 + x + sqrt(-3*x^2 - 2*x + C3))   and  C3 is in  R"   "y = 1/2 (-1*sqrt(-3*x^2 - 2*x + C5) + 1 + x)   and  C5 is in  R
   //  auto res = solveDifur((3*x2 - 3*y2 + 4*x)*dx - (6*x*y + 4*y)*dy, x, y); //y = sqrt(2*C2 + 3*x^4 + 3*x*C2 + 4*x^2 + 8*x^3)*C7/(2 + 3*x)  and  C2 is in  R  and  C7 is in  { -1 } U { 1 }
    // auto res = solveDifur((6*y - 3*x2 + 3*y2)*dx + (6*x + 6*x*y)*dy, x, y);    //y =  (sqrt(x)*C7 + sqrt(x^3 + 3*x + C3)*C9) *C11/sqrt(x)  and  C3 is in  R  and  C7 is in  { -3 } U { sqrt(3) }  and  C9 is in  { sqrt(3) } U { 3 }  and  C11 is in  { -1/3 } U { 1/3 }
     //auto res = solveDifur(2*x*(1 - pow(euler(), y))*dx/pow(1 + x2, 2) + pow(euler(), y)*dy/(1 + x2), x, y);  //"y = ln(C13 + x^2*C13 + C14)  and  C13 is in  (-inf; 0)  and  C14 is in  { -1 } U { 1 }"  "y = ln(-1*C11 - x^2*C11 + 1)  and  C11 is in  (-inf; 0)"  "y = 0"
@@ -219,17 +223,35 @@ int main(int argc, char *argv[])
   //  auto res = solveDifur(derivObj(y, x, 2) - 6*derivObj(y, x, 1) + 9*y, x, y);  //y = e^(3*x) (x*C1 + C)   and  C is in  R  and  C1 is in  R
    // auto res = solveDifur(derivObj(y, x, 2) - 2*derivObj(y, x, 1) + 10*y, x, y);
 
-
-   // auto res = solveDifur(derivObj(y, x, 2) - 4*derivObj(y, x, 1) + 5*y - pow(euler(), 2*x)/cos(x), x, y);  //y = e^(2*x) (x*sin(x) + cos(x)*C2 + sin(x)*C3 + ln(|cos(x)|)*cos(x))   and  C2 is in  R  and  C3 is in  R
+    //auto res = solveDifur(derivObj(y, x, 2) + derivObj(y, x, 1) + y - 2, x, y);
+  //  auto res = solveDifur(derivObj(y, x, 2) - 4*derivObj(y, x, 1) + 5*y - pow(euler(), 2*x)/cos(x), x, y);  //y = e^(2*x) (x*sin(x) + cos(x)*C2 + sin(x)*C3 + ln(|cos(x)|)*cos(x))   and  C2 is in  R  and  C3 is in  R
     //auto res = solveDifur(derivObj(y, x, 2) - 4*derivObj(y, x, 1) - 8 + 16*x, x, y);  //y = -1/4 (-8*x^2 + e^(4*x)*C11 + 4*x + C12)   and  C11 is in  R  and  C12 is in  R
     //auto res = solveDifur(derivObj(y, x, 2) - 6*derivObj(y, x, 1) + 10*y - 51*pow(euler(), -x), x, y); //y = -1 (-3 + cos(x)*e^(4*x)*C8 + sin(x)*e^(4*x)*C9) /e^x  and  C8 is in  R  and  C9 is in  R
    // auto res = solveDifur(derivObj(y, x, 2) - 6 * derivObj(y, x, 1) + 9*y - pow(euler(), 3*x), x, y);  //y = -1/2*e^(3*x) (-1*x^2 + x*C9 + C8)   and  C8 is in  R  and  C9 is in  R
-    auto res = solveDifur(derivObj(y, x, 2) - 2*derivObj(y, x, 1) + 5*y - 21*cos(2*x) +sin(2*x) ,x, y);
+    //auto res = solveDifur(derivObj(y, x, 2) - 2*derivObj(y, x, 1) + 5*y - 21*cos(2*x) +sin(2*x) ,x, y);  //y = -1/4 (-4*cos(2*x) + cos(2*x)*e^x*C8 + sin(2*x)*e^x*C9 + 20*sin(2*x))   and  C8 is in  R  and  C9 is in  R
+   // auto res = solveDifur(derivObj(y, x, 2) + y - 2*cos(x), x, y); //y = -1/2 (-2*x*sin(x) - cos(x) + cos(x)*C8 + sin(x)*C9)   and  C8 is in  R  and  C9 is in  R
+    //auto res = solveDifur(derivObj(y, x, 2) + 9*y - 2*x*sin(3*x), x, y);  //y = -1/11664 (-648*x*sin(3*x) - 108*cos(3*x) + cos(3*x)*C8 + sin(3*x)*C9 + 1944*cos(3*x)*x^2)   and  C8 is in  R  and  C9 is in  R
+    //auto res = solveDifur(derivObj(y, x, 2) - 2*derivObj(y, x, 1) + 5*y - pow(euler(), x)*sin(2*x), x, y);  //y = -1/64*e^x (-4*sin(2*x) + cos(2*x)*C8 + sin(2*x)*C9 + 16*x*cos(2*x))   and  C8 is in  R  and  C9 is in  R
+    //auto res = solveDifur(derivObj(y, x, 2) + 9*y + 18*sin(3*x) + 18*pow(euler(), 3*x), x, y);   //y = -1/2 (-6*x*cos(3*x) + sin(3*x) + cos(3*x)*C8 + sin(3*x)*C9 + 2*e^(3*x))   and  C8 is in  R  and  C9 is in  R
+
+  //  auto res = solveDifur(derivObj(y, x, 3) + derivObj(y, x, 1), x, y);  //y = cos(x)*C1 + sin(x)*C2 + C  and  C is in  R  and  C1 is in  R  and  C2 is in  R
     qDebug() << "RES: ";
-    for (auto &it : res)
+    for (auto &it : res.first)
         qDebug() << it.toString();
 
-    c = integral(sin(x)*cos(x)/pow(euler(), x), x);
+//ScriptsNameSpace sp;
+ //   c = parseAndComplete("2 + 3", sp);
+  //  c = parseAndComplete("x + x", sp);
+ //   c = parseAndComplete("2*x + 3y - 3x + 3", sp);
+ //   c = parseAndComplete("2x*y + 3^3*x", sp);
+    //c = parseAndComplete("x(2 + 3) + (3+4)*7",sp);
+  //  c = parseAndComplete("(x + 3)(x - 2) + 2", sp);
+    // c = parseAndComplete("((x + 3)(x - 2)) + 2", sp);
+    //c = parseAndComplete("2pow(x, y + 3) + 3x*sqrt(5)", sp);
+  //  c = parseAndComplete("x*y/a + b/c - 2", sp);
+    //c = parseAndComplete("Integrate[x*D(x)]", sp);
+
+    //c = parseAndComplete("Integrate[x, x]", sp);
     qDebug();
     qDebug() << "######################################################";
     qDebug() << c.toString();
@@ -243,8 +265,8 @@ int main(int argc, char *argv[])
     widg.setExpr(c.toString());
     widg.show();
 #endif
-    MainWindow w;
-
+   MainApplicationSpace appl;
+   appl.launch();
 
     return sdsd.exec();
 }

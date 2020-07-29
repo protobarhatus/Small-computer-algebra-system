@@ -117,6 +117,8 @@ public:
     void eraseAllAddictiveWithoutVar(int var);
 
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
+
+    bool canBeZero() const override;
 private:
     bool hasIntegratingConstantAddictiveThatCanBeChanged() const;
     void pullSomeMembersIntoOneIntegratingConstant();
@@ -146,6 +148,9 @@ private:
     bool is_fractional_coefficients_allowed = false;
 };
 abs_ex checkIfItsSinusOrCosinusFormulaPolynomial(std::unique_ptr<Polynomial> && polynom);
+abs_ex checkIfItsTangentOrCotangentFormulaPolynomial(std::unique_ptr<Polynomial> && polynom);
 std::unique_ptr<Polynomial> toPolynomialPointer(const abs_ex & expr);
 std::unique_ptr<Polynomial> toPolynomialPointer(abs_ex && expr);
+
+std::unique_ptr<Polynomial> toPolynomWithFractialCoefficients(const abs_ex & expr);
 #endif // POLYNOMIAL_H

@@ -9,7 +9,7 @@ DifEquationRootCondition::DifEquationRootCondition(const abs_ex &cond, int x, in
     this->y = y;
     this->is_condition_difur = this->condition->hasDifferential();
     if (this->is_condition_difur)
-        solved_as_difur_condition = solveDifur(condition, x, y);
+        solved_as_difur_condition = solveDifur(condition, x, y).first;
     else
         solved_as_difur_condition.push_back(DifurResult(copy(condition), DifurResult::COMMON_INTEGRAL));
     this->has_condition_x = has(cond->getSetOfVariables(), x);
@@ -50,7 +50,8 @@ DifEquationRootCondition &DifEquationRootCondition::operator=(const DifEquationR
      y = difcond.y;
      is_condition_difur = difcond.is_condition_difur;
      condition = copy(difcond.condition);
-     solved_as_difur_condition = difcond.solved_as_difur_condition;
+     for (auto &it : difcond.solved_as_difur_condition)
+         this->solved_as_difur_condition.push_back(it);
      return *this;
 }
 

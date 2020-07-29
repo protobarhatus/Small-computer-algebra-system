@@ -48,6 +48,11 @@ public:
     void getRidOfAbsoluteValues() override;
 
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
+
+    void setName(const QString & name);
+    void setRange(const FunctionRange & range);
+
+    bool canBeZero() const override;
 private:
     friend Variable getVariable(int id);
     friend Variable integratingConstant();
@@ -67,5 +72,6 @@ private:
     friend VariablesDistributor;
     friend Variable systemVar();
     friend Variable systemVar(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
+    friend Variable systemVar(const FunctionRange & range);
 };
 #endif // VARIABLE_H

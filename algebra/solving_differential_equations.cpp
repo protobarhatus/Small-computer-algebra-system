@@ -13,12 +13,25 @@
 #include "derivativeobject.h"
 #include "sinus.h"
 #include "cosinus.h"
+#include "algebra/algexpr.h"
+
+QString formula(const QString & text)
+{
+    return "<big><font color=\"black\">" + text + "</font></big>";
+}
+abs_ex copyWithHtmlConstantsIndexes(const abs_ex & expr)
+{
+    abs_ex cop = copy(expr);
+    downgradeIntegratingConstantsIndexes(cop);
+    return cop;
+}
+
 int getOrderOfHighOrderEquation(const abs_ex & difur, int x, int y);
 bool isItFirstOrderExpression(const abs_ex & difur, int x, int y);
 bool isEquationOfAppropriateForm(const abs_ex & difur, int x, int y);
 bool hasDerivativeObject(const abs_ex & difur, int x, int y);
-std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y);
-std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y,
+std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y, std::vector<QString> & steps);
+std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y, std::vector<QString> & steps,
                                              const DifursRootConditions & conditions);
 bool isDifferentialOf(abs_ex & expr, int x)
 {
@@ -27,41 +40,58 @@ bool isDifferentialOf(abs_ex & expr, int x)
 
 bool isRootOfEquation(abs_ex && equation, const abs_ex & root, int var)
 {
-  //  qDebug() << root->makeStringOfExpression();
-  //  qDebug() << equation->makeStringOfExpression();
+ //   qDebug() << root->toString();
+  //  qDebug() << equation->toString();
     setUpExpressionIntoVariable(equation, root, var);
-  //  qDebug() << equation->makeStringOfExpression();
+   // qDebug() << equation->toString();
     return isZero(equation);
 }
 //true значит что это дифур с разделяющимися переменными, который по какой-то причине не удалось решить
 //(не удалось взять интеграл) и в таком случае программа не будет проверять дифур на других методах
-std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const std::unique_ptr<Polynomial> & difur, int x, int y)
+
+std::pair<std::list<abs_ex>, std::vector<QString>>  tryToSolveDifurWithSeparableVariables(const std::unique_ptr<Polynomial> & difur, int x, int y,
+                                                                                          bool & is_that_type_difur)
 {
+    std::vector<QString> steps;
     //qDebug() << difur->makeStringOfExpression();
     std::unique_ptr<Polynomial> right(new Polynomial(zero.get()));
     std::unique_ptr<Polynomial> left(new Polynomial(zero.get()));
     for (auto &it : difur->getMonomialsPointers())
     {
         if (it->getFractal().first->size() == 0)
-            return {std::list<abs_ex> (), false};
+            return {std::list<abs_ex> (), steps};
         if (isDifferentialOf(it->getFractal().first->back(), x))
             *right = *right - it;
         else if (isDifferentialOf(it->getFractal().first->back(), y))
             *left = *left + it;
         else
-            return {std::list<abs_ex> (), false};
+            return {std::list<abs_ex> (), steps};
     }
+
+    steps.push_back(QIODevice::tr("Перенести слагаемые с ") + formula("d" + getVariable(x).toString()) + QIODevice::tr(" на правую часть:"));
+    steps.push_back(formula(left->toString() + " = " + right->toString()));
+
+    bool reduced_something = false;
     abs_ex right_common_part = right->reduceCommonPart();
+    if (*right_common_part != *one)
+        reduced_something = true;
     std::unique_ptr<Fractal> right_frac(new Fractal(right_common_part * copy(right.get())));
 
     abs_ex left_common_part = left->reduceCommonPart();
+    if (*left_common_part != *one)
+        reduced_something = true;
     std::unique_ptr<Fractal> left_frac(new Fractal(left_common_part * copy(left.get())));
+    if (reduced_something)
+    {
+        steps.push_back(QIODevice::tr("Вынести за скобки общий множитель:"));
+        steps.push_back(formula(left_frac->toString() + " = " + right_frac->toString()));
+    }
 
     right_frac->separatePolynomialsDegree();
     left_frac->separatePolynomialsDegree();
     std::list<abs_ex>  res;
-
-    auto takeMultipliersWithVariablesAwayToOtherFractal = [&res, &difur](fractal_argument * from_erase,
+    bool took_something = false;
+    auto takeMultipliersWithVariablesAwayToOtherFractal = [&res, &difur, &took_something](fractal_argument * from_erase,
                                                         fractal_argument * to_insert, int var_take, int var_stay,
             bool is_from_erase_numerator)
     {
@@ -71,6 +101,7 @@ std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const 
             {
                 if (is_from_erase_numerator)
                 {
+                   // qDebug() << it->get()->toString();
                     auto roots = solveEquation(*it, var_take);
                     for (auto &it1 : roots)
                         if (isRootOfEquation(copy(difur.get()), it1, var_take))
@@ -78,6 +109,7 @@ std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const 
                 }
                 to_insert->push_back(copy(it->get()));
                 it = from_erase->erase(it);
+                took_something = true;
             }
             else
                 ++it;
@@ -97,16 +129,42 @@ std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const 
                                                    x, y, false);
     left_frac->simplify();
     right_frac->simplify();
+    if (took_something)
+    {
+        steps.push_back(QIODevice::tr("Перенести множители с '") + getVariable(x).toString() + QIODevice::tr("' вправо, а множители с '") + getVariable(y).toString() +
+                        QIODevice::tr("' - влево:"));
+        steps.push_back(formula(left_frac->toString() + " = " + right_frac->toString()));
+    }
+    if (res.size() > 0)
+    {
+        steps.push_back(QIODevice::tr("В процессе деления потеряно ") + QString::number(res.size()) + QIODevice::tr(" решений:"));
+        for (auto &it : res)
+            steps.push_back(formula(it->toString() + " = 0"));
+    }
   //  qDebug() << left_frac->makeStringOfExpression();
    // qDebug() << right_frac->makeStringOfExpression();
     if (left_frac->hasVariable(x) || right_frac->hasVariable(y))
-        return {std::list<abs_ex> (), false};
+        return {std::list<abs_ex> (), steps};
+
+    is_that_type_difur = true;
+
+    steps.push_back(QIODevice::tr("Проинтегрировать уравнение:"));
+    steps.push_back(formula(QString(QChar(8747)) + left_frac->toString() + " = " + QString(QChar(8747)) + right_frac->toString()));
+
+
     auto left_integr = integrate(toAbsEx(left_frac));
     auto right_integr = integrate(toAbsEx(right_frac));
   //  qDebug() << left_integr->toString();
  //   qDebug() << right_integr->toString();
+    if (left_integr == nullptr)
+        steps.push_back(QIODevice::tr("Не удалось найти интеграл левой части"));
+    if (right_integr == nullptr)
+        steps.push_back(QIODevice::tr("Не удалось найти интеграл правой части"));
     if (left_integr == nullptr || right_integr == nullptr)
-        return {std::list<abs_ex> (), true};
+        return {std::move(res), std::move(steps)};
+    steps.push_back(QIODevice::tr("Общий интеграл уравнения:"));
+    steps.push_back(formula(left_integr->toString() + " = " + right_integr->toString() + " + C,    C = const"));
+
     auto ic = integratingConstantExpr();
 
     res.push_back(left_integr - right_integr + std::move(ic));
@@ -114,12 +172,14 @@ std::pair<std::list<abs_ex>, bool>  tryToSolveDifurWithSeparableVariables(const 
    // qDebug() << res.back()->toString();
    // for (auto &it : res)
      //   qDebug() << it->toString();
-    return {std::move(res), true};
+    return {std::move(res), std::move(steps)};
 }
-std::pair<std::list<abs_ex>, bool> tryToSolveFirstOrderHomoheneousDifur(abs_ex && difur, int x, int y)
+std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveFirstOrderHomoheneousDifur(abs_ex && difur, int x, int y)
 {
+    std::vector<QString> steps;
     assert(difur->getId() == POLYNOMIAL);
     auto alpha = systemVarExpr(zero, nullptr, true, false);
+    static_cast<Variable*>(alpha.get())->setName(QChar(955));
     auto dx = systemVarExpr();
     difur->changeSomePartOn(D(getVariableExpr(x))->makeStringOfExpression(), dx);
     auto dy = systemVarExpr();
@@ -130,13 +190,21 @@ std::pair<std::list<abs_ex>, bool> tryToSolveFirstOrderHomoheneousDifur(abs_ex &
 
     setUpExpressionIntoVariable(difur, D(getVariableExpr(x)), dx->getId());
 
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
+
+    steps.push_back(QIODevice::tr("Подставить: ") + formula(xs + " = " + QString(QChar(955)) + xs + "; " + ys + " = " + QString(QChar(955)) + ys));
+    steps.push_back(formula(difur->toString()));
     if (difur->getId() != POLYNOMIAL)
-        return {std::list<abs_ex>(), false};
+        return {std::list<abs_ex> (), steps};
     static_cast<Polynomial*>(difur.get())->reduceCommonPart();
     if (difur->hasVariable(alpha->getId()))
-        return {std::list<abs_ex>(), false};
+        return {std::list<abs_ex> (), steps};
+    steps.push_back(QIODevice::tr("Так как ") + formula(QString(QChar(955))) + " сократились, это однородное уравнение");
+    steps.push_back(QIODevice::tr("Провести замену ") + formula(ys + " = " + unicode(951) + xs + ", => " + ys + "' = " + unicode(951) + "'" + xs + " + " + unicode(951)) + ":");
 
     abs_ex t = systemVarExpr();
+    t->setName(unicode(951));
     setUpExpressionIntoVariable(difur, t*getVariableExpr(x), y);
     //qDebug() << dy->toString();
     //qDebug() << t->toString();
@@ -148,15 +216,22 @@ std::pair<std::list<abs_ex>, bool> tryToSolveFirstOrderHomoheneousDifur(abs_ex &
     setUpExpressionIntoVariable(difur, var_to_open_abs, x);
     setUpExpressionIntoVariable(difur, getVariableExpr(x), var_to_open_abs->getId());
 
+    steps.push_back(formula(difur->toString() + " = 0"));
+    steps.push_back("");
     //  qDebug() << difur->toString();
     auto res = solveDifur(difur, x, t->getId());
-    if (res.empty())
-        return {std::list<abs_ex>(), true};
+    if (res.first.empty())
+        return {std::list<abs_ex> (), steps};
+
+    for (auto &it : res.second)
+        steps.push_back(it);
+
     std::list<abs_ex> actual_res;
     //for (auto &it : res)
     //    qDebug() << it.toString();
-
-    for (auto &it : res)
+    steps.push_back("");
+    steps.push_back(QIODevice::tr("Провести обратную замену ") + formula(unicode(951) + " = " + ys + "/" + xs));
+    for (auto &it : res.first)
         if (it.getType() != DifurResult::SOLVED_FOR_X &&
                 !(it.getType() == DifurResult::COMMON_INTEGRAL &&
                   !it.expr()->hasVariable(y)))
@@ -167,23 +242,39 @@ std::pair<std::list<abs_ex>, bool> tryToSolveFirstOrderHomoheneousDifur(abs_ex &
         setUpExpressionIntoVariable(it, getVariableExpr(y)/getVariableExpr(x), t->getId());
 
 
-    return {std::move(actual_res), true};
+    return {std::move(actual_res), steps};
 }
-std::pair<std::list<abs_ex>, bool> tryToSolveHeterogeneousDifur(const std::unique_ptr<Polynomial> & difur, int x, int y)
+QString toMultString(const abs_ex & expr)
+{
+    if (*expr == *one)
+        return "";
+    if (expr->getId() == POLYNOMIAL)
+        return "(" + expr->toString() + ")*";
+    return expr->toString() + "*";
+}
+
+std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveHeterogeneousDifur(const std::unique_ptr<Polynomial> & difur, int x, int y)
 {
     //ЛИНЕЙНОЕ
     //неоднородное уравнение в справочниках имеет вид r(x)*y' + p(x)*y = q(x), а в нашем случае,
     //  r(x)*dy + p(x)*y*dx +q(x)*dx = 0
+    std::vector<QString> steps;
     abs_ex r = copy(zero);
     abs_ex p = copy(zero);
     abs_ex q = copy(zero);
     auto monoms = difur->getMonoms();
+
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
+
     for (auto &it : *monoms)
     {
+        if (it->hasVariable(x) && it->hasVariable(y))
+            return {std::list<abs_ex>(), steps};
         if (!it->hasVariable(y))
         {
             if (!it->hasDifferential())
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
             q = std::move(q) + it->downcast()/D(getVariableExpr(x));
         }
         else
@@ -193,7 +284,7 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHeterogeneousDifur(const std::uniqu
             if (fr_with_var->getId() == y)
             {
                 if (!fr_without_var->hasDifferential())
-                    return {std::list<abs_ex>(), false};
+                    return {std::list<abs_ex> (), steps};
                 p = std::move(p) + fr_without_var->downcast()/D(getVariableExpr(x));
             }
             else if (fr_with_var->getId() == DIFFERENTIAL)
@@ -201,39 +292,82 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHeterogeneousDifur(const std::uniqu
                 r = std::move(r) + fr_without_var->downcast();
             }
             else
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
         }
     }
+    QString minus_q = (-q)->toString();
+    steps.push_back(QIODevice::tr("Это неоднородное уравнение"));
+    steps.push_back(QIODevice::tr("Привести уравнение к виду ") + formula(toMultString(r) + ys + "' + "  +toMultString(p) + ys + " = " + minus_q));
+    steps.push_back(QIODevice::tr("Провести замену ") + formula(ys + " = " + unicode(956) + unicode(957) + ", => " + ys + "' = " + unicode(956) + "'" + unicode(957) + " + " +
+                    unicode(956) + unicode(957) + "'") + ":");
+    steps.push_back(formula(toMultString(r) + unicode(956) + "'" + unicode(957) + " + " + toMultString(r) + unicode(956) + unicode(957) + "'" + " + " + toMultString(p) +
+                    unicode(956) + unicode(957) + " = " + minus_q));
+    steps.push_back(QIODevice::tr("Сгруппировать данным образом:"));
+    steps.push_back(formula(toMultString(r) + unicode(956) + "'" + unicode(957) + " + " + unicode(956) + "(" + toMultString(r) + unicode(957) + " + " + "'" + toMultString(p) +
+                    unicode(957) + ") = " + minus_q));
+    steps.push_back(QIODevice::tr("Составить систему уравнений: "));
+    steps.push_back(formula(QIODevice::tr("{ ") + toMultString(r) + unicode(957) + "'" + " + " + toMultString(p) + unicode(957) + " = 0,"));
+    steps.push_back(formula(QIODevice::tr("{ ") + toMultString(r) + unicode(956) + "'" + unicode(957) + " = " + minus_q + "."));
+    steps.push_back(QIODevice::tr("Выразить ") + unicode(957) + QIODevice::tr(" из первого уравнения:"));
+
+    auto p_r_div = -p/r;
+    steps.push_back(formula(unicode(957) + " = e^" + unicode(8747) + "(" + p_r_div->toString() + ")d" + xs));
+
    // qDebug() << r->toString();
    // qDebug() << p->toString();
    // qDebug() << q->toString();
     abs_ex antideriv = (-p/r)->antiderivative(x);
     if (antideriv == nullptr)
-        return {std::list<abs_ex>(), true};
+        return {std::list<abs_ex> (), steps};
     antideriv = getExpressionWithoutAbsoluteValues(antideriv);
     abs_ex v = pow(getEuler(), antideriv);
+
+    steps.push_back(formula(unicode(957) + " = " + v->toString()));
+
     abs_ex u = systemVarExpr();
+    u->setName(unicode(956));
 
     //qDebug() << v->toString();
    // qDebug() << (r*D(u)*v + q*D(getVariableExpr(x)))->toString();
-    auto second_eq_res = solveDifur(r*D(u)*v + q*D(getVariableExpr(x)), x, u->getId());
+    steps.push_back(QIODevice::tr("Подставить ") + formula(unicode(957)) + " во второе уравнение:");
+    auto second_difur = r*D(u)*v + q*D(getVariableExpr(x));
+    steps.push_back(formula(second_difur->toString() + " = 0"));
+    steps.push_back("");
+    auto second_eq_res = solveDifur(second_difur, x, u->getId());
+
+    for (auto &it : second_eq_res.second)
+        steps.push_back(it);
+    steps.push_back("");
+    steps.push_back(formula(ys + " = " + u->toString() + unicode(957)));
+
     std::list<abs_ex> res;
-    for (auto &it1 : second_eq_res)
+    for (auto &it1 : second_eq_res.first)
     {
        // qDebug() << it1.toString();
         if (it1.getType() == DifurResult::SOLVED_FOR_Y)
             res.push_back(getVariableExpr(y) - v * it1.expr());
     }
-    return {std::move(res), true};
+
+    return {std::move(res), steps};
 
 }
-std::pair<std::list<abs_ex>, bool> tryToSolveBernullyEquation(std::unique_ptr<Polynomial> && difur, int x, int y)
+QString toDegreeString(const abs_ex & degr)
+{
+    if (degr->getId() == FRACTAL || degr->getId() == POLYNOMIAL)
+        return + "(" + degr->toString() + ")";
+    return degr->toString();
+}
+std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveBernullyEquation(std::unique_ptr<Polynomial> && difur, int x, int y)
 {
     //уравнение бернулли имеет вид r(x)*y' + p(x)*y + q(x)*y^n = 0
     //или, в случае этой алгебр. системы r(x)*dy + p(x)*y*dx + q(x)*y^n*dx = 0
     //однако, если n < 0, то мы не сможем получить уравнение вида r(x)*dy + p(x)*y*dx + q(x) * 1/y^(-n) * dx = 0,
     //мы получим уравнение вида r(x)*y^n*dy + p(x)*y^(n + 1)*dx + q(x) * dx = 0, поэтому это надо исправить
     //почему я пишу "мы"  если я один?
+    std::vector<QString> steps;
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
+
     auto monoms = difur->getMonoms();
     abs_ex y_mult = nullptr;
 
@@ -249,14 +383,16 @@ std::pair<std::list<abs_ex>, bool> tryToSolveBernullyEquation(std::unique_ptr<Po
                 break;
             }
             else if (frac_with_y->hasVariable(y))
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
             break;
         }
     }
     if (y_mult != nullptr)
     {
+        steps.push_back(QIODevice::tr("Разделить уравнение на ") + formula(y_mult->toString()) + ":");
         for (auto &it : *monoms)
             it = toFrac(toAbsEx(std::move(it))/y_mult);
+        steps.push_back(formula(difur->toString() + " = 0"));
     }
   //  qDebug() << difur->toString();
     abs_ex r = copy(zero);
@@ -274,7 +410,7 @@ std::pair<std::list<abs_ex>, bool> tryToSolveBernullyEquation(std::unique_ptr<Po
         else
         {
             if (!frac_without_y->hasDifferentialOfVarAsMultiplier(x))
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
             if (frac_with_y->getId() == y)
                 p = std::move(p) + toAbsEx(frac_without_y)/D(getVariableExpr(x));
             else if (Degree::getArgumentOfDegree(frac_with_y.get())->getId() == y)
@@ -282,7 +418,7 @@ std::pair<std::list<abs_ex>, bool> tryToSolveBernullyEquation(std::unique_ptr<Po
                 if (n == nullptr)
                     n = Degree::getDegreeOfExpression(frac_with_y.get());
                 else if (*n != *Degree::getDegreeOfExpression(frac_with_y.get()))
-                    return {std::list<abs_ex>(), false};
+                    return {std::list<abs_ex> (), steps};
                 q = std::move(q) + toAbsEx(frac_without_y)/D(getVariableExpr(x));
             }
             else if (Degree::getArgumentOfDegree(one/frac_with_y)->getId() == y)
@@ -290,14 +426,22 @@ std::pair<std::list<abs_ex>, bool> tryToSolveBernullyEquation(std::unique_ptr<Po
                 if (n == nullptr)
                     n = -Degree::getDegreeOfExpression(one/frac_with_y);
                 else if (*n != *-Degree::getDegreeOfExpression(one/frac_with_y))
-                    return {std::list<abs_ex>(), false};
+                    return {std::list<abs_ex> (), steps};
                 q = std::move(q) + toAbsEx(frac_without_y)/D(getVariableExpr(x));
             }
             else
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
         }
 
     }
+    //r(x)*y' + p(x)*y + q(x)*y^n = 0
+    auto minus_q = -q;
+    steps.push_back(QIODevice::tr("Представить уравнение в следующем виде:"));
+    steps.push_back(formula(toMultString(r) + ys + "'" + " + " + toMultString(p) + ys + " = " + toMultString(minus_q) + ys + "^" + toDegreeString(n)));
+    steps.push_back(QIODevice::tr("Тип уравнения: уравнение Бернулли"));
+
+    if (n->getPositionRelativelyZero() >= 0)
+        steps.push_back(QIODevice::tr("Сохранить решение ") + formula(ys + " = 0"));
 
     std::list<abs_ex> res;
     //y = 0 - решение практически любого уравнения Бернулли, которое теряется в ходе дальнейших преобразований
@@ -305,11 +449,22 @@ std::pair<std::list<abs_ex>, bool> tryToSolveBernullyEquation(std::unique_ptr<Po
         res.push_back(getVariableExpr(y));
 
     // переделываем уравнение в вид r(x)dy/y^n + p(x)/y^(n-1) = -q(x), замена z(x) = 1/y^(n-1), dy/y^n = dz/(1-n)
+    steps.push_back(QIODevice::tr("Привести уравнение к виду:"));
+    steps.push_back(formula(toMultString(r) + ys + "'/" + ys + "^" + toDegreeString(n) + " + " + toMultString(p) + "/" + ys + "^" + toDegreeString(n - one) + " = " + minus_q->toString()));
     abs_ex z = systemVarExpr();
+    z->setName(unicode(947));
 
+    steps.push_back(QIODevice::tr("Провести замену: ") + formula(z->toString() + " = " + (one/pow(getVariableExpr(y), n - one))->toString() + ", => " + ys + "'/" + ys +
+                    "^" + toDegreeString(n) + " = " + z->toString() + (one/(one - n))->toString()));
+    auto subdifur = r*D(z)/(one - n) + p*z*D(getVariableExpr(x)) + q*D(getVariableExpr(x));
     //qDebug() << (r*D(z)/(one - n) + p*z*D(getVariableExpr(x)) + q*D(getVariableExpr(x)))->toString();
-    auto eq_res = solveDifur(r*D(z)/(one - n) + p*z*D(getVariableExpr(x)) + q*D(getVariableExpr(x)), x, z->getId());
-    for (auto &it : eq_res)
+    steps.push_back(QIODevice::tr(""));
+    auto eq_res = solveDifur(subdifur, x, z->getId());
+    for (auto &it : eq_res.second)
+        steps.push_back(it);
+    steps.push_back(QIODevice::tr(""));
+    steps.push_back(QIODevice::tr("Провести обратную замену ") + formula(ys + " = (1/" + z->toString() + ")^" + toDegreeString(one/(n - one))));
+    for (auto &it : eq_res.first)
     {
        // qDebug() << it.toString();
         if (it.getType() == DifurResult::SOLVED_FOR_Y)
@@ -323,7 +478,7 @@ std::pair<std::list<abs_ex>, bool> tryToSolveBernullyEquation(std::unique_ptr<Po
        // qDebug() << res.back()->toString();
     }
 
-    return {std::move(res), true};
+    return {std::move(res), steps};
 }
 //https://portal.tpu.ru/SHARED/s/SHERSTNEVA/Study_work/Studentam_ETO/Lecture_documents_diff_ur/Tab/4.%20Уравнения%20в%20полных%20дифференц.pdf
 //https://1cov-edu.ru/differentsialnye-uravneniya/integriruyuschii_mnozhitel/
@@ -376,6 +531,9 @@ abs_ex tryToFindIntegratingMultiplicator(const abs_ex & M, const abs_ex & N, int
     };
     auto xv = getVariableExpr(x);
     auto yv = getVariableExpr(y);
+    //qDebug() << xv->toString();
+    //qDebug() << yv->toString();
+    //qDebug() << (xv + yv)->toString();
     if (isItFunctionOfSuchExpr(xv + yv))
     {
         return getRes(xv + yv);
@@ -394,9 +552,12 @@ abs_ex tryToFindIntegratingMultiplicator(const abs_ex & M, const abs_ex & N, int
         return getRes(sqrt(xv) + sqrt(yv));
     return nullptr;
 }
-std::pair<std::list<abs_ex>, bool> tryToSolveDifurInFullDifferential(const std::unique_ptr<Polynomial> & difur, int x, int y)
+std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveDifurInFullDifferential(const std::unique_ptr<Polynomial> & difur, int x, int y)
 {
     //qDebug() << difur->toString();
+    std::vector<QString> steps;
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
     abs_ex p = copy(zero);
     abs_ex q = copy(zero);
     auto monoms = difur->getMonoms();
@@ -405,44 +566,62 @@ std::pair<std::list<abs_ex>, bool> tryToSolveDifurInFullDifferential(const std::
         if (it->hasDifferentialOfVarAsMultiplier(x))
         {
             if ((toAbsEx(it) / D(getVariableExpr(x)))->hasDifferential())
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
             p = std::move(p) + toAbsEx(it)/D(getVariableExpr(x));
         }
         else if (it->hasDifferentialOfVarAsMultiplier(y))
         {
             if ((toAbsEx(it) / D(getVariableExpr(y)))->hasDifferential())
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
             q = std::move(q) + toAbsEx(it)/D(getVariableExpr(y));
         }
         else
-            return {std::list<abs_ex>(), false};
+            return {std::list<abs_ex> (), steps};
     }
   //  qDebug() << p->toString();
   //  qDebug() << q->toString();
   //  qDebug() << p->derivative(y)->toString();
  //   qDebug() << q->derivative(x)->toString();
+    steps.push_back(QIODevice::tr("Представить уравнение в виде: "));
+    steps.push_back(formula(toMultString(p) + "d" + xs + " + " + toMultString(q) + "d" + ys + " = 0"));
     if (!subCompare(p->derivative(y), q->derivative(x)))
     {
         auto integr_mult = tryToFindIntegratingMultiplicator(p, q, x, y);
         if (integr_mult == nullptr)
-            return {std::list<abs_ex>(), false};
+            return {std::list<abs_ex> (), steps};
+        steps.push_back(QIODevice::tr("Домножить уравнение на ") + formula(integr_mult->toString()));
         p = std::move(p) * integr_mult;
         q = std::move(q) * std::move(integr_mult);
     }
+    steps.push_back(QIODevice::tr("Обозначить: "));
+    steps.push_back(formula(unicode(420) + " = " + p->toString()));
+    steps.push_back(formula(unicode(490) + " = " + q->toString()));
+    steps.push_back(QIODevice::tr("Т. к. ") + formula("d" + unicode(420) + "/d" + ys + " = d" + unicode(490) + "/d" + xs + " = " + p->derivative(y)->toString()) +
+                    ", это уравнение в полных дифференциалах");
+    steps.push_back(QIODevice::tr("Пусть ") + formula("F") + QIODevice::tr(" - искомая функция. Тогда ") + formula(unicode(420) + " = " + "dF/d" + xs + ", " + unicode(490) + " = " + "dF/d" + ys));
     //здесь есть два зеркальных пути. идем сначала по одному, а если не выходит, то по второму
 
     abs_ex p_x_integral = integrate(p*D(getVariableExpr(x)));
     if (p_x_integral != nullptr)
     {
+        steps.push_back(formula(QIODevice::tr("F = ") + unicode(8747) + "(" + p->toString() + ")d" + xs));
+        steps.push_back(formula("F = " + p_x_integral->toString() + " + " + unicode(966) + "(" + ys + ")"));
         abs_ex p_y_deriv = p_x_integral->derivative(y);
+        steps.push_back(formula("dF/d" + ys + " = " + "(" + p_x_integral->toString() + ")'" + " = " + p_y_deriv->toString() + unicode(966) + "'(" + ys + ")" + " = " + unicode(490)));
         abs_ex phita1 = q - p_y_deriv;
+        steps.push_back(formula(p_y_deriv->toString() + " + " + unicode(966) + "'" + "(" + ys + ")" + " = " + q->toString()));
+        steps.push_back(formula(unicode(966) + "'(" + ys + ") = " + phita1->toString()));
 
+        steps.push_back(formula(unicode(966) + "(" + ys + ") = " + unicode(8747) + "(" + phita1->toString() + ")d" + ys));
         abs_ex phita_integral = integrate(phita1*D(getVariableExpr(y)));
         if (phita_integral != nullptr)
         {
+            steps.push_back(formula(unicode(966) + "(" + ys + ") = " + phita_integral->toString()));
+            auto F = std::move(p_x_integral) + std::move(phita_integral);
+            steps.push_back(formula("F = " + F->toString() + " + C,   C = const"));
             std::list<abs_ex> res;
-            res.push_back(std::move(p_x_integral + phita_integral + integratingConstantExpr()));
-            return {std::move(res), true};
+            res.push_back(std::move(F) + integratingConstantExpr());
+            return {std::move(res), steps};
         }
 
     }
@@ -450,45 +629,58 @@ std::pair<std::list<abs_ex>, bool> tryToSolveDifurInFullDifferential(const std::
     abs_ex q_y_integral = integrate(q*D(getVariableExpr(y)));
     if (q_y_integral != nullptr)
     {
+        steps.push_back(formula(QIODevice::tr("F = ") + unicode(8747) + "(" + q->toString() + ")d" + ys));
+        steps.push_back(formula("F = " + q_y_integral->toString() + " + " + unicode(966) + "(" + xs + ")"));
         abs_ex q_x_deriv = q_y_integral->derivative(x);
+        steps.push_back(formula("dF/d" + xs + " = " + "(" + q_y_integral->toString() + ")'" + " = " + q_x_deriv->toString() + unicode(966) + "'(" + xs + ")" + " = " + unicode(420)));
         abs_ex phita2 = p - q_x_deriv;
+        steps.push_back(formula(q_x_deriv->toString() + " + " + unicode(966) + "'" + "(" + xs + ")" + " = " + p->toString()));
+        steps.push_back(formula(unicode(966) + "'(" + xs + ") = " + phita2->toString()));
 
+        steps.push_back(formula(unicode(966) + "(" + xs + ") = " + unicode(8747) + "(" + phita2->toString() + ")d" + xs));
         abs_ex phita_integral = integrate(phita2 * D(getVariableExpr(x)));
         if (phita_integral != nullptr)
         {
+            steps.push_back(formula(unicode(966) + "(" + xs + ") = " + phita_integral->toString()));
             std::list<abs_ex> res;
-            res.push_back(std::move(q_y_integral + phita_integral + integratingConstantExpr()));
-            return {std::move(res), true};
+            auto F = std::move(q_y_integral) + std::move(phita_integral);
+            steps.push_back(formula("F = " + F->toString() + " + C,   C = const"));
+            res.push_back(std::move(F) + integratingConstantExpr());
+            return {std::move(res), steps};
         }
     }
-    return {std::list<abs_ex>(), true};
+    return {std::list<abs_ex>(), steps};
 
 }
 
 
-std::list<abs_ex> solveFirstOrderDifurByMethods(const abs_ex & difur, int x, int y)
+std::pair<std::list<abs_ex>, std::vector<QString>> solveFirstOrderDifurByMethods(const abs_ex & difur, int x, int y)
 {
     auto dif_pol = toPolynomialPointer(difur);
-    auto res = tryToSolveDifurWithSeparableVariables(dif_pol, x, y);
-    if (res.second)
-        return std::move(res.first);
+    bool is_that_type_difur = false;
+    auto res = tryToSolveDifurWithSeparableVariables(dif_pol, x, y, is_that_type_difur);
+    if (is_that_type_difur)
+        return res;
     res = tryToSolveFirstOrderHomoheneousDifur(copy(difur), x, y);
-    if (res.second)
-        return std::move(res.first);
+    if (res.first.size() > 0)
+        return res;
     res = tryToSolveHeterogeneousDifur(dif_pol, x, y);
-    if (res.second)
-        return std::move(res.first);
+    if (res.first.size() > 0)
+        return res;
     res = tryToSolveBernullyEquation(toPolynomialPointer(difur), x, y);
-    if (res.second)
-        return std::move(res.first);
+    if (res.first.size() > 0)
+        return res;
     res = tryToSolveDifurInFullDifferential(toPolynomialPointer(difur), x, y);
-    if (res.second)
-        return std::move(res.first);
-    return std::list<abs_ex> ();
+    if (res.first.size() > 0)
+        return res;
+    return {std::list<abs_ex> (), std::vector<QString>()};
 }
 
-std::pair<std::list<abs_ex>, bool> tryToSolveDifurByReintegration(const abs_ex & difur, int x, int y)
+std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveDifurByReintegration(const abs_ex & difur, int x, int y)
 {
+    std::vector<QString> steps;
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
     bool can_solve_by_reintegration = true;
     int order = getOrderOfHighOrderEquation(difur, x, y);
     difur->doSomethingInDerivativeObject([&can_solve_by_reintegration, order](int, int, int ord){
@@ -496,13 +688,24 @@ std::pair<std::list<abs_ex>, bool> tryToSolveDifurByReintegration(const abs_ex &
             can_solve_by_reintegration = false;
     });
     if (!can_solve_by_reintegration)
-        return {std::list<abs_ex>(), false};
+        return {std::list<abs_ex> (), steps};
 
     abs_ex cop = copy(difur);
     abs_ex t = systemVarExpr();
     cop->changeSomePartOn(derivative(getVariableExpr(y), x, order)->makeStringOfExpression(), t);
 
     auto eq_res = solveEquation(cop, t->getId());
+    steps.push_back(QIODevice::tr("Выразить производную и представить уравнение в виде:"));
+    if (eq_res.size() == 1)
+    {
+        steps.push_back(formula(derivative(getVariableExpr(y), x, order)->toString() + " = " + eq_res.begin()->get()->toString()));
+    }
+    else if (eq_res.size() > 0)
+    {
+        for (auto &it : eq_res)
+            steps.push_back(formula("[" + derivative(getVariableExpr(y), x, order)->toString() + " = " + it->toString()));
+    }
+    steps.push_back(QIODevice::tr("Проинтегрировать уравнение ") + formula(QString::number(order)) + " раз:");
 
     std::list<abs_ex> res;
     for (auto &it : eq_res)
@@ -512,16 +715,22 @@ std::pair<std::list<abs_ex>, bool> tryToSolveDifurByReintegration(const abs_ex &
         {
             integr = integrate(integr * D(getVariableExpr(x)));
             if (integr != nullptr)
+            {
                 integr = std::move(integr) + integratingConstantExpr();
+                steps.push_back(formula(derivative(getVariableExpr(y), x, order - i - 1)->toString() + " = " + copyWithHtmlConstantsIndexes( integr)->toString()));
+            }
         }
         if (integr != nullptr)
-            res.push_back(std::move(getVariableExpr(y) - integr));
+            res.push_back(getVariableExpr(y) - std::move(integr));
     }
-    return {std::move(res), true};
+    return {std::move(res), steps};
 }
 
-std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderDifurByLoweringOrder(const abs_ex & difur, int x, int y)
+std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveHighOrderDifurByLoweringOrder(const abs_ex & difur, int x, int y)
 {
+    std::vector<QString> steps;
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
     int min_order = std::numeric_limits<int>::max();
   //  qDebug() << difur->toString();
     difur->doSomethingInDerivativeObject([&min_order, y](int var, int, int order) {
@@ -529,9 +738,12 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderDifurByLoweringOrder(const
              min_order = std::min(min_order, order);
     });
     if (min_order == 0)
-        return {std::list<abs_ex>(), false};
+        return {std::list<abs_ex> (), steps};
 
     abs_ex z = systemVarExpr();
+    z->setName(unicode(952));
+    steps.push_back(QIODevice::tr("Сделать замену ") + formula(z->toString() + " = " + derivative(getVariableExpr(y), x, min_order)->toString()));
+
     int max_order = getOrderOfHighOrderEquation(difur, x, y);
     abs_ex cop = copy(difur);
     for (int i = min_order; i <= max_order; ++i)
@@ -542,45 +754,73 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderDifurByLoweringOrder(const
     cop->setSimplified(false);
     cop = cop->downcast();
 
-    auto pre_res = solveDifurInCommonIntegral(cop, x, z->getId());
+    auto pre_res = solveDifurInCommonIntegral(cop, x, z->getId(), steps);
+    steps.push_back(QIODevice::tr("Решения: "));
+    for (auto &it : pre_res)
+        steps.push_back(formula(copyWithHtmlConstantsIndexes(  it)->toString() + " = 0"));
+    steps.push_back(QIODevice::tr("Сделать обратную замену"));
 
     std::list<abs_ex> res;
     for (auto &it : pre_res)
     {
         setUpExpressionIntoVariable(it, derivative(getVariableExpr(y), x, min_order), z->getId());
-        res.splice(res.end(), solveDifurInCommonIntegral(it, x, y));
+        steps.push_back(formula(it->toString() + " = 0"));
+        steps.push_back("");
+        res.splice(res.end(), solveDifurInCommonIntegral(it, x, y, steps));
+        steps.push_back("");
     }
-    return {std::move(res), true};
+    return {std::move(res), steps};
 }
 
-std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderDifurWithoutX(const abs_ex & difur, int x, int y)
+std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveHighOrderDifurWithoutX(const abs_ex & difur, int x, int y)
 {
+    std::vector<QString> steps;
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
     if (difur->hasVariable(x))
-        return {std::list<abs_ex>(), false};
+        return {std::list<abs_ex> (), steps};
 
     if (getOrderOfHighOrderEquation(difur,x ,y) > 2)
-        return {std::list<abs_ex>(), false};
+        return {std::list<abs_ex> (), steps};
 
     abs_ex cop = copy(difur);
 
     abs_ex z = systemVarExpr();
+    z->setName(unicode(946));
+    steps.push_back("Сделать замену " + formula(ys + "' = " + z->toString() + "(" + ys + ")"));
+    steps.push_back("Тогда " + formula(ys + "'' = " + z->toString() + "'"  + z->toString()));
+
     cop->changeSomePartOn(derivative(getVariableExpr(y), x, 1)->toString(), z);
     abs_ex z_der = derivative(z, y, 1)*z;
     cop->changeSomePartOn(derivative(getVariableExpr(y), x, 2)->toString(), z_der);
    // qDebug() << cop->toString();
-    auto pre_res = solveDifurInCommonIntegral(cop, y, z->getId());
+    steps.push_back("Решить получившееся уравнение относительно " + formula(ys + " и " + z->toString()));
+    auto pre_res = solveDifurInCommonIntegral(cop, y, z->getId(), steps);
 
     std::list<abs_ex> res;
     for (auto &it : pre_res)
     {
-        qDebug() << it->toString();
+        //qDebug() << it->toString();
+        steps.push_back(QIODevice::tr("В выражении ") + formula(it->toString() + " = 0 ") + QIODevice::tr("выполнить обратную замену"));
+
         setUpExpressionIntoVariable(it, D(getVariableExpr(y))/D(getVariableExpr(x)), z->getId());
-        res.splice(res.end(), solveDifurInCommonIntegral(it, x, y));
+
+        steps.push_back(formula(it->toString() + " = 0"));
+        steps.push_back(QIODevice::tr("Решить получившееся уравнение"));
+        steps.push_back("");
+
+        res.splice(res.end(), solveDifurInCommonIntegral(it, x, y, steps));
+
+        steps.push_back("");
     }
-    return {std::move(res), true};
+    return {std::move(res), steps};
 }
-std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderLinearHomogeneousDifur(const abs_ex & difur, int x, int y)
+std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveHighOrderLinearHomogeneousDifur(const abs_ex & difur, int x, int y)
 {
+    std::vector<QString> steps;
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
+
     int order = getOrderOfHighOrderEquation(difur, x, y);
     std::vector<abs_ex> coefs(order + 1);
     for (auto &it : coefs)
@@ -590,7 +830,7 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderLinearHomogeneousDifur(con
     for (auto &it : *monoms)
     {
         if (!it->hasVariable(y) || it->hasVariable(x))
-            return {std::list<abs_ex>(), false};
+            return {std::list<abs_ex> (), steps};
         auto frac_without_y = it->getFractalWithoutVariable(y);
         auto frac_with_y = toAbsEx(it)/toAbsEx(frac_without_y);
         if (frac_with_y->getId() == y)
@@ -601,20 +841,39 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderLinearHomogeneousDifur(con
             coefs[ord] = std::move(coefs[ord]) + std::move(frac_without_y);
         }
         else
-            return {std::list<abs_ex>(), false};
+            return {std::list<abs_ex> (), steps};
     }
+    steps.push_back(QIODevice::tr("Представить уравнение в следующем виде:"));
+    QString equation_view;
+    for (int i = order; i >= 0; --i)
+        equation_view += toMultString(coefs[i]) + derivative(getVariableExpr(y), x, i)->toString() + (i == 0 ? "" : " + ");
+    steps.push_back(formula(equation_view + " = 0"));
+    steps.push_back(QIODevice::tr("Тип: однородное уравнение ") + formula(QString::number(order)) + QIODevice::tr("-го порядка"));
+
     auto t = systemVarExpr();
+    t->setName(unicode(968));
+
     abs_ex charasteristic_equation = copy(zero);
     for (int i = 0; i < coefs.size(); ++i)
-        charasteristic_equation = std::move(charasteristic_equation) + std::move(coefs[i]) * pow(t, i);
+        charasteristic_equation = std::move(charasteristic_equation) + coefs[i] * pow(t, i);
+
+    steps.push_back(QIODevice::tr("Составить характеристическое уравнение:"));
+    QString charachteristic_equation_string;
+    for (int i = order; i >= 0; --i)
+        charachteristic_equation_string += toMultString(coefs[i]) + pow(t, i)->toString() + (i == 0 ? "" : " + ");
+    steps.push_back(formula(charachteristic_equation_string + " = 0"));
+    steps.push_back(QIODevice::tr("Решить характеристическое уравнение относительно ") + formula(t->toString()));
  //   qDebug() << charasteristic_equation->toString();
+
     auto roots = solvePolynomialEquationInComplexNumber(charasteristic_equation, t->getId());
     if (!roots.second)
-        return {std::list<abs_ex>(), true};
+        return {std::list<abs_ex> (), steps};
+
     abs_ex result = copy(zero);
     abs_ex x_var = getVariableExpr(x);
     for (auto &it : roots.first)
     {
+        steps.push_back(formula(t->toString() + " = " + it.first.toString() + "       |x" + QString::number(it.second)));
         for (int i = 0; i < it.second; ++i)
         {
            // qDebug() << result->toString();
@@ -626,13 +885,19 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderLinearHomogeneousDifur(con
                         (integratingConstantExpr() * sin(it.first.b() * x_var) + integratingConstantExpr() * cos(it.first.b() * x_var));
         }
     }
+    steps.push_back(QIODevice::tr("Построить ответ из корней характеристического уравнения:"));
+    steps.push_back(formula(ys + " = " + copyWithHtmlConstantsIndexes(result)->toString()));
     result = getVariableExpr(y) - std::move(result);
     std::list<abs_ex> res;
     res.push_back(std::move(result));
-    return {std::move(res), true};
+    return {std::move(res), steps};
 }
-std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderHeterogeneousDifur(const abs_ex & difur, int x, int y)
+std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveHighOrderHeterogeneousDifur(const abs_ex & difur, int x, int y)
 {
+    std::vector<QString> steps;
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
+
     int order = getOrderOfHighOrderEquation(difur, x, y);
     std::vector<abs_ex> coefs(order + 1);
     for (auto &it : coefs)
@@ -648,7 +913,7 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderHeterogeneousDifur(const a
            // qDebug() << it->get()->getFractalWithoutVariable(x)->toString();
            // qDebug() << frac_with_x->toString();
             if (frac_with_x->hasVariable(y))
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
             for (auto &it : *monoms)
                 it = it / frac_with_x;
             break;
@@ -661,7 +926,7 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderHeterogeneousDifur(const a
         if (it->hasVariable(y))
         {
             if (it->hasVariable(x))
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
             auto frac_without_y = it->getFractalWithoutVariable(y);
             auto frac_with_y = toAbsEx(it)/toAbsEx(frac_without_y);
             if (frac_with_y->getId() == y)
@@ -672,7 +937,7 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderHeterogeneousDifur(const a
                 coefs[ord] = std::move(coefs[ord]) + std::move(frac_without_y);
             }
             else
-                return {std::list<abs_ex>(), false};
+                return {std::list<abs_ex> (), steps};
             related_homogeneous_difur = std::move(related_homogeneous_difur) + toAbsEx(it);
         }
         else
@@ -680,24 +945,34 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderHeterogeneousDifur(const a
             f_x = std::move(f_x) + toAbsEx(it);
         }
     }
+
     //a_0 * y''.. + a_1 * ...... + a_n * y = f_x
     f_x = -std::move(f_x);
-
+    steps.push_back(QIODevice::tr("Представить уравнение в виде:"));
+    steps.push_back(formula(related_homogeneous_difur->toString() + " = " + f_x->toString()));
+    steps.push_back(QIODevice::tr("Тип: неоднородное уравнение ") + formula(QString::number(order)) + QIODevice::tr("-го порядка"));
+    steps.push_back(QIODevice::tr("Решить соответствующее однородное дифференциальное уравнение:"));
+    steps.push_back("");
     auto common_solving_list = solveDifur(related_homogeneous_difur, x, y);
-    assert(common_solving_list.size() == 1 &&
-           common_solving_list.begin()->getType() == DifurResult::SOLVED_FOR_Y);
-    auto common_solving_expr = copy(common_solving_list.begin()->expr());
+    for (auto &it : common_solving_list.second)
+        steps.push_back(it);
+    steps.push_back("");
+    steps.push_back("");
+
+    assert(common_solving_list.first.size() == 1 &&
+           common_solving_list.first.begin()->getType() == DifurResult::SOLVED_FOR_Y);
+    auto common_solving_expr = copy(common_solving_list.first.begin()->expr());
     assert(common_solving_expr->getId() == POLYNOMIAL || common_solving_expr->getId() == FRACTAL);
     std::unique_ptr<Polynomial> common_solving;
     if (common_solving_expr->getId() == POLYNOMIAL)
-        common_solving = toPolynomialPointer(std::move(common_solving_expr));
+        common_solving = toPolynomialPointer(common_solving_expr);
     else
     {
         auto fr = static_cast<Fractal*>(common_solving_expr.get());
         assert(fr->canTurnIntoPolynomWithOpeningParentheses(true));
         common_solving = fr->turnIntoPolynomWithOpeningParentheses(true);
     }
-    //qDebug()<< common_solving->toString();
+  //  qDebug()<< common_solving->toString();
     std::vector<abs_ex> y_coefs (order);
     for (auto &it : y_coefs)
         it = copy(zero);
@@ -727,6 +1002,9 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderHeterogeneousDifur(const a
     std::vector<int> variables(order);
     for (auto &it : variables)
         it = systemVarExpr()->getId();
+    for (int i = 0; i < variables.size(); ++i)
+        getVariable(variables[i]).setName(unicode(955) + "<sub>" + QString::number(i + 1) + "</sub>" + "'");
+
     std::vector<abs_ex> equations(order);
     for (auto &it : equations)
         it = copy(zero);
@@ -743,48 +1021,81 @@ std::pair<std::list<abs_ex>, bool> tryToSolveHighOrderHeterogeneousDifur(const a
         if (i == order - 1)
             equations[i] = std::move(equations[i]) - f_x/coefs[order];
     }
+
+    //for (auto &it : equations)
+     //   qDebug() << it->toString();
+    steps.push_back(QIODevice::tr("Решение соответствующего однородного уравнения:"));
+    abs_ex out_cop = licCopy(common_solving_expr);
+    downgradeIntegratingConstantsIndexes(out_cop);
+    steps.push_back(formula(ys + " = " + out_cop->toString()));
+    steps.push_back(QIODevice::tr("В получившимся решении однородного уравнения заменить константы интегрирования на производные неизвестных функции ") + formula(unicode(955) +
+                    "<sub>1</sub> ... " + unicode(955) + "<sub>" + QString::number(order) + "</sub>"));
+    auto out_cop_set = out_cop->getSetOfVariables();
+    int counter = 0;
+    for (auto &it : out_cop_set)
+        if (isIntegratingConstant(it))
+            setUpExpressionIntoVariable(out_cop, getVariableExpr(variables[counter++]), it);
+    steps.push_back(formula(ys + " = " + out_cop->toString()));
+    steps.push_back(QIODevice::tr("Для нахождения этих функций составить систему уравнений:"));
+    for (auto &it : equations)
+        steps.push_back(formula("{  " + it->toString() + " = 0"));
+    steps.push_back(QIODevice::tr("Решить систему линейных уравнений относительно производных функций ") + formula(unicode(955)));
+
     auto equations_result = solveSystemOfEquations(equations, variables);
+    for (int i = 0; i < equations_result.size(); ++i)
+        steps.push_back(formula(getVariable(variables[i]).toString() + " = " + equations_result[i][0]->toString()));
+    steps.push_back(QIODevice::tr("Найти функции ") + formula(unicode(955)) + QIODevice::tr(" интегрированием"));
+
     if (equations_result.size() == 0)
-        return {std::list<abs_ex>(), true};
+        return {std::list<abs_ex> (), steps};
     auto answer = copy(zero);
     for (int i = 0; i < order; ++i)
     {
+
+       // qDebug() << equations_result[i][0]->toString();
         auto integr = integrate(equations_result[i][0]*D(getVariableExpr(x)));
-        //qDebug() << equations_result[i][0]->toString();
+
+       // qDebug() << integr->toString();
         if (integr == nullptr)
-            return {std::list<abs_ex>(), true};
+            return {std::list<abs_ex> (), steps};
+
+        steps.push_back(formula(unicode(955) + "<sub>" + QString::number(i + 1) + "</sub>" + " = " + unicode(8747) + "(" + equations_result[i][0]->toString() + ")d" + xs +
+                " = " + integr->toString() + " + C,      C = const"));
         answer = std::move(answer) + y_coefs[i] * (std::move(integr) + integratingConstantExpr());
     }
+    steps.push_back(QIODevice::tr("Подставить функции ") + formula(unicode(955)) + " в ответ:");
+    steps.push_back(formula(ys + " = " + answer->toString()));
+
     answer = getVariableExpr(y) - answer;
     std::list<abs_ex> res;
     res.push_back(std::move(answer));
-    return {std::move(res), true};
+    return {std::move(res), steps};
 
 }
-std::list<abs_ex> solveHighOrderDifurByMethods(const abs_ex & difur, int x, int y)
+std::pair<std::list<abs_ex>, std::vector<QString>> solveHighOrderDifurByMethods(const abs_ex & difur, int x, int y)
 {
-    auto reintegr_res = tryToSolveDifurByReintegration(difur, x, y);
-    if (reintegr_res.second)
-        return std::move(reintegr_res.first);
+    auto res = tryToSolveDifurByReintegration(difur, x, y);
+    if (res.first.size() > 0)
+        return res;
+
+     res = tryToSolveHighOrderLinearHomogeneousDifur(difur, x, y);
+     if (res.first.size() > 0)
+         return res;
 
 
-    auto homogen_res = tryToSolveHighOrderLinearHomogeneousDifur(difur, x, y);
-    if (homogen_res.second)
-        return std::move(homogen_res.first);
+     res = tryToSolveHighOrderDifurByLoweringOrder(difur, x, y);
+     if (res.first.size() > 0)
+         return res;
+     res = tryToSolveHighOrderHeterogeneousDifur(difur, x, y);
+     if (res.first.size() > 0)
+         return res;
+
+     res = tryToSolveHighOrderDifurWithoutX(difur, x, y);
+     if (res.first.size() > 0)
+         return res;
 
 
-    auto lowerord_res = tryToSolveHighOrderDifurByLoweringOrder(difur, x, y);
-    if (lowerord_res.second)
-        return std::move(lowerord_res.first);
-
-    auto without_x_res = tryToSolveHighOrderDifurWithoutX(difur, x, y);
-    if (without_x_res.second)
-        return std::move(without_x_res.first);
-
-    auto heterogen_res = tryToSolveHighOrderHeterogeneousDifur(difur, x, y);
-    if (heterogen_res.second)
-        return std::move(heterogen_res.first);
-    return std::list<abs_ex>();
+    return {std::list<abs_ex>(), std::vector<QString>()};
 }
 
 
@@ -792,8 +1103,11 @@ std::list<abs_ex> solveHighOrderDifurByMethods(const abs_ex & difur, int x, int 
 
 
 
-std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y)
+std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y, std::vector<QString> & steps)
 {
+    QString xs = getVariable(x).toString();
+    QString ys = getVariable(y).toString();
+
     std::list<abs_ex> res;
     if (isZero(difur))
     {
@@ -816,7 +1130,25 @@ std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y
             res.push_back(copy(zero));
             return res;
         }
+        steps.push_back(QIODevice::tr("Решить уравнение ") + formula(difur->toString() + " = 0"));
+        steps.push_back(formula(unicode(8747) + difur->toString() + " = " + unicode(8747) + "0"));
+        steps.push_back(formula(getVariable(var).toString() + " =  C,   C = const"));
+
         res.push_back(getVariableExpr(var) - integratingConstantExpr());
+        return res;
+    }
+    if (difur->getId() == DERIVATIVE_OBJECT && isEquationOfAppropriateForm(difur, x, y))
+    {
+        steps.push_back(QIODevice::tr("Решить уравнение ") + formula(difur->toString() + " = 0") + ":");
+        int order = getOrderOfHighOrderEquation(difur, x, y);
+        steps.push_back(QIODevice::tr("Проинтегрировать правую часть ") + formula(QString::number(order)) + QIODevice::tr(" раз"));
+        abs_ex integr = copy(zero);
+        for (int i = 0; i < order; ++i)
+        {
+            integr = integr->antiderivative(x) + integratingConstantExpr();
+            steps.push_back(formula(derivative(getVariableExpr(y), x, order - i - 1)->toString() + " = " + copyWithHtmlConstantsIndexes(integr)->toString()));
+        }
+        res.push_back(getVariableExpr(y) - std::move(integr));
         return res;
     }
     if (difur->getId() == FRACTAL)
@@ -824,27 +1156,34 @@ std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y
         auto fr = static_cast<Fractal*>(difur.get())->getFractal();
         DifursRootConditions conditions;
         for (auto &it : *fr.second)
+        {
             conditions.addCondition(DifEquationRootCondition(it, x, y));
+            steps.push_back(QIODevice::tr("Условие ") + formula(it->toString() + " " + unicode(8800) + " 0"));
+        }
         for (auto &it : *fr.first)
-            res.splice(res.end(), solveDifurInCommonIntegral(it, x, y, conditions));
+            res.splice(res.end(), solveDifurInCommonIntegral(it, x, y, steps, conditions));
         return res;
     }
+
+    steps.push_back(QIODevice::tr("Решить дифференциальное уравнение ") + formula(difur->toString() + " = 0"));
+
+
     if (difur->getId() == DEGREE)
-        return solveDifurInCommonIntegral(copy(Degree::getArgumentOfDegree(difur.get())), x, y,
+        return solveDifurInCommonIntegral(copy(Degree::getArgumentOfDegree(difur.get())), x, y, steps,
                                           DifEquationRootCondition(Degree::getDegreeOfExpression(difur.get()),
                                                                    x, y));
     if (difur->getId() == ABSOLUTE_VALUE || difur->getId() == ARCTANGENT || difur->getId() == ARCSINUS)
-        return solveDifurInCommonIntegral(getArgumentOfFunction(difur), x, y);
+        return solveDifurInCommonIntegral(getArgumentOfFunction(difur), x, y, steps);
     if (difur->getId() == SINUS)
-        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - getPi()*systemVarExpr(), x, y);
+        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - getPi()*systemVarExpr(), x, y, steps);
     if (difur->getId() == COSINUS)
-        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - getPi()/two - getPi()*systemVarExpr(), x, y);
+        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - getPi()/two - getPi()*systemVarExpr(), x, y, steps);
     if (difur->getId() == TANGENT)
-        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - getPi()*systemVarExpr(), x, y);
+        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - getPi()*systemVarExpr(), x, y, steps);
     if (difur->getId() == COTANGENT)
-        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - getPi()/two - getPi()*systemVarExpr(), x, y);
+        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - getPi()/two - getPi()*systemVarExpr(), x, y, steps);
     if (difur->getId() == LOGARITHM)
-        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - one, x, y);
+        return solveDifurInCommonIntegral(getArgumentOfFunction(difur) - one, x, y, steps);
     if (isEquationOfAppropriateForm(difur, x, y))
     {
         if (isItFirstOrderExpression(difur, x, y))
@@ -852,16 +1191,23 @@ std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y
           //  qDebug() << difur->toString();
             if (hasDerivativeObject(difur, x, y))
             {
+                steps.push_back(QIODevice::tr("Представить производную в дифференциальном виде ") + formula(ys + "' = d" + ys + "/d" + xs));
                 abs_ex y_der = D(getVariableExpr(y))/D(getVariableExpr(x));
                 difur->changeSomePartOn(derivative(getVariableExpr(y), x, 1)->makeStringOfExpression(), y_der);
                 difur->setSimplified(false);
                 difur->simplify();
-
-                return solveDifurInCommonIntegral(difur->downcast(), x, y);
+               // qDebug() << difur->toString();
+                return solveDifurInCommonIntegral(difur->downcast(), x, y, steps);
             }
-            return solveFirstOrderDifurByMethods(difur, x, y);
+            auto solv = solveFirstOrderDifurByMethods(difur, x, y);
+            for (auto &it : solv.second)
+                steps.push_back(std::move(it));
+            return std::move(solv.first);
         }
-        return solveHighOrderDifurByMethods(difur, x, y);
+        auto solv = solveHighOrderDifurByMethods(difur, x, y);
+        for (auto &it : solv.second)
+            steps.push_back(std::move(it));
+        return std::move(solv.first);
     }
     abs_ex difur_with_try_to_change_differentials = copy(difur);
     abs_ex dy_on_change = D(getVariableExpr(x))*derivative(getVariableExpr(y), x, 1);
@@ -871,23 +1217,30 @@ std::list<abs_ex>  solveDifurInCommonIntegral(const abs_ex & difur, int x, int y
             zero;
     if (isEquationOfAppropriateForm(difur, x, y))
     {
-        return solveHighOrderDifurByMethods(difur, x, y);
+        steps.push_back(QIODevice::tr("Поделить уравнение на dx и записать дробь ") + formula("d" + ys + "/d" + xs + " в виде " + ys + "'"));
+        auto solv = solveHighOrderDifurByMethods(difur, x, y);
+        for (auto &it : solv.second)
+            steps.push_back(std::move(it));
+        return std::move(solv.first);
     }
+    return std::list<abs_ex>();
 }
-std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y,
+std::list<abs_ex> solveDifurInCommonIntegral(const abs_ex & difur, int x, int y, std::vector<QString> & steps,
                                              const DifursRootConditions & conditions)
 {
     auto preres = solveDifur(difur, x, y);
+    for (auto &it : preres.second)
+        steps.push_back(it);
     std::list<abs_ex> res;
   //  qDebug() << difur->makeStringOfExpression();
-    for (auto &it : preres)
+    for (auto &it : preres.first)
     {
 
      //   qDebug() << it.toString();
         if (conditions.check(it))
             res.push_back(it.toCommonIntegral(x, y));
     }
-    return res;
+    return  res ;
 }
 FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(AbstractExpression * expr)
 {
@@ -1205,13 +1558,13 @@ void uniteSameResults(std::list<abs_ex> & list)
           //  qDebug() << it->get()->toString();
           //  qDebug() << it1->get()->toString();
            // qDebug() << VariablesDistributor::amountOfVariable(1500000000);
-           /* if (isIntegratingConstantAndCanChangeIt(sub->getId()))
-            {
-                FunctionRange range1 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(*it);
-                FunctionRange range2 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(*it1);
-                *it = *it + integratingConstantExpr(unification(range1, range2));
-                it1 = list.erase(it1);
-            }*///они не могут быть одновременно нулями, это сверху раскрывается
+           // if (isIntegratingConstantAndCanChangeIt(sub->getId()))
+            //{
+             //   FunctionRange range1 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(*it);
+             //   FunctionRange range2 = getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(*it1);
+             //   *it = *it + integratingConstantExpr(unification(range1, range2));
+             //   it1 = list.erase(it1);
+            //}//они не могут быть одновременно нулями, это сверху раскрывается
             if (isZero(*it) || isZero(*it1))
             {
                 if (isZero(*it))
@@ -1231,13 +1584,13 @@ void uniteSameResults(std::list<abs_ex> & list)
                     ++it1;
                 it->get()->simplify();
             }
-          /*  else if (isIntegratingConstantAndCanChangeIt((*it / *it1)->getId()))
-            {
-                FunctionRange range1 = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(*it);
-                FunctionRange range2 = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(*it1);
-                *it = *it * integratingConstantExpr(unification(range1, range2));
-                it1 = list.erase(it1);
-            }*/
+        //    else if (isIntegratingConstantAndCanChangeIt((*it / *it1)->getId()))
+        //    {
+         //       FunctionRange range1 = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(*it);
+        //        FunctionRange range2 = getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(*it1);
+         //       *it = *it * integratingConstantExpr(unification(range1, range2));
+        //        it1 = list.erase(it1);
+        //    }
             else if (it->get()->tryToMergeIdenticalBehindConstantExpressions(*it1))
             {
                 it1 = list.erase(it1);
@@ -1327,9 +1680,11 @@ void simplifyAndDowncast(std::list<abs_ex> & list)
     }
 }
 
-std::list<DifurResult> solveDifur(const abs_ex &difur, int x, int y)
+std::pair<std::list<DifurResult>, std::vector<QString>> solveDifur(const abs_ex &difur, int x, int y)
 {
-    auto res = solveDifurInCommonIntegral(difur, x, y);
+    std::vector<QString> steps;
+    auto res = solveDifurInCommonIntegral(difur, x, y, steps);
+    //qDebug() << res.begin()->get()->toString();
     std::list<abs_ex> solved_for_y;
     std::list<abs_ex> solved_for_x;
     for (auto it = res.begin(); it != res.end();)
@@ -1387,7 +1742,7 @@ std::list<DifurResult> solveDifur(const abs_ex &difur, int x, int y)
         result.push_back(DifurResult(std::move(it), DifurResult::SOLVED_FOR_X));
     for (auto &it : solved_for_y)
         result.push_back(DifurResult(std::move(it), DifurResult::SOLVED_FOR_Y));
-    return result;
+    return {std::move(result), std::move(steps)};
 }
 
 
@@ -1412,8 +1767,8 @@ bool isEquationOfAppropriateForm(const abs_ex & difur, int x, int y)
 bool isItFirstOrderExpression(const abs_ex & difur, int x, int y)
 {
     bool has_non_first_order_deriv = false;
-    difur->doSomethingInDerivativeObject([&has_non_first_order_deriv](int y, int x, int order){
-        if (order > 1)
+    difur->doSomethingInDerivativeObject([&has_non_first_order_deriv, x, y](int _y, int _x, int order){
+        if (order > 1 && x == _x && y == _y)
             has_non_first_order_deriv = true;
     });
     return !has_non_first_order_deriv;
@@ -1422,16 +1777,17 @@ bool isItFirstOrderExpression(const abs_ex & difur, int x, int y)
 int getOrderOfHighOrderEquation(const abs_ex & difur, int x, int y)
 {
     int order = 0;
-    difur->doSomethingInDerivativeObject([&order](int y, int x, int _order){
-        order = std::max(order, _order);
+    difur->doSomethingInDerivativeObject([&order, x, y](int _y, int _x, int _order){
+        if (_y == y && _x == x)
+            order = std::max(order, _order);
     });
     return order;
 }
 bool hasDerivativeObject(const abs_ex & difur, int x, int y)
 {
     bool has_object = false;
-    difur->doSomethingInDerivativeObject([&has_object](int, int, int order) {
-        if (order > 0)
+    difur->doSomethingInDerivativeObject([&has_object, x, y](int _y, int _x, int order) {
+        if (order > 0 && x == _x && y == _y)
             has_object = true;
     });
     return has_object;
@@ -1477,7 +1833,7 @@ QString DifurResult::toString() const
     auto set = this->result->getSetOfVariables();
     for (auto &it : set)
         if (isIntegratingConstant(it))
-            res += "  and  " + makeIntegratingConstantName(it) + QString::fromStdWString(L" is in  ")
+            res += "  and  " + makeIntegratingConstantName(it) + " " + QChar(8712) + "  "
                     + VariablesDistributor::getVariablesDefinition(it)->getRange().toString();
     return res;
 }

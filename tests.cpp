@@ -1067,7 +1067,7 @@ void testAlgMod()
 },
 []()->bool {
     AlgExpr x = var(), a = var();
-    return integral(1/cos(a*x), x) == ln(abs(tan(a*x/2 + pi()/4)))/a;
+    return integral(1/cos(a*x), x) == (-1*ln(abs(cos(x*a))) + ln(abs(1 + sin(x*a)))) /a;
 },
 []()->bool {
     AlgExpr x = var();
@@ -1115,11 +1115,8 @@ void testAlgMod()
 },
 []()->bool { //235
     AlgExpr x = var(), a = var();
-    return integral(1/pow(cos(a*x), 3), x) == (1*((-1*ln(abs(((-1*tan((1*x*a/2)))+(1)))))+
-                                                    (-1*ln(abs(((1)+(tan((1*x*a/2))))))*pow(sin((x*a)),2))+
-                                                    (ln(abs(((1)+(tan((1*x*a/2)))))))+(sin((x*a)))+
-                                                    (ln(abs(((-1*tan((1*x*a/2)))+(1))))*pow(sin((x*a)), 2)))/
-                                               ((-1*pow(sin((x*a)), 2))+(1))/a)/2;
+    return integral(1/pow(cos(a*x), 3), x) ==   (-1*ln(abs(cos(x*a))) - ln(abs(1 + sin(x*a)))*pow(sin(x*a), 2) + ln(abs(1 + sin(x*a))) + sin(x*a) +
+                                                    ln(abs(cos(x*a)))*pow(sin(x*a), 2)) /a/(-1*pow(sin(x*a), 2) + 1)/2;
 },
 []()->bool {
     AlgExpr x = var(), a = var(), b = var(), c =var(), d = var();
@@ -1240,6 +1237,7 @@ void testAlgMod()
 },
 []()->bool {
     AlgExpr x = var();
+   // qDebug() << integral(sin(x)/pow(cos(x), 2), x).toString();
     return integral(sin(x)/pow(cos(x), 2), x) == 1/cos(x);
 },
 []()->bool {
@@ -1357,7 +1355,49 @@ void testAlgMod()
 },
 []()->bool {
     AlgExpr x = var();
-    return integral(pow(euler(), -x/2)*sin(5*x), x) == -2 *(sin(5*x) + 10*cos((5*x))) /pow(euler(), (1/2*x))/101;
+    return integral(pow(euler(), -x/2)*sin(5*x), x) == -2 *(sin(5*x) + 10*cos((5*x))) /pow(euler(), (1*x/2))/101;
+},
+[]()->bool { //290
+    AlgExpr x = var();
+    return integral(pow(euler(), x) * sin(x)*sin(x), x) == pow(e(), x) * (-2*sin(2*x) - cos(2*x) + 5)/10;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(pow(euler(), x) * sin(x)*sin(x)*sin(x), x) == pow(e(), x) * (-6*cos(x) + pow(sin(x), 3) + 3*sin(x) + 3*pow(cos(x), 3))/10;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(pow(euler(), x) * sin(x)*sin(2*x)*cos(3*x), x) ==
+            1*pow(euler(), x)*(-20720*cos(x)*pow(sin(x), 3) - 5044*pow(sin(x), 2) - 2220*sin(4*x) - 653 - 555*cos(4*x) + 1360*pow(sin(x), 6) + 3140*pow(sin(x), 4) + 8160*pow(cos(x), 3)*pow(sin(x), 3) + 10088*cos(x)*sin(x))/6290;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(x*x*sqrt(1 - x*x), x) ==  (-2*x*pow((-1*x*x + 1),(A(3)/2)) + asin(x) + x*sqrt(-1*x*x + 1)) /8;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(x*x*sqrt(2 - 3*x*x), x) == 1*sqrt(3) *(-1*x*sqrt(3)*pow((-3*x*x + 2), (A(3)/2)) + x*sqrt(-3*x*x + 2)*sqrt(3) + 2*asin(x*sqrt(3)/sqrt(2)))/36;
+},
+[]()->bool { //295
+    AlgExpr x = var();
+    return integral(x*x*sqrt(-x*x - 2*x), x) == - (-15*sqrt(-1*x)*sqrt(x + 2) - 5*sqrt(x + 2)*pow((-1*x),(A(3)/2)) - 2*sqrt(-1*x)*sqrt(x + 2)*x*x +
+                                                       6*sqrt(x + 2)*x*x*pow((-1*x),(A(3)/2)) + 30*asin(sqrt(-1*x)/sqrt(2)))/24 ;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(x/pow(cos(x), 2), x) == ln(abs(cos(x))) + x*tan(x);
+},
+[]()->bool {
+    AlgExpr x =var();
+    return integral(x*pow(tan(x), 2), x) ==   (-1*x*x + 2*ln(abs(cos(x))) + 2*x*tan(x)) /2;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(asin(cbrt(x)), x) ==  (sqrt(-1*pow(x, (A(2)/3)) + 1)*pow(x, (A(2)/3)) + 2*sqrt(-1*pow(x,(A(2)/3)) + 1) + 3*x*asin(cbrt(x))) /3;
+},
+[]()->bool {
+    AlgExpr x = var();
+    return integral(asin(cbrt(2*x + 3)), x) ==  (sqrt(-1*pow((2*x + 3), (A(2)/3)) + 1)*pow((2*x + 3), (A(2)/3)) + 2*sqrt(-1*pow((2*x + 3),(A(2)/3)) + 1) + 6*x*asin(cbrt(2*x + 3)) + 9*asin(cbrt(2*x + 3)))/6 ;
 }
     };
 

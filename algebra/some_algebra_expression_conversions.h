@@ -9,6 +9,7 @@ class Fractal;
 
 //std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, const AbstractExpression * argument);
 bool has(const std::set<int> & set, int el);
+
 abs_ex copy(const AbstractExpression * arg);
 abs_ex copy(const abs_ex & arg);
 abs_ex copyWithLiftingIntegrationConstantsThatCanBeChanged(const abs_ex & expr);
@@ -22,6 +23,7 @@ std::pair<long long int, std::pair<long long int, long long int>> xea(long long 
 long long int lcm(long long int a, long long int b);
 long long int root(long long int a, long long int n, bool & succesfully);
 long long int power(long long int a, long long int n, bool & succesfully);
+long long int power(long long int a, long long int n);
 bool hasIntersections(const std::set<int> & a, const std::set<int> & b);
 
 std::multiset<int> findSubsetWithSum(const std::multiset<int> & set, int n);
@@ -37,4 +39,5 @@ bool isPiMemberInTable(Number coe);
 bool isPiMemberOnAxis(Number coe);
 abs_ex toAbsEx( AbstractExpression * expr);
 void liftAllIntegratingConstants(abs_ex & expr);
+QString unicode(int sym);
 #endif // SOME_ALGEBRA_EXPRESSION_CONVERSIONS_H

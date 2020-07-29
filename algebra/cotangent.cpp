@@ -70,6 +70,8 @@ void Cotangent::simplify()
             this->simplified = true;
             return;
         }
+        this->argument->simplify();
+        this->argument = this->argument->downcast();
     }
     if (this->argument->getId() == POLYNOMIAL)
     {
@@ -320,9 +322,44 @@ abs_ex Cotangent::antiderivative(int var) const
     if (!has(this->getSetOfVariables(), var))
         return abs_ex(new Variable(getVariable(var))) * copy(this);
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
-    if (ln_f.first == nullptr)
+    if (ln_f.first != nullptr)
+        return one/ln_f.first * ln(abs(sin(this->argument)));
+    int lcm_of_denoms = this->getLcmOfDenominatorsOfDegreesOfVariable(var);
+    if (lcm_of_denoms > 1)
+    {
+        abs_ex t;
+        if (lcm_of_denoms % 2 == 0)
+            t = systemVarExpr(zero, nullptr, true, false);
+        else
+            t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, pow(t, lcm_of_denoms), var);
+        cop = std::move(cop) * pow(t, lcm_of_denoms)->derivative(t->getId());
+       // qDebug() << cop->toString();
+        auto integr = cop->antiderivative(t->getId());
+
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, pow(getVariableExpr(var), one/numToAbs(lcm_of_denoms)), t->getId());
+            return integr;
+        }
+
+    }
+    auto ln_deg = checkIfItsDegreeOfLinearFunction(argument, var);
+    if (ln_deg.first != nullptr)
+    {
+        abs_ex t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, (t - ln_deg.second) / ln_deg.first, var);
+        auto integr = cop->antiderivative(t->getId());
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, ln_deg.first * getVariableExpr(var) + ln_deg.second, t->getId());
+            return integr / ln_deg.first;
+        }
         return nullptr;
-    return one/ln_f.first * ln(abs(sin(this->argument)));
+    }
+    return nullptr;
 }
 
 const abs_ex &Cotangent::getArgument() const
@@ -339,7 +376,7 @@ void Cotangent::setSimplified(bool simpl)
 std::set<abs_ex > Cotangent::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> set;
-    set.insert(cot(argument));
+    set.insert(copy(this));
     return set;
 }
 
@@ -432,6 +469,11 @@ void Cotangent::getRidOfAbsoluteValues()
 void Cotangent::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
 {
     this->argument->doSomethingInDerivativeObject(func);
+}
+
+bool Cotangent::canBeZero() const
+{
+    return true;
 }
 
 bool Cotangent::operator<(const AbstractExpression &right) const

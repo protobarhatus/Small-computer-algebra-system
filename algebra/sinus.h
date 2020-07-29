@@ -49,6 +49,8 @@ public:
     void getRidOfAbsoluteValues() override;
 
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
+
+    bool canBeZero() const override;
 private:
     abs_ex argument;
     //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может
@@ -58,4 +60,7 @@ private:
 };
 abs_ex sin(const abs_ex & expr);
 abs_ex sin(abs_ex && expr);
+
+abs_ex csc(const abs_ex & expr);
+abs_ex csc(abs_ex && expr);
 #endif // SINUS_H

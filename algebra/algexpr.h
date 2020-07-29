@@ -9,6 +9,7 @@
 #include "variablesdistributor.h"
 #include "absolutevalue.h"
 #include "solving_differential_equations.h"
+#include "equationrootsconditions.h"
 class AlgExpr
 {
 public:
@@ -32,6 +33,11 @@ public:
     AlgExpr& operator-=(const AlgExpr & expr);
     AlgExpr& operator*=(const AlgExpr & expr);
     AlgExpr& operator/=(const AlgExpr & expr);
+
+    AlgExpr& operator+=(AlgExpr && expr);
+    AlgExpr& operator-=(AlgExpr && expr);
+    AlgExpr& operator*=(AlgExpr && expr);
+    AlgExpr& operator/=(AlgExpr && expr);
     AlgExpr operator-() const;
     bool operator==(const AlgExpr & expr) const;
     bool operator==(Number num) const;
@@ -101,7 +107,15 @@ private:
     bool isEqualTo(const AlgExpr & sec) const;
     abs_ex expression;
 };
+//после преобразований, в получившимся выражении константы интегрирования обладают большими индексами, в то время, как C, C1, C2... не присутствуют в выражении
+//данная функция изменит имена этих констант, добавив при этом в имя html тег
+void downgradeIntegratingConstantsIndexes(AlgExpr & expr);
+void downgradeIntegratingConstantsIndexes(abs_ex & expr);
 
+std::pair<std::vector<AlgExpr>, std::vector<RootCondition>> selectRootsAndConditions(const std::vector<AlgExpr> & roots, const std::vector<RootCondition> & conditions, int var);
+std::pair<std::vector<DifurResult>, std::vector<RootCondition>> selectRootsAndConditions(const std::vector<DifurResult> & roots, const std::vector<RootCondition> & conditions, int y);
+
+bool isDifferentialEquation(const AlgExpr & eq);
 AlgExpr operator+(const AlgExpr & left, const AlgExpr & right);
 AlgExpr operator+(const AlgExpr & left, AlgExpr && right);
 AlgExpr operator+(AlgExpr && left, const AlgExpr & right);
@@ -118,11 +132,13 @@ AlgExpr operator/(const AlgExpr & left, const AlgExpr & right);
 AlgExpr operator/(const AlgExpr & left, AlgExpr && right);
 AlgExpr operator/(AlgExpr && left, const AlgExpr & right);
 AlgExpr operator/(AlgExpr && left, AlgExpr && right);
+
 //creates new variable with empty definition
 AlgExpr var();
 AlgExpr positiveVar();
 AlgExpr var(VariablesDefinition );
 AlgExpr var(int min, int max);
+AlgExpr var(const QString & name);
 AlgExpr operator+(long long int left, const AlgExpr & expr);
 AlgExpr operator-(long long int left, const AlgExpr & right);
 AlgExpr operator*(long long int left, const AlgExpr & right);
@@ -182,6 +198,8 @@ AlgExpr cbrt(AlgExpr && arg);
 AlgExpr deriv(const AlgExpr & arg, AlgExpr arg_var, int order);
 AlgExpr derivObj(const AlgExpr & func_var, int arg_var, int order);
 AlgExpr derivObj(const AlgExpr & func_var, const AlgExpr & arg_var, int order);
+AlgExpr factorize(const AlgExpr & expr);
+AlgExpr expand(const AlgExpr & expr);
 std::list<AlgExpr> solveEquation(const AlgExpr & equation, const AlgExpr & var);
-std::list<DifurResult> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
+std::pair<std::list<DifurResult>, std::vector<QString>> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
 #endif // ALGEXPR_H

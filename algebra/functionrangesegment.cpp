@@ -151,7 +151,7 @@ bool FunctionRangeSegment::canBeBiggerThanZero() const
 QString FunctionRangeSegment::toString() const
 {
     if (this->min() == nullptr && this->max() == nullptr)
-        return "R";
+        return QChar(8477);
     if (this->isPoint())
     {
         return "{ " + this->min()->toString() + " }";
@@ -162,12 +162,12 @@ QString FunctionRangeSegment::toString() const
     else
         res += '(';
     if (this->min() == nullptr)
-        res += QString::fromWCharArray(L"-inf");
+        res += "-" + QString(QChar(8734));
     else
         res += this->min()->toString();
     res += "; ";
     if (this->max() == nullptr)
-        res += QString::fromWCharArray(L"inf");
+        res += QChar(8734);
     else
         res += this->max()->toString();
     if (this->isMaxIncluded())
@@ -181,6 +181,15 @@ bool FunctionRangeSegment::isEmpty()
 {
     return !(this->min() == nullptr || this->max() == nullptr) &&
             subCompare(min(), max()) && !(this->isMinIncluded() && this->isMaxIncluded());
+}
+
+bool FunctionRangeSegment::containsZero() const
+{
+    if (isZero(min()))
+        return isMinIncluded();
+    if (isZero(max()))
+        return isMaxIncluded();
+    return canBeLowerThanZero() && canBeBiggerThanZero();
 }
 //нужен для уможнения и деления областей значений
 class RangeUnit

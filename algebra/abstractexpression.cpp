@@ -126,7 +126,7 @@ int AbstractExpression::getPositionRelativelyZero()
 
 }
 
-bool AbstractExpression::hasVariable(int var)
+bool AbstractExpression::hasVariable(int var)  const
 {
     auto s = this->getSetOfVariables();
     return s.find(var) != s.end();
@@ -158,6 +158,22 @@ std::set<abs_ex> AbstractExpression::getUniqueTrigonometricalFunctions() const
             funcs.insert(copy(it));
     }
     return funcs;
+}
+
+bool AbstractExpression::hasDerivativeObject() const
+{
+    bool has = false;
+    this->doSomethingInDerivativeObject([&has](int, int, int order) {
+        if (order > 0)
+            has = true;
+    });
+    return has;
+}
+
+void AbstractExpression::setName(const QString &name)
+{
+    assert(this->getId() > 0);
+    static_cast<Variable*>(this)->setName(name);
 }
 
 
@@ -1220,3 +1236,23 @@ abs_ex getExpressionWithoutAddictiveWithoutVariable(const abs_ex &expr, int var)
 }
 
 
+
+void getRidOfAbsoluteValues(abs_ex &expr)
+{
+    if (expr->getId() == ABSOLUTE_VALUE)
+    {
+        expr = getArgumentOfFunction(expr);
+        getRidOfAbsoluteValues(expr);
+        return;
+    }
+    expr->getRidOfAbsoluteValues();
+    expr->setSimplified(false);
+    expr->simplify();
+    expr = expr->downcast();
+}
+
+std::pair<abs_ex, abs_ex> checkIfItsDegreeOfLinearFunction(const abs_ex &func, int var)
+{
+    auto arg = Degree::getArgumentOfDegree(func);
+    return checkIfItsLinearFunction(arg, var);
+}

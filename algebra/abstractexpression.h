@@ -93,7 +93,7 @@ public:
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) = 0;
     //1 is bigger than 0 (or equally), -1 is less, 0 is undefined
     int getPositionRelativelyZero();
-    bool hasVariable(int var);
+    bool hasVariable(int var) const;
     virtual abs_ex changeSomePartOn(QString function, abs_ex & on_what) = 0;
     //отличие от changeSomePartOn в том, что то не снимает simplified, а это - снимает
     virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) = 0;
@@ -119,6 +119,12 @@ public:
     virtual void getRidOfAbsoluteValues() = 0;
 
     virtual void doSomethingInDerivativeObject(const std::function<void (int, int, int)> & func) const = 0;
+
+    bool hasDerivativeObject() const;
+
+    virtual bool canBeZero() const = 0;
+
+    void setName(const QString & name);
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -128,6 +134,7 @@ protected:
 
 
 };
+void getRidOfAbsoluteValues(abs_ex & expr);
 bool canBeConsideredAsConstant(const AbstractExpression * expr);
 bool canBeConsideredAsConstant(const abs_ex & expr);
 bool canBeConsideredAsConstantThatCanBeChanged(const AbstractExpression * expr);
@@ -197,6 +204,8 @@ abs_ex numToAbs(int num);
 //тригонометрические и логарифмическая функции
 std::pair<abs_ex, abs_ex> checkIfItsFunctionOfLinearArgument(const abs_ex & func, int var);
 std::pair<abs_ex, abs_ex> checkIfItsFunctionOfLinearArgument(const AbstractExpression * func, int var);
+
+std::pair<abs_ex, abs_ex> checkIfItsDegreeOfLinearFunction(const abs_ex & func, int var);
 abs_ex operator*(const abs_ex & left, const abs_ex & right);
 abs_ex operator/(const abs_ex & left, const abs_ex & right);
 abs_ex operator+(const abs_ex & left, const abs_ex & right);

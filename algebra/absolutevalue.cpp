@@ -207,6 +207,8 @@ abs_ex AbsoluteValue::derivative(int var) const
 
 abs_ex AbsoluteValue::antiderivative(int var) const
 {
+    if (!this->hasVariable(var))
+        return getVariableExpr(var)*copy(this);
     assert(false);
     return nullptr;
 }
@@ -304,6 +306,11 @@ void AbsoluteValue::getRidOfAbsoluteValues()
 void AbsoluteValue::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
 {
     this->expression->doSomethingInDerivativeObject(func);
+}
+
+bool AbsoluteValue::canBeZero() const
+{
+    return this->expression->canBeZero();
 }
 
 abs_ex abs(const abs_ex &expr)

@@ -244,6 +244,11 @@ void Differential::doSomethingInDerivativeObject(const std::function<void (int, 
     this->argument->doSomethingInDerivativeObject(func);
 }
 
+bool Differential::canBeZero() const
+{
+    return true;
+}
+
 bool Differential::operator<(const AbstractExpression &expr) const
 {
     assert(expr.getId() == DIFFERENTIAL);

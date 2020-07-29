@@ -249,3 +249,19 @@ void Variable::doSomethingInDerivativeObject(const std::function<void (int, int,
 {
     func(id, 0, 0);
 }
+
+void Variable::setName(const QString &name)
+{
+    this->name = name;
+    VariablesDistributor::addSpecialName(id, name);
+}
+
+void Variable::setRange(const FunctionRange &range)
+{
+    this->definition->setRange(range);
+}
+
+bool Variable::canBeZero() const
+{
+    return this->definition->getRange().containsZero();
+}

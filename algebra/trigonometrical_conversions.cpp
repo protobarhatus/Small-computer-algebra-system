@@ -6,6 +6,7 @@
 #include "number.h"
 #include "degree.h"
 #include "some_algebra_expression_conversions.h"
+#include "mathsets.h"
 abs_ex cosinusToSinus(abs_ex && cosinus_square)
 {
 
@@ -342,4 +343,86 @@ std::pair<std::map<QString, TrigonometricalFunctionsArgumentsCastType>, bool> ch
         }
     }
     return {instructions, need_to_convert};
+}
+std::list<abs_ex> lowerSinusDegree(const abs_ex &sin_degree)
+{
+
+    int n = toIntegerNumber(Degree::getDegreeOfExpression(sin_degree));
+    auto arg = getArgumentOfFunction(sin_degree);
+    if (n % 2 == 0)
+    {
+        std::list<abs_ex> res;
+        res.push_back( numToAbs(MathSets::combinations(n/2, n))/numToAbs(power(2, n)));
+        abs_ex multiplier = one/numToAbs(power(2, n - 1));
+        for (int k = 0; k <= n/2 - 1; ++k)
+            res.push_back(multiplier * numToAbs(power(-1, n/2 - k))*numToAbs(MathSets::combinations(k, n))*cos(arg * numToAbs(n - 2*k)));
+        return res;
+    }
+    else
+    {
+        std::list<abs_ex> res;
+        abs_ex multiplier = one/numToAbs(power(2, n - 1));
+        for (int k = 0; k <= (n - 1)/2; ++k)
+            res.push_back(multiplier *  numToAbs(power(-1, (n - 1)/2 - k)) * numToAbs(MathSets::combinations(k, n)) * sin(arg * numToAbs(n - 2*k)));
+        return res;
+    }
+}
+std::list<abs_ex> lowerCosinusDegree(const abs_ex & cos_degree)
+{
+    int n = toIntegerNumber(Degree::getDegreeOfExpression(cos_degree));
+    auto arg = getArgumentOfFunction(cos_degree);
+    if (n % 2 == 0)
+    {
+        std::list<abs_ex> res;
+        res.push_back(numToAbs(MathSets::combinations(n/2, n))/numToAbs(power(2, n)));
+        abs_ex multiplier = one/numToAbs(power(2, n - 1));
+        for (int k = 0; k <= n/2 - 1; ++k)
+            res.push_back(multiplier * numToAbs(MathSets::combinations(k, n))*cos(arg * numToAbs(n - 2*k)));
+        return res;
+    }
+    else
+    {
+        std::list<abs_ex> res;
+        abs_ex multiplier = one/numToAbs(power(2, n - 1));
+        for (int k = 0; k <= (n - 1)/2; ++k)
+            res.push_back(multiplier * numToAbs(MathSets::combinations(k, n)) * cos(arg * numToAbs(n - 2*k)));
+        return res;
+    }
+}
+std::list<abs_ex> lowerDegree(const abs_ex &trig_degree)
+{
+    assert(isDegreeOfTrigonometricalFunction(trig_degree));
+    assert(canLowerDegree(trig_degree));
+    switch (Degree::getArgumentOfDegree(trig_degree.get())->getId())
+    {
+    case SINUS:
+        return lowerSinusDegree(trig_degree);
+    case COSINUS:
+        return lowerCosinusDegree(trig_degree);
+    default:
+        assert(false);
+    }
+}
+
+bool canLowerDegree(const abs_ex &trig_degree)
+{
+
+    return (Degree::getArgumentOfDegree(trig_degree)->getId() == SINUS || Degree::getArgumentOfDegree(trig_degree)->getId() == COSINUS)
+            && *Degree::getDegreeOfExpression(trig_degree) != *one && isIntegerNumber(Degree::getDegreeOfExpression(trig_degree)) &&
+            lower(Degree::getDegreeOfExpression(trig_degree), numToAbs(30));
+}
+
+abs_ex multiplicationOfSinusesAndCosinuses(const abs_ex &left, const abs_ex &right)
+{
+    auto a = getArgumentOfFunction(left);
+    auto b = getArgumentOfFunction(right);
+    if (left->getId() == SINUS && right->getId() == SINUS)
+        return half * (cos(a - b) - cos(a + b));
+    if (left->getId() == SINUS && right->getId() == COSINUS)
+        return half * (sin(a + b) + sin(a - b));
+    if (left->getId() == COSINUS && right->getId() == SINUS)
+        return half * (sin(a + b) + sin(b - a));
+    if (left->getId() == COSINUS && right->getId() == COSINUS)
+        return half * (cos(a - b) + cos(a + b));
+    assert(false);
 }

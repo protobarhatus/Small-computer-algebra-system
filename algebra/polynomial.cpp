@@ -16,6 +16,7 @@
 #include "solving_differential_equations.h"
 #include "sinus.h"
 #include "cosinus.h"
+
 Polynomial::Polynomial()
 {
 
@@ -171,12 +172,14 @@ int Polynomial::tryToGetPositionRelativelyZeroOfLinearFunction()
 {
     //если имеется линейная функция от нескольких переменных, то можно очень просто посчитать ее минимум и максимум на области определения переменных в ней.
     //в каждом множителе может быть только 1 переменная
+    if (this->getSetOfPolyVariables() != this->getSetOfVariables())
+        return 0;
     auto max_rule = [](VariablesDefinition * def)->double { return def->getMaxValue();};
     auto min_rule = [](VariablesDefinition * def)->double { return def->getMinValue();};
     double max_value = 0, min_value = 0;
     for (auto &it : this->monomials)
     {
-        auto monoms_vars = it->getSetOfVariables();
+        auto monoms_vars = it->getSetOfPolyVariables();
         if (monoms_vars.size() > 1)
             return 0;
         if (!monoms_vars.empty() && !(it->getMaxDegreeOfVariable(*monoms_vars.begin()).isOne()))
@@ -717,7 +720,7 @@ Polynomial Polynomial::getCoefficientOfMaxDegreeOfVariable(int id)
     Polynomial result;
     Number degree = this->getMaxDegreeOfVariable(id);
     if (!degree.isCorrect())
-        return std::move(result);
+        return result;
     for (auto &it : this->monomials)
     {
         Number it_deg = it->getMaxDegreeOfVariable(id);
@@ -1119,12 +1122,13 @@ std::unique_ptr<Fractal> chooseAddictive(std::list<std::list<std::unique_ptr<Fra
         while (it_a != a.end() && it_b != b.end())
         {
             if (*it_a == *it_b)
-                return false;
+                return true;
             if (*it_a < *it_b)
                 ++it_a;
             else if (*it_a > *it_b)
                 ++it_b;
         }
+        return false;
     };
     bool can_choose_group_that_dont_intersect_with_others = false;
     int max_amount_of_vars = 0;
@@ -1883,6 +1887,8 @@ abs_ex Polynomial::tryToTakeRootOfNonVariablesPolynomial()
     }
     return abs_ex(nullptr);
 }
+
+
 void Polynomial::pushBack(std::unique_ptr<Fractal> &&fractal)
 {
     NONCONST
@@ -2190,7 +2196,7 @@ abs_ex Polynomial::antiderivative(int var) const
     abs_ex result = copy(zero);
     for (auto &it : this->monomials)
     {
-        abs_ex integr_res = it->downcast()->antiderivative(var);
+        abs_ex integr_res = copy(it.get())->downcast()->antiderivative(var);
         if (integr_res == nullptr)
             return nullptr;
         result = std::move(result) + std::move(integr_res);
@@ -2730,6 +2736,20 @@ void Polynomial::doSomethingInDerivativeObject(const std::function<void (int, in
         it->doSomethingInDerivativeObject(func);
 }
 
+bool Polynomial::canBeZero() const
+{
+    int pos = copy(this)->getPositionRelativelyZero();
+    if (pos == 0)
+        return true;
+    for (auto &it : monomials)
+        if (copy(it.get())->getPositionRelativelyZero() != pos)
+            return true;
+    for (auto &it : monomials)
+        if (!it->canBeZero())
+            return false;
+    return true;
+}
+
 bool Polynomial::hasIntegratingConstantAddictiveThatCanBeChanged() const
 {
     for (auto &it : this->monomials)
@@ -2793,6 +2813,7 @@ void Polynomial::checkIfCanSimplifyThisTrigonometryByTakingCommonPart()
     if (only_trig_polynom == nullptr)
         return;
     int old_size = static_cast<Polynomial*>(only_trig_polynom.get())->amountOfMonoms();
+    //qDebug() << static_cast<Polynomial*>(only_trig_polynom.get())->toString();
     auto common_part = static_cast<Polynomial*>(only_trig_polynom.get())->reduceCommonPart();
     if (only_trig_polynom->getId() == POLYNOMIAL)
     {
@@ -2873,7 +2894,7 @@ abs_ex checkIfItsSinusOrCosinusFormulaPolynomial(std::unique_ptr<Polynomial> &&p
         return nullptr;
     Number coe = polynom->reduce();
     //степень синуса или косинуса после сортировки будет впереди цифры
-    bool minus;
+    bool minus = false;
     Fractal* first = monoms->begin()->get();
     if (first->getCoefficient() != 1 && first->getCoefficient() != -1)
         return nullptr;
@@ -2893,7 +2914,7 @@ abs_ex checkIfItsSinusOrCosinusFormulaPolynomial(std::unique_ptr<Polynomial> &&p
     Fractal * second = next(monoms->begin())->get();
     if (second->getCoefficient() != 1 && second->getCoefficient() != -1)
         return nullptr;
-    if (minus && second->getCoefficient() == 1)
+    if (minus != (second->getCoefficient() != 1))
         return nullptr;
     if (!(second->getFractal().first->empty() && second->getFractal().second->empty()))
         return nullptr;
@@ -2902,4 +2923,52 @@ abs_ex checkIfItsSinusOrCosinusFormulaPolynomial(std::unique_ptr<Polynomial> &&p
     if (sinus)
         return sqr(sin(arg)) * toAbsEx(coe * (minus ? -1 : 1));
     return sqr(cos(arg)) * toAbsEx(coe * (minus ? -1 : 1));
+}
+
+abs_ex checkIfItsTangentOrCotangentFormulaPolynomial(std::unique_ptr<Polynomial> &&polynom)
+{
+    auto monoms = polynom->getMonoms();
+    if (monoms->size() != 2)
+        return nullptr;
+    Number coe = polynom->reduce();
+    //степень тангенса или котангенса после сортировки будет впереди цифры
+    bool minus = false;
+    Fractal* first = monoms->begin()->get();
+    if (first->getCoefficient() != 1 && first->getCoefficient() != -1)
+        return nullptr;
+    if (first->getCoefficient() == -1)
+        minus = true;
+    if (!first->getFractal().second->empty() || first->getFractal().first->size() != 1)
+        return nullptr;
+    if (first->getFractal().first->begin()->get()->getId() != DEGREE ||
+            *Degree::getDegreeOfExpression(first->getFractal().first->begin()->get()) != *two)
+        return nullptr;
+    bool sinus_return = false;
+    if (Degree::getArgumentOfDegree(first->getFractal().first->begin()->get())->getId() == COTANGENT)
+        sinus_return = true;
+    else if (Degree::getArgumentOfDegree(first->getFractal().first->begin()->get())->getId() != TANGENT)
+        return nullptr;
+
+    Fractal * second = next(monoms->begin())->get();
+    if (second->getCoefficient() != 1 && second->getCoefficient() != -1)
+        return nullptr;
+    if (first->getCoefficient() != second->getCoefficient())
+        return nullptr;
+    if (!(second->getFractal().first->empty() && second->getFractal().second->empty()))
+        return nullptr;
+
+    auto arg = getArgumentOfFunction(*first->getFractal().first->begin());
+    if (sinus_return)
+        return sqr(sin(arg)) * toAbsEx(coe * (minus ? -1 : 1));
+    return sqr(cos(arg)) * toAbsEx(coe * (minus ? -1 : 1));
+}
+
+std::unique_ptr<Polynomial> toPolynomWithFractialCoefficients(const abs_ex &expr)
+{
+    if (expr->getId() == FRACTAL)
+    {
+        if (static_cast<Fractal*>(expr.get())->canTurnIntoPolynomWithOpeningParentheses(true))
+            return static_cast<Fractal*>(expr.get())->turnIntoPolynomWithOpeningParentheses(true);
+    }
+    return toPolynomialPointer(expr);
 }

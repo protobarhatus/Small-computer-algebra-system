@@ -48,6 +48,8 @@ public:
     void getRidOfAbsoluteValues() override;
 
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
+
+    bool canBeZero() const override;
 private:
     void checkIfNeedToCheckSignToLeadToTheAcceptedForm();
     virtual int getPositionRelativelyZeroIfHasVariables() override;

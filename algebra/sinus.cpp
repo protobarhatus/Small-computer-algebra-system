@@ -55,6 +55,8 @@ void Sinus::simplify()
             this->simplified = true;
             return;
         }
+        this->argument->simplify();
+        this->argument = this->argument->downcast();
     }
     if (this->argument->getId() == POLYNOMIAL)
     {
@@ -324,9 +326,44 @@ abs_ex Sinus::antiderivative(int var) const
         }
     }
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
-    if (ln_f.first == nullptr)
+    if (ln_f.first != nullptr)
+        return minus_one / ln_f.first * cos(this->argument);
+    int lcm_of_denoms = this->getLcmOfDenominatorsOfDegreesOfVariable(var);
+    if (lcm_of_denoms > 1)
+    {
+        abs_ex t;
+        if (lcm_of_denoms % 2 == 0)
+            t = systemVarExpr(zero, nullptr, true, false);
+        else
+            t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, pow(t, lcm_of_denoms), var);
+        cop = std::move(cop) * pow(t, lcm_of_denoms)->derivative(t->getId());
+       // qDebug() << cop->toString();
+        auto integr = cop->antiderivative(t->getId());
+
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, pow(getVariableExpr(var), one/numToAbs(lcm_of_denoms)), t->getId());
+            return integr;
+        }
+
+    }
+    auto ln_deg = checkIfItsDegreeOfLinearFunction(argument, var);
+    if (ln_deg.first != nullptr)
+    {
+        abs_ex t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, (t - ln_deg.second) / ln_deg.first, var);
+        auto integr = cop->antiderivative(t->getId());
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, ln_deg.first * getVariableExpr(var) + ln_deg.second, t->getId());
+            return integr / ln_deg.first;
+        }
         return nullptr;
-    return minus_one / ln_f.first * cos(this->argument);
+    }
+    return nullptr;
 }
 
 const abs_ex &Sinus::getArgument() const
@@ -343,7 +380,7 @@ void Sinus::setSimplified(bool simpl)
 std::set<abs_ex > Sinus::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> result;
-    result.insert(sin(argument));
+    result.insert(copy(this));
     return result;
 }
 
@@ -468,6 +505,11 @@ void Sinus::doSomethingInDerivativeObject(const std::function<void (int, int, in
     this->argument->doSomethingInDerivativeObject(func);
 }
 
+bool Sinus::canBeZero() const
+{
+    return true;
+}
+
 abs_ex sin(const abs_ex &expr)
 {
     return abs_ex(new Sinus(expr))->downcast();
@@ -476,4 +518,14 @@ abs_ex sin(const abs_ex &expr)
 abs_ex sin(abs_ex &&expr)
 {
     return abs_ex(new Sinus(std::move(expr)))->downcast();
+}
+
+abs_ex csc(const abs_ex &expr)
+{
+    return one/sin(expr);
+}
+
+abs_ex csc(abs_ex &&expr)
+{
+    return one/std::move(sin(expr));
 }

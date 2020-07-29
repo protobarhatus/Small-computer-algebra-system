@@ -43,6 +43,8 @@ public:
     void getRidOfAbsoluteValues() override;
 
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
+
+    bool canBeZero() const override;
 private:
     int func_argument_var;
     abs_ex argument;

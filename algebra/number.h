@@ -67,6 +67,8 @@ public:
     void getRidOfAbsoluteValues() override;
 
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
+
+    bool canBeZero() const override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     long long int numerator;
@@ -81,6 +83,7 @@ Number min(Number a, Number b);
 Number pow(Number a, int deg);
 abs_ex toAbsEx(Number n);
 bool isIntegerNumber(const abs_ex & expr);
+int toIntegerNumber(const abs_ex & expr);
 /*
 
 abs_ex one = abs_ex(new Number(1));

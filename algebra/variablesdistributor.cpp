@@ -24,6 +24,8 @@ VariablesDistributor& VariablesDistributor::get()
 }
 QString makeVariablesName(int id)
 {
+    if (VariablesDistributor::hasSpecialName(id))
+        return VariablesDistributor::getSpecialName(id);
     if (id >= VariablesDistributor::firstIntegrateConstant())
         return makeIntegratingConstantName(id);
     if (id >= VariablesDistributor::firstSystemNum())
@@ -63,6 +65,17 @@ Variable VariablesDistributor::createVariable(VariablesDefinition definition)
         throw Exception();
     ++Variable::id_counter;
     QString name = makeVariablesName(Variable::id_counter);
+    VariablesNameDistributor::addVariable(Variable::id_counter, name);
+    VariablesDistributor& distr = VariablesDistributor::get();
+    distr.variables.push_back(new VariablesDefinition(definition));
+    return Variable(Variable::id_counter, distr.variables[Variable::id_counter - 1]);
+}
+
+Variable VariablesDistributor::createVariable(VariablesDefinition definition, const QString &name)
+{
+    if (Variable::id_counter >= get().first_system_num - 1)
+        throw Exception();
+    ++Variable::id_counter;
     VariablesNameDistributor::addVariable(Variable::id_counter, name);
     VariablesDistributor& distr = VariablesDistributor::get();
     distr.variables.push_back(new VariablesDefinition(definition));
@@ -119,6 +132,21 @@ int VariablesDistributor::amountOfVariable(int i)
         return 0;
     return VariablesDistributor::get().amount_of_integrating_constants[i -
             VariablesDistributor::get().first_integrate_constant];
+}
+
+void VariablesDistributor::addSpecialName(int index, const QString &name)
+{
+    VariablesDistributor::get().special_names.insert({index, name});
+}
+
+bool VariablesDistributor::hasSpecialName(int id)
+{
+    return VariablesDistributor::get().special_names.find(id) != VariablesDistributor::get().special_names.end();
+}
+
+QString VariablesDistributor::getSpecialName(int id)
+{
+    return VariablesDistributor::get().special_names.find(id)->second;
 }
 Variable systemVar(int num)
 {
@@ -188,6 +216,8 @@ Variable integratingConstant(const FunctionRange &range)
 
 QString makeIntegratingConstantName(int id)
 {
+    if (VariablesDistributor::hasSpecialName(id))
+        return VariablesDistributor::getSpecialName(id);
     id -= VariablesDistributor::get().first_integrate_constant;
     if (id == 0)
         return "C";
@@ -200,16 +230,19 @@ abs_ex integratingConstantExpr(const FunctionRange &range)
 {
     return abs_ex(new Variable(integratingConstant(range)));
 }
-
-Variable systemVar(const abs_ex &min, const abs_ex &max, bool min_included, bool max_included)
+Variable systemVar(const FunctionRange &range)
 {
     ++Variable::system_id_counter;
-    VariablesDefinition * new_def = new VariablesDefinition(FunctionRange(FunctionRangeSegment(min, max,
-                                                                                               min_included, max_included)));
+    VariablesDefinition * new_def = new VariablesDefinition(range);
     VariablesDistributor::get().system_variables.push_back(new_def);
 
     Variable new_var = Variable(Variable::system_id_counter - 1, makeVariablesName(Variable::system_id_counter - 1));
     return new_var;
+}
+
+Variable systemVar(const abs_ex &min, const abs_ex &max, bool min_included, bool max_included)
+{
+    return systemVar(FunctionRange(min, max, min_included, max_included));
 }
 
 abs_ex systemVarExpr(const abs_ex &min, const abs_ex &max, bool min_included, bool max_included)
@@ -237,4 +270,10 @@ bool isIntegratingConstantAndCanChangeIt(int id)
 int amountOfIntegratingConstant(int index)
 {
     return VariablesDistributor::amountOfVariable(index + 1500000000);
+}
+
+
+abs_ex systemVarExpr(const FunctionRange &range)
+{
+    return abs_ex(new Variable(systemVar(range)));
 }

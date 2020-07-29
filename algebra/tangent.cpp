@@ -71,6 +71,8 @@ void Tangent::simplify()
             this->simplified = true;
             return;
         }
+        this->argument->simplify();
+        this->argument = this->argument->downcast();
     }
     if (this->argument->getId() == POLYNOMIAL)
     {
@@ -117,8 +119,6 @@ bool Tangent::canDowncastTo()
 {
     if (this->argument->getId() == FRACTAL && static_cast<Fractal*>(this->argument.get())->getCoefficient().compareWith(0) < 0)
         return true;
-    if (pi_member == nullptr)
-        return false;
   /*  if (expr == NUMBER)
     {
         //k*pi или k/2 * pi
@@ -141,6 +141,9 @@ bool Tangent::canDowncastTo()
     if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
     if (this->argument->getId() == ARCTANGENT)
+        return true;
+   // qDebug() << (this->argument * two)->toString();
+    if ((this->argument * two)->getId() == ARCTANGENT)
         return true;
     return false;
 }
@@ -193,6 +196,11 @@ abs_ex Tangent::downcastTo()
     }
     if (this->argument->getId() == ARCTANGENT)
         return getArgumentOfFunction(this->argument);
+    if ((this->argument * two)->getId() == ARCTANGENT)
+    {
+        abs_ex x = getArgumentOfFunction(argument * two);
+        return (sqrt(x*x + one) - one)/x;
+    }
     return abs_ex(nullptr);
 }
 
@@ -318,9 +326,44 @@ abs_ex Tangent::antiderivative(int var) const
         return abs_ex(new Variable(getVariable(var))) * copy(this);
 
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
-    if (ln_f.first == nullptr)
+    if (ln_f.first != nullptr)
+        return minus_one / ln_f.first * ln(abs(cos(this->argument)));
+    int lcm_of_denoms = this->getLcmOfDenominatorsOfDegreesOfVariable(var);
+    if (lcm_of_denoms > 1)
+    {
+        abs_ex t;
+        if (lcm_of_denoms % 2 == 0)
+            t = systemVarExpr(zero, nullptr, true, false);
+        else
+            t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, pow(t, lcm_of_denoms), var);
+        cop = std::move(cop) * pow(t, lcm_of_denoms)->derivative(t->getId());
+       // qDebug() << cop->toString();
+        auto integr = cop->antiderivative(t->getId());
+
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, pow(getVariableExpr(var), one/numToAbs(lcm_of_denoms)), t->getId());
+            return integr;
+        }
+
+    }
+    auto ln_deg = checkIfItsDegreeOfLinearFunction(argument, var);
+    if (ln_deg.first != nullptr)
+    {
+        abs_ex t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, (t - ln_deg.second) / ln_deg.first, var);
+        auto integr = cop->antiderivative(t->getId());
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, ln_deg.first * getVariableExpr(var) + ln_deg.second, t->getId());
+            return integr / ln_deg.first;
+        }
         return nullptr;
-    return minus_one / ln_f.first * ln(abs(cos(this->argument)));
+    }
+    return nullptr;
 }
 
 const abs_ex &Tangent::getArgument() const
@@ -337,7 +380,7 @@ void Tangent::setSimplified(bool simpl)
 std::set<abs_ex > Tangent::getTrigonometricalFunctions() const
 {
     std::set<abs_ex> res;
-    res.insert(tan(argument));
+    res.insert(copy(this));
     return res;
 }
 
@@ -449,6 +492,11 @@ void Tangent::getRidOfAbsoluteValues()
 void Tangent::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
 {
     this->argument->doSomethingInDerivativeObject(func);
+}
+
+bool Tangent::canBeZero() const
+{
+    return true;
 }
 
 bool Tangent::operator<(const AbstractExpression &right) const

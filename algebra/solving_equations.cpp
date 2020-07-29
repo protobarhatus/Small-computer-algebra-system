@@ -1269,6 +1269,8 @@ ComplexNum &ComplexNum::operator=(ComplexNum &&num)
 
 QString ComplexNum::toString() const
 {
+    if (isZero(this->b()))
+        return this->a()->toString();
     return  this->a()->toString()  + "  +  i * (" + this->b()->toString() + ")";
 }
 

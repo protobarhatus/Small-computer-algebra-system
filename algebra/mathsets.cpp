@@ -75,14 +75,19 @@ std::set<int> & MathSets::getPrimesSet()
     return MathSets::getInstance().primes_set;
 }
 
-std::vector<std::vector<long long int>> &MathSets::getBinomialCoefs()
+const std::vector<std::vector<long long int>> &MathSets::getBinomialCoefs()
 {
     return MathSets::getInstance().binomial_coefficients;
 }
 
-std::vector<long long> &MathSets::getBinomialCoefs(int degree)
+const std::vector<long long> &MathSets::getBinomialCoefs(int degree)
 {
     return MathSets::getInstance().binomial_coefficients[degree];
+}
+
+long long MathSets::combinations(int n, int k)
+{
+    return MathSets::getBinomialCoefs()[k][n];
 }
 
 int MathSets::maxDegreeOfBinomialCoefs()

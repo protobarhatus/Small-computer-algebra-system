@@ -9,6 +9,7 @@ public:
     VariablesDefinition * system_var_def;
     static VariablesDistributor& get();
     static Variable createVariable(VariablesDefinition definition);
+    static Variable createVariable(VariablesDefinition definition, const QString & name);
     void deleteVariables();
     static VariablesDefinition * getVariablesDefinition(int id);
     static int firstSystemNum();
@@ -17,6 +18,9 @@ public:
     static int firstIntegrateConstant();
     friend abs_ex integratingConstantExpr(int index, const FunctionRange & range);
     static int amountOfVariable(int i);
+    static void addSpecialName(int index, const QString & name);
+    static bool hasSpecialName(int id);
+    static QString getSpecialName(int id);
 private:
     friend Variable getVariable(int id);
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
@@ -24,6 +28,7 @@ private:
     const int first_integrate_constant = 1500000000;
     friend Variable systemVar(int min, int max);
     friend Variable systemVar();
+    std::map<int, QString> special_names;
     VariablesDistributor();
     VariablesDistributor(const VariablesDistributor &) = delete;
     VariablesDistributor& operator=(const VariablesDistributor &) = delete;
@@ -42,6 +47,7 @@ private:
     static void increaseIntegratingConstant(int id);
     static void decreaseIntegratingConstant(int id);
     friend Variable systemVar(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
+    friend Variable systemVar(const FunctionRange & range);
     friend class Variable;
     friend bool isIntegratingConstantAndCanChangeIt(int id);
 };
@@ -55,8 +61,10 @@ Variable systemVar(int num);
 Variable systemVar();
 abs_ex systemVarExpr();
 Variable systemVar(int min, int max);
+Variable systemVar(const FunctionRange & range);
 Variable systemVar(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
 abs_ex systemVarExpr(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
+abs_ex systemVarExpr(const FunctionRange & range);
 Variable integratingConstant();
 Variable integratingConstant( const FunctionRange & range);
 bool isIntegratingConstantAndCanChangeIt(int id);

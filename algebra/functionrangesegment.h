@@ -37,6 +37,7 @@ public:
 
     QString toString() const;
     bool isEmpty();
+    bool containsZero() const;
 private:
     abs_ex _min;
     abs_ex _max;

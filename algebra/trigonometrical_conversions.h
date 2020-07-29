@@ -48,4 +48,12 @@ abs_ex fromHalfArgument(abs_ex && func_degree);
 abs_ex fromDoubleArgument(abs_ex && func_degree);
 abs_ex fromTrippleArgument(abs_ex && func_degree);
 
+bool canLowerDegree(const abs_ex & trig_degree);
+//элементы в листе представляют отдельные слагаемые получившегося выражения
+//проблема в том, что если это конструировать обычной арифметикой, то получившееся выражение может привестись обратно
+//к тому, что было, т. к. алгоритм имеет тенденцию к сравниванию аргументов функций
+std::list<abs_ex> lowerDegree(const abs_ex & trig_degree);
+
+abs_ex multiplicationOfSinusesAndCosinuses(const abs_ex & left, const abs_ex & right);
+
 #endif // TRIGONOMETRICAL_CONVERSIONS_H

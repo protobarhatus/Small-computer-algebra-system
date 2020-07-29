@@ -50,6 +50,9 @@ void ArcSinus::simplify()
     this->argument = this->argument->downcast();
     int pos;
     pos = (this->argument - one)->getPositionRelativelyZero();
+  //  qDebug() << this->argument->toString();
+    //if (pos > 0)
+      //  (this->argument - one)->getPositionRelativelyZero();
     if (pos > 0)
         throw Exception();
     pos = (this->argument + one)->getPositionRelativelyZero();
@@ -81,7 +84,7 @@ bool ArcSinus::canDowncastTo()
     if (this->argument->getId() == COSINUS)
     {
         auto cos_arg = getArgumentOfFunction(this->argument);
-        int pos = cos_arg->getPositionRelativelyZero();
+        int pos = (cos_arg + getPi())->getPositionRelativelyZero();
         if (!(pos > 0))
             return false;
         pos = (cos_arg - getPi())->getPositionRelativelyZero();
@@ -256,10 +259,49 @@ abs_ex ArcSinus::antiderivative(int var) const
     }
 
     auto ln_f = checkIfItsLinearFunction(this->argument, var);
-    if (ln_f.first == nullptr)
+    if (ln_f.first != nullptr)
+    {
+        abs_ex& a = ln_f.first;
+        return (one / ln_f.first) * (this->argument * asin(this->argument) + sqrt(one - sqr(this->argument)));
+    }
+    int lcm_of_denoms = this->getLcmOfDenominatorsOfDegreesOfVariable(var);
+    if (lcm_of_denoms > 1)
+    {
+        abs_ex t;
+        if (lcm_of_denoms % 2 == 0)
+            t = systemVarExpr(zero, nullptr, true, false);
+        else
+            t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, pow(t, lcm_of_denoms), var);
+        cop = std::move(cop) * pow(t, lcm_of_denoms)->derivative(t->getId());
+       // qDebug() << cop->toString();
+        auto integr = cop->antiderivative(t->getId());
+
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, pow(getVariableExpr(var), one/numToAbs(lcm_of_denoms)), t->getId());
+            return integr;
+        }
+
+    }
+    auto ln_deg = checkIfItsDegreeOfLinearFunction(argument, var);
+    if (ln_deg.first != nullptr)
+    {
+        abs_ex t = systemVarExpr();
+        abs_ex cop = copy(this);
+        setUpExpressionIntoVariable(cop, (t - ln_deg.second) / ln_deg.first, var);
+        auto integr = cop->antiderivative(t->getId());
+        if (integr != nullptr)
+        {
+            setUpExpressionIntoVariable(integr, ln_deg.first * getVariableExpr(var) + ln_deg.second, t->getId());
+            return integr / ln_deg.first;
+        }
         return nullptr;
-    abs_ex& a = ln_f.first;
-    return (one / ln_f.first) * (this->argument * asin(this->argument) + sqrt(one - sqr(this->argument)));
+    }
+    return nullptr;
+
+
 }
 
 const abs_ex &ArcSinus::getArgument() const
@@ -363,6 +405,11 @@ void ArcSinus::getRidOfAbsoluteValues()
 void ArcSinus::doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const
 {
     this->argument->doSomethingInDerivativeObject(func);
+}
+
+bool ArcSinus::canBeZero() const
+{
+    return this->argument->canBeZero();
 }
 
 bool ArcSinus::operator<(const AbstractExpression &right) const

@@ -21,7 +21,10 @@
 #include "arctangent.h"
 #include "arcsinus.h"
 #include "derivativeobject.h"
-
+QString unicode(int sym)
+{
+    return QChar(sym);
+}
 std::unique_ptr<AbstractExpression> makeAbstractExpression(AlgebraExpression type, const AbstractExpression * argument)
 {
     assert(type == argument->getId() || (type > 0 && argument->getId() > 0));
@@ -521,4 +524,21 @@ abs_ex licCopy(const AbstractExpression *expr)
 abs_ex licCopy(const abs_ex &expr)
 {
     return copyWithLiftingIntegrationConstantsThatCanBeChanged(expr);
+}
+
+long long power(long long a, long long n)
+{
+    if (n == 0)
+        return 1;
+    if (n == 1)
+        return a;
+    if (n == 2)
+        return a*a;
+    if (n % 2 == 0)
+    {
+        int h = power(a, n/2);
+        return h*h;
+    }
+    int h = power(a, n/2);
+    return h*h*a;
 }

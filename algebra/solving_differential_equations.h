@@ -28,7 +28,7 @@ FunctionRange getRangeOfConstantMultipliersThatCanBeChangedAndTakeThemAway(Abstr
 FunctionRange getRangeOfConstantAddictivesThatCanBeChangedAndTakeThemAway(AbstractExpression * expr);
 FunctionRange getRangeOfConstantMultipliersThatCanBeChanged(const abs_ex & expr);
 FunctionRange getRangeOfConstantMultipliersThatCanBeChanged(const AbstractExpression * expr);
-std::list<DifurResult> solveDifur(const abs_ex & difur, int x, int y);
-
+std::pair<std::list<DifurResult>, std::vector<QString>> solveDifur(const abs_ex & difur, int x, int y);
+bool hasDerivativeObject(const abs_ex & difur, int x, int y);
 
 #endif // SOLVING_DIFFERENTIAL_EQUATIONS_H

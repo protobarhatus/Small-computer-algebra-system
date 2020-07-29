@@ -242,6 +242,11 @@ void DerivativeObject::doSomethingInDerivativeObject(const std::function<void (i
     func(this->argument->getId(), this->func_argument_var, this->order);
 }
 
+bool DerivativeObject::canBeZero() const
+{
+    return true;
+}
+
 int DerivativeObject::getPositionRelativelyZeroIfHasVariables()
 {
     return 0;

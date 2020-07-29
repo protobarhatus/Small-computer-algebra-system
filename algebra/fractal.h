@@ -122,6 +122,10 @@ public:
     void getRidOfAbsoluteValues() override;
 
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
+    //возвращаемое значение показывает, было ли произведено ли хоть одно действие
+    bool turnSinusAndCosinusMultiplicatorsIntoOneFunction();
+
+    bool canBeZero() const override;
 private:
     void takeAwayAbsoluteValues();
     bool hasIntegratingConstantMultiplierThatCanBeChanged() const;
@@ -138,6 +142,13 @@ private:
     abs_ex tryToGetAntiderivativeOfTrigonometricalFunctionByReplacements(int var) const;
     abs_ex tryToGetAntiderivativeByChangingNonLinearArgumentOfFunction(int var) const;
     abs_ex tryToGetAntiderivativeBySelfReduction(int var) const;
+    abs_ex tryToGetAntiderivativeByLoweringDegreeOfSinusOrCosinusMultipliers(int var) const;
+    abs_ex tryToGetAntiderivativeOfSomethingMultipliedOrDivedOnSqrtFromQuadratic(int var) const;
+    abs_ex getAntiderivativeOfTrigOrExponentMultiplyPolynom(int var) const;
+    abs_ex getAntiderivativeOfArcTrigonometryMultiplyPolynom(int var) const;
+    abs_ex tryToGetAntiderivativeOfFractionWithSinusAndCosinus(int var) const;
+    abs_ex getAntiderivativeOfTangentOrCotangentInEvenDegreeMult(int var) const;
+
     bool casted_trigonometry;
     void castTrigonometry();
     void castTrigonometryArguments();
@@ -168,6 +179,8 @@ private:
 
     Number coefficient;
 };
+
+bool hasDifferentialAsMultiplier(const abs_ex & expr);
 std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal>& left, const std::unique_ptr<Fractal> & right);
 std::unique_ptr<Fractal> operator*(std::unique_ptr<Fractal> && left, const std::unique_ptr<Fractal> & right);
 std::unique_ptr<Fractal> operator*(const std::unique_ptr<Fractal> & left, std::unique_ptr<Fractal> && right);

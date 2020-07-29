@@ -8,8 +8,9 @@ public:
 
     static std::vector<int> & getPrimesVector();
     static std::set<int> & getPrimesSet();
-    static std::vector<std::vector<long long int>> & getBinomialCoefs();
-    static std::vector<long long int> & getBinomialCoefs(int degree);
+    static const std::vector<std::vector<long long int>> & getBinomialCoefs();
+    static const std::vector<long long int> & getBinomialCoefs(int degree);
+    static long long int combinations(int n, int k);
     static int maxDegreeOfBinomialCoefs();
 private:
     static void init(MathSets &);

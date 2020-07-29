@@ -106,9 +106,18 @@ SOURCES += \
     algebra/variablesdefinition.cpp \
     algebra/variablesdistributor.cpp \
     algebra/variablesnamedistributor.cpp \
+    commandresponse.cpp \
+    functionliteral.cpp \
     main.cpp \
+    mainapplicationspace.cpp \
     mainwindow.cpp \
-    tests.cpp
+    parser.cpp \
+    script.cpp \
+    scriptsnamespace.cpp \
+    scripttextfield.cpp \
+    showstepsofdifursform.cpp \
+    tests.cpp \
+    variableliteral.cpp
 
 HEADERS += \
     ../../mo2/Balloon/balloontip.h \
@@ -203,11 +212,21 @@ HEADERS += \
     algebra/variablesdefinition.h \
     algebra/variablesdistributor.h \
     algebra/variablesnamedistributor.h \
+    commandresponse.h \
+    functionliteral.h \
+    mainapplicationspace.h \
     mainwindow.h \
-    tests.h
+    parser.h \
+    script.h \
+    scriptsnamespace.h \
+    scripttextfield.h \
+    showstepsofdifursform.h \
+    tests.h \
+    variableliteral.h
 
 FORMS += \
-    mainwindow.ui
+    mainwindow.ui \
+    showstepsofdifursform.ui
 
 TRANSLATIONS += \
     differential_equations_ru_RU.ts
