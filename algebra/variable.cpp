@@ -114,8 +114,9 @@ bool Variable::canDowncastTo()
 }
 abs_ex Variable::downcastTo()
 {
-    return this->definition->getRange().getPoint();
-    assert(false);
+    if (this->definition->getRange().isPoint())
+        return this->definition->getRange().getPoint();
+   // assert(false);
     return abs_ex(nullptr);
 }
 void Variable::_qDebugOut()

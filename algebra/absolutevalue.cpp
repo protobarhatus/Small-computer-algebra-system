@@ -79,7 +79,7 @@ bool AbsoluteValue::canDowncastTo()
 }
 abs_ex AbsoluteValue::downcastTo()
 {
-    assert(canDowncastTo());
+   // assert(canDowncastTo());
     if (this->expr_position > 0)
         return std::move(this->expression);
     if (this->expr_position == 0 && this->expression->getId() == FRACTAL)
@@ -100,6 +100,8 @@ abs_ex AbsoluteValue::downcastTo()
         static_cast<Polynomial*>(copy.get())->changeSign();
         return std::move(copy);
     }
+    if (this->expr_position < 0)
+        return -this->expression;
     if (this->expression->getId() == DEGREE)
     {
         auto arg = Degree::getArgumentOfDegree(this->expression.get());
@@ -109,8 +111,7 @@ abs_ex AbsoluteValue::downcastTo()
     {
         return integratingConstantExpr(this->expression->getId(), this->getRange());
     }
-    abs_ex minus(new Number(-1));
-    return this->expression * minus;
+   return nullptr;
 }
 std::set<int> AbsoluteValue::getSetOfPolyVariables() const
 {

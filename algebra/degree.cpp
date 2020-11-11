@@ -174,7 +174,7 @@ bool Degree::canDowncastTo()
 abs_ex Degree::downcastTo()
 {
 
-    assert(canDowncastTo());
+    //assert(canDowncastTo());
 
     if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM)
         return static_cast<Logarithm*>(this->degree.get())->getArgumentMoved();
@@ -191,7 +191,8 @@ abs_ex Degree::downcastTo()
             return one/pow(std::move(argument), -degree);
         }
     }
-    if ((this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isOne()) || static_cast<Number*>(this->degree.get())->isZero())
+    if ((this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isOne()) ||
+            (this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->isZero()))
         return abs_ex(new Number(1));
     if (this->argument->getId() == NUMBER && static_cast<Number*>(this->argument.get())->isZero())
         return numToAbs(0);
@@ -235,6 +236,14 @@ abs_ex Degree::downcastTo()
     {
         auto fract = static_cast<Fractal*>(this->argument.get())->getFractal();
 
+            Fractal * frac = static_cast<Fractal*>(this->argument.get());
+            auto fr = frac->getFractal();
+            //это на случай подобно sqrt(-a), чтобы не пытался разложить на sqrt(-1)*sqrt(a)
+            if (((this->degree->getId() == NUMBER && static_cast<Number*>(this->degree.get())->getDenominator() % 2 == 0) ||
+                 (this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->getCoefficient().getDenominator() % 2 == 0)) &&
+                    ((fr.first->size() == 1 && fr.second->empty())) &&
+                    frac->getCoefficient() == -1)
+                return nullptr;
         //though this degree suppose to be destroyed after this function, I would use safe copy instead of moving in denumenator of fractal
 
         fractal_argument num, denum;
@@ -296,9 +305,9 @@ abs_ex Degree::downcastTo()
         {
             denum.push_back(abs_ex(new Degree(std::move(it), copy(degree))));
         }
-        auto fr =  abs_ex(new Fractal(&num, &denum));
-        fr->simplify();
-        return fr;
+        auto _fr =  abs_ex(new Fractal(&num, &denum));
+        _fr->simplify();
+        return _fr;
     }
     if (this->degree->getPositionRelativelyZero() < 0)
     {
@@ -320,8 +329,8 @@ abs_ex Degree::downcastTo()
         }
         if (this->degree->getId() == POLYNOMIAL && static_cast<Polynomial*>(degree.get())->hasIntegratingConstantThatCanBeChanged())
         {
-            qDebug() << this->argument->toString();
-            qDebug() << this->degree->toString();
+           // qDebug() << this->argument->toString();
+           // qDebug() << this->degree->toString();
             abs_ex constant = static_cast<Polynomial*>(degree.get())->takeAwayIntegragingConstantThatCanBeChanged();
             return pow(argument, std::move(constant)) * pow(argument, std::move(degree));
         }
@@ -333,7 +342,7 @@ abs_ex Degree::downcastTo()
       //  qDebug() << cop->makeStringOfExpression();
         return cop;
     }
-    if (*this->argument == *getEuler() && this->degree->getId() == POLYNOMIAL)
+    if (*this->argument == *getEuler() && this->degree->getId() == POLYNOMIAL && static_cast<Polynomial*>(this->degree.get())->hasLogarithmicMonoms())
     {
         auto monoms = static_cast<Polynomial*>(this->degree.get())->getMonomialsPointers();
         abs_ex res = copy(one);
@@ -363,7 +372,7 @@ abs_ex Degree::downcastTo()
     {
         return integratingConstantExpr(this->getRange());
     }
-    if (this->degree->getId() == FRACTAL)
+    if (this->degree->getId() == FRACTAL )
     {
         auto fr = static_cast<Fractal*>(this->degree.get())->getFractal();
         bool has_log_of_arg = false;
@@ -387,8 +396,9 @@ abs_ex Degree::downcastTo()
                 }
         }
     }
-
-    return copy( this->argument.get());
+    if (*this->degree == *one)
+        return copy( this->argument.get());
+    return nullptr;
 
 }
 
@@ -905,9 +915,11 @@ QString Degree::toString() const
     if (this->degree->getId() != NUMBER || static_cast<Number*>(this->degree.get())->isInteger())
     {
         if (this->argument->getId() != POLYNOMIAL && this->argument->getId() != FRACTAL)
-            result = this->argument->toString() + "^";
+            result = this->argument->toString()  + "^";
         else
             result = "(" + this->argument->toString() + ")^";
+
+
         if (this->degree->getId() != POLYNOMIAL && this->degree->getId() != FRACTAL)
             result += this->degree->toString();
         else
@@ -1077,6 +1089,7 @@ abs_ex Degree::antiderivative(int var) const
         return one / ln_f.first * takeDegreeOf(copy(this->argument), this->degree + one) / (this->degree + one);
     }
     ln_f = checkIfItsLinearFunction(this->degree, var);
+    //qDebug() << this->argument->toString();
     if (ln_f.first != nullptr && !this->argument->hasVariable(var))
         return one / ln_f.first * takeDegreeOf(this->argument, this->degree) / ln(this->argument);
 

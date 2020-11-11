@@ -34,6 +34,10 @@ void Polynomial::simplify()
 {
 
     SIM_IF_NEED
+          //  qDebug() << this->toString();
+
+
+
          //   qDebug() << "Simplify: " << this->makeStringOfExpression();
    // qDebug();
    //   int randId = rands(0, 2000000000);
@@ -252,7 +256,7 @@ bool Polynomial::canDowncastTo()
 }
 abs_ex Polynomial::downcastTo()
 {
-    assert(canDowncastTo());
+   // assert(canDowncastTo());
     if ( this->isZero())
         return abs_ex(new Number(0));
     if (this->monomials.size() == 1 && this->monomials.begin()->get()->getCoefficient() == 1 &&
@@ -265,7 +269,9 @@ abs_ex Polynomial::downcastTo()
     {
         return integratingConstantExpr(this->getRange());
     }
-    return this->monomials.begin()->get()->downcast();
+    if (this->monomials.size() == 1)
+        return this->monomials.begin()->get()->downcast();
+    return nullptr;
 }
 AlgebraExpression Polynomial::getId() const
 {
@@ -906,8 +912,11 @@ std::pair<abs_ex, abs_ex> Polynomial::multiplyIrrationalSumOnAppropriateFormula(
   //  return std::pair<abs_ex, abs_ex>(*l_ptr * *l_ptr - *r_ptr * *r_ptr, *l_ptr - *r_ptr);
     abs_ex zero(new Number(0));
     long long int deg = static_cast<Degree*>(right->monomials.front()->getFractal().first->front().get())->getRootValue();
+
     if (deg % 2 == 0)
         return std::pair<abs_ex, abs_ex>((l_ptr - r_ptr)*(l_ptr + r_ptr)+zero, l_ptr - r_ptr);
+
+
     abs_ex second_multiplier(new Polynomial);
     bool plus = true;
     for (long long int i = deg - 1; i >= 0; --i)

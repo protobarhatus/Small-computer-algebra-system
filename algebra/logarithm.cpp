@@ -203,16 +203,22 @@ abs_ex Logarithm::downcastTo()
         if (!num.isInteger())
             return ln(numToAbs(num.getNumerator())) - ln(numToAbs(num.getDenominator()));
         auto facts = factorize(num.getNumerator());
-        abs_ex res = copy(zero);
-        for (auto &it : facts)
-            res = std::move(res) + numToAbs(it.second) * ln(numToAbs(it.first));
-        return res;
+
+
+        if (facts.size() > 1 || (facts.size() == 1 && facts.begin()->second > 1))
+        {
+            abs_ex res = copy(zero);
+            for (auto &it : facts)
+                res = std::move(res) + numToAbs(it.second) * ln(numToAbs(it.first));
+            return res;
+        }
+
     }
     if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
     {
         return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
-    assert(false);
+    return nullptr;
 }
 
 std::set<int> Logarithm::getSetOfPolyVariables() const

@@ -44,7 +44,7 @@ bool Number::operator==(AbstractExpression & right)
 }
 abs_ex Number::downcastTo()
 {
-    assert(false);
+    //assert(false);
     return abs_ex(nullptr);
 }
 long long int Number::getNumerator() const

@@ -1,12 +1,26 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "showstepsofdifursform.h"
+#include <QVBoxLayout>
+#include "script.h"
+#include "scripttextfield.h"
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     this->ui->show_equation_solving_steps->setVisible(false);
+    QVBoxLayout * layout = new QVBoxLayout;
+    layout->setSpacing(0);
+    layout->addWidget(this->ui->tabWidget);
+   // layout->addWidget(this->ui->input_field);
+    layout->addWidget(this->ui->output_field);
+    layout->addWidget(this->ui->show_equation_solving_steps);
+
+    this->ui->centralwidget->setLayout(layout);
+
+    //
+    //this->addScript();
 
 }
 
@@ -18,9 +32,11 @@ MainWindow::~MainWindow()
 void MainWindow::setMainApplicationSpace(MainApplicationSpace *space)
 {
     this->application_space = space;
-    this->ui->input_field->subscribeApplicationSpace(space);
-    this->current_input_field = this->ui->input_field;
+    //this->ui->input_field->subscribeApplicationSpace(space);
+    //this->current_input_field = this->ui->input_field;
     this->text_fields.push_back(current_input_field);
+    this->addScript();
+
 }
 
 void MainWindow::outResult(const std::vector<CommandResponse> & answers, const std::vector<QString> & input_text)

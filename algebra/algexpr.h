@@ -54,8 +54,8 @@ public:
     friend AlgExpr sqrt(const AlgExpr & arg);
     friend AlgExpr operator/(long long int left, const AlgExpr & right);
     void out();
-    QString toString();
-    QString toWolframString();
+    QString toString() const;
+    QString toWolframString() const;
     friend void testAlgMod();
     friend void _neuLData();
     friend AlgExpr var();

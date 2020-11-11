@@ -107,6 +107,7 @@ SOURCES += \
     algebra/variablesdistributor.cpp \
     algebra/variablesnamedistributor.cpp \
     commandresponse.cpp \
+    form.cpp \
     functionliteral.cpp \
     main.cpp \
     mainapplicationspace.cpp \
@@ -213,6 +214,7 @@ HEADERS += \
     algebra/variablesdistributor.h \
     algebra/variablesnamedistributor.h \
     commandresponse.h \
+    form.h \
     functionliteral.h \
     mainapplicationspace.h \
     mainwindow.h \
@@ -225,6 +227,7 @@ HEADERS += \
     variableliteral.h
 
 FORMS += \
+    form.ui \
     mainwindow.ui \
     showstepsofdifursform.ui
 

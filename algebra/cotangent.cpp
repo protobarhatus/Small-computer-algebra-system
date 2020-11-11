@@ -168,7 +168,8 @@ abs_ex Cotangent::downcastTo()
         if (coe == Number(5, 6))
             return takeDegreeOf(Number(3), Number(1, 2)) * abs_ex(new Number(-1));
     }
-    if (this->pi_member->getCoefficient() == Number(1, 2) || this->pi_member->getCoefficient() == Number(-1, 2))
+    if (this->pi_member != nullptr &&
+            (this->pi_member->getCoefficient() == Number(1, 2) || this->pi_member->getCoefficient() == Number(-1, 2)))
         return -tan(argument - toAbsEx(pi_member));
     if (this->pi_member != nullptr && isPiMemberOnAxis(pi_member->getCoefficient()))
     {

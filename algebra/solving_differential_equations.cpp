@@ -607,7 +607,7 @@ std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveDifurInFullDifferen
         steps.push_back(formula(QIODevice::tr("F = ") + unicode(8747) + "(" + p->toString() + ")d" + xs));
         steps.push_back(formula("F = " + p_x_integral->toString() + " + " + unicode(966) + "(" + ys + ")"));
         abs_ex p_y_deriv = p_x_integral->derivative(y);
-        steps.push_back(formula("dF/d" + ys + " = " + "(" + p_x_integral->toString() + ")'" + " = " + p_y_deriv->toString() + unicode(966) + "'(" + ys + ")" + " = " + unicode(490)));
+        steps.push_back(formula("dF/d" + ys + " = " + "(" + p_x_integral->toString() + ")'" + " = " + p_y_deriv->toString() + " + " + unicode(966) + "'(" + ys + ")" + " = " + unicode(490)));
         abs_ex phita1 = q - p_y_deriv;
         steps.push_back(formula(p_y_deriv->toString() + " + " + unicode(966) + "'" + "(" + ys + ")" + " = " + q->toString()));
         steps.push_back(formula(unicode(966) + "'(" + ys + ") = " + phita1->toString()));
@@ -632,7 +632,7 @@ std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveDifurInFullDifferen
         steps.push_back(formula(QIODevice::tr("F = ") + unicode(8747) + "(" + q->toString() + ")d" + ys));
         steps.push_back(formula("F = " + q_y_integral->toString() + " + " + unicode(966) + "(" + xs + ")"));
         abs_ex q_x_deriv = q_y_integral->derivative(x);
-        steps.push_back(formula("dF/d" + xs + " = " + "(" + q_y_integral->toString() + ")'" + " = " + q_x_deriv->toString() + unicode(966) + "'(" + xs + ")" + " = " + unicode(420)));
+        steps.push_back(formula("dF/d" + xs + " = " + "(" + q_y_integral->toString() + ")'" + " = " + q_x_deriv->toString() + " + " + unicode(966) + "'(" + xs + ")" + " = " + unicode(420)));
         abs_ex phita2 = p - q_x_deriv;
         steps.push_back(formula(q_x_deriv->toString() + " + " + unicode(966) + "'" + "(" + xs + ")" + " = " + p->toString()));
         steps.push_back(formula(unicode(966) + "'(" + xs + ") = " + phita2->toString()));
@@ -741,7 +741,7 @@ std::pair<std::list<abs_ex>, std::vector<QString>> tryToSolveHighOrderDifurByLow
         return {std::list<abs_ex> (), steps};
 
     abs_ex z = systemVarExpr();
-    z->setName(unicode(952));
+    z->setName(unicode(949));
     steps.push_back(QIODevice::tr("Сделать замену ") + formula(z->toString() + " = " + derivative(getVariableExpr(y), x, min_order)->toString()));
 
     int max_order = getOrderOfHighOrderEquation(difur, x, y);

@@ -103,13 +103,13 @@ bool AbstractExpression::canDowncast()
 }
 abs_ex AbstractExpression::downcast()
 {
-    if (!this->canDowncast())
+   // if (!this->canDowncast())
+    //    return copy(this);
+    //return this->downcastTo()->downcast();
+    abs_ex cast = this->downcastTo();
+    if (cast == nullptr)
         return copy(this);
-    return this->downcastTo()->downcast();
-    //abs_ex expr = copy(this);
-    //while (expr->canDowncast())
-     //   expr = expr->downcastTo();
-    //return expr;
+    return cast->downcast();
 }
 
 int AbstractExpression::getPositionRelativelyZero()
@@ -723,7 +723,7 @@ std::vector<abs_ex > checkIfItsIntegerPolynom(const AbstractExpression *func, in
     for (auto &it : pol_res)
         if (it->getId() != NUMBER || !static_cast<Number*>(it.get())->isInteger())
             return std::vector<abs_ex>();
-    return std::move(pol_res);
+    return pol_res;
 }
 
 std::vector<abs_ex > checkIfItsPolynom(const abs_ex &func, int var)
@@ -817,6 +817,7 @@ abs_ex tryToOpenByTrigonometricalSum(abs_ex &expr)
         return nullptr;
     auto left = copy(*static_cast<Polynomial*>(polynom.get())->getMonomialsPointers().begin());
     auto right = polynom - left;
+
     switch (arg->getId()) {
     case SINUS:
         return pow(sin(left)*cos(right) + cos(left)*sin(right), deg);
@@ -1089,6 +1090,7 @@ abs_ex operator+(const abs_ex & left, abs_ex && right)
 }
 abs_ex operator-(const abs_ex & left, abs_ex && right)
 {
+
     if (left->getId() == NUMBER && right->getId() == NUMBER)
         return toAbsEx(*static_cast<Number*>(left.get()) - *static_cast<Number*>(right.get()));
     abs_ex polynom = abs_ex(new Polynomial(toFrac(left), toFrac(-std::move(right))));

@@ -42,7 +42,13 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
     }
     auto buildAnswerFromNonDifferentialEquation = [&space](const AlgExpr & equation, const QString & var)->QString
     {
-        auto roots = solveEquation(equation, parseAndComplete(var, space));
+        std::list<AlgExpr> roots;
+        try {
+            roots = solveEquation(equation, parseAndComplete(var, space));
+        } catch (...) {
+            return QIODevice::tr("Нет корней или программа не может найти корни");
+        }
+
         if (roots.size() == 0)
             return QIODevice::tr("Нет корней или программа не может найти корни");
         std::vector<AlgExpr> roots_vectors;

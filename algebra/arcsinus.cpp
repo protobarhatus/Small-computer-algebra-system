@@ -131,7 +131,7 @@ abs_ex ArcSinus::downcastTo()
     {
         return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
-    assert(false);
+
     return nullptr;
 
 }

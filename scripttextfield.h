@@ -2,6 +2,7 @@
 #define SCRIPTTEXTFIELD_H
 #include <QTextEdit>
 #include <mainapplicationspace.h>
+#include <QTextBrowser>
 class ScriptTextField : public QTextEdit
 {
     Q_OBJECT

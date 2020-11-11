@@ -116,7 +116,7 @@ abs_ex ArcTangent::downcastTo()
     {
         return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
-    assert(false);
+
     return nullptr;
 
 }

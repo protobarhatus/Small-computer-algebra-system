@@ -18,9 +18,10 @@ void MainApplicationSpace::launch()
     for (int i = 0; i < 26; ++i)
         var();
     this->window = new MainWindow;
+    current_script = -1;
     this->window->setMainApplicationSpace(this);
-    this->scripts.push_back(Script());
-    current_script = 0;
+    //this->scripts.push_back(Script());
+
     window->show();
 
 }

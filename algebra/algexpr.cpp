@@ -261,6 +261,10 @@ bool AlgExpr::operator==(QString var_name) const
 
 bool AlgExpr::operator==(int num) const
 {
+  //  qDebug() << "OPERATOR==:";
+  //  qDebug() << this->toString();
+ //   qDebug() << num;
+  //  qDebug() << (*this == (long long int)num);
     return *this == (long long int)num;
 }
 bool AlgExpr::operator!=(const AlgExpr &expr) const
@@ -331,7 +335,7 @@ bool operator!=(long long int left, const AlgExpr & right)
 {
     return !(right == left);
 }
-QString AlgExpr::toString()
+QString AlgExpr::toString() const
 {
     QString res = this->expression->toString();
     auto set = this->expression->getSetOfVariables();
@@ -342,7 +346,7 @@ QString AlgExpr::toString()
     return res;
 }
 
-QString AlgExpr::toWolframString()
+QString AlgExpr::toWolframString() const
 {
     return this->expression->makeWolframString();
 }
@@ -649,7 +653,7 @@ AlgExpr factorize(const AlgExpr &expr)
     auto facts = factorizePolynom(toPolynomialPointer(expr.getExpr()));
     AlgExpr res = toAbsEx(facts.second);
     for (auto &it : facts.first)
-        res += std::move(it);
+        res *= std::move(it);
     return res;
 }
 

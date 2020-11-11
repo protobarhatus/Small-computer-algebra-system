@@ -63,8 +63,9 @@ abs_ex Differential::downcastTo()
 {
     if (this->argument->getId() == NUMBER)
         return copy(zero);
-    return fullDifferential(this->argument);
-    assert(false);
+    if (this->argument->getId() <= 0)
+        return fullDifferential(this->argument);
+   // assert(false);
     return nullptr;
 }
 

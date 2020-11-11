@@ -3,9 +3,11 @@
 #include <QDebug>
 ScriptTextField::ScriptTextField(QWidget * parent) : QTextEdit(parent)
 {
+
     auto font = this->font();
     font.setPointSize(15);
     this->setFont(font);
+
 }
 bool isCursorChangingKey(QKeyEvent * e)
 {

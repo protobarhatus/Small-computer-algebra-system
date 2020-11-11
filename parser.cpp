@@ -17,6 +17,10 @@ bool isDigit(QChar sym)
 {
     return sym >= '0' && sym <= '9';
 }
+bool isEnglishLetter(QChar sym)
+{
+    return (sym >= 'a' && sym <= 'z') || (sym >= 'A' && sym <= 'Z');
+}
 QChar breaketsPair( QChar sym)
 {
     if (sym == '(')
@@ -229,14 +233,48 @@ AlgExpr parseIntegerNumber(const QString & expr)
 {
     return expr.toInt();
 }
+//возвращает строку со скобками и индекс после соответствующей закрывающей скобки
+std::pair<QString, int> cutOffBreaketGroup(const QString & expr, int ind_of_open)
+{
+    QString res;
+    int balance = 1;
+    for (ind_of_open++; ind_of_open < expr.size() && balance > 0; ++ind_of_open)
+    {
+        if (isOpenBreaket(expr[ind_of_open]))
+            ++balance;
+        res += expr[ind_of_open];
+        if (isClosingBreaket(expr[ind_of_open]))
+            --balance;
+    }
+    if (balance > 0)
+        throw QIODevice::tr("Отсутствует закрывающая скобка в \"") + expr + "\"";
+    return {res, ind_of_open};
+}
+std::pair<QString, int> cutOffSingleExprUnit(const QString & expr, int start)
+{
+    QString res;
+    if (isOpenBreaket(expr[start]))
+        return cutOffBreaketGroup(expr, start);
+    if (isDigit(expr[start]))
+    {
+        while (start < expr.length() && isDigit(expr[start]))
+            res += expr[start++];
+        return {res, start};
+    }
+    while (start < expr.length() && isEnglishLetter(expr[start]))
+        res += expr[start++];
+    return {res, start};
+
+}
+//придется учитывать степени скобок, чтобы можно было писать по типу (x-3)(x+2)^2(x+3) (это равно (x-3)*(x+2)^2*(x+3)
 std::list<QString> tryToSplitAmongBreaketsMultiplications(const QString & expr)
 {
     QString current_mult;
     std::list<QString> res;
     int breakets_level = 0;
-    for (auto &it : expr)
+    for (int i = 0; i  < expr.size(); ++i)
     {
-        if (isOpenBreaket(it))
+        if (isOpenBreaket(expr[i]))
         {
             if (breakets_level == 0)
             {
@@ -245,25 +283,37 @@ std::list<QString> tryToSplitAmongBreaketsMultiplications(const QString & expr)
                 current_mult = "";
             }
             else
-                current_mult += it;
+                current_mult += expr[i];
             ++breakets_level;
         }
-        else if (isClosingBreaket(it))
+        else if (isClosingBreaket(expr[i]))
         {
             if (breakets_level == 0)
                 throw "Syntax error: extra closing breaket in \"" + expr + "\"";
             --breakets_level;
             if (breakets_level == 0)
             {
-                if (current_mult != "")
-                    res.push_back(current_mult);
+                if (i < expr.size() - 2 && expr[i + 1] == '^' && (isEnglishLetter(expr[i + 2]) || isOpenBreaket(expr[i + 2]) || isDigit(expr[i + 2])))
+                {
+                    auto deg = cutOffSingleExprUnit(expr, i + 2);
+                    res.push_back("(" + current_mult + ")^" + deg.first);
+                    //deg.second будет указывать на символ после окончания юнита (числа/перменной/скобки), то есть
+                    //на следующую открывающую скобку, но
+                    //так как i еще раз увеличится в конце цикла, мы пропустим эту открывающую скобку
+                    i = deg.second - 1;
+                }
+                else
+                {
+                    if (current_mult != "")
+                        res.push_back(current_mult);
+                }
                 current_mult = "";
             }
             else
-                current_mult += it;
+                current_mult += expr[i];
         }
         else
-            current_mult += it;
+            current_mult += expr[i];
     }
     if (current_mult != "")
         res.push_back(current_mult);
@@ -329,6 +379,31 @@ AlgExpr parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
                 result /= parseAndComplete(it.second, scripts_space);
         return result;
     }
+    if (isMinusMultiplySomething(expr))
+        return parseMinusMultiplySomething(expr, scripts_space);
+
+
+    auto impl_mult_res = tryToParseImplicitMultiplicationOfNumberAndStuff(expr, scripts_space);
+    if (impl_mult_res.second)
+        return impl_mult_res.first;
+
+    if (isFunction(expr, scripts_space))
+        return parseFunction(expr, scripts_space);
+    if (isVariable(expr, scripts_space))
+        return scripts_space.getVariable(expr);
+    if (isIntegerNumber(expr))
+        return parseIntegerNumber(expr);
+
+    auto mult_split = tryToSplitAmongBreaketsMultiplications(expr);
+    if (mult_split.size() > 1)
+    {
+        AlgExpr res = 1;
+        for (auto &it : mult_split)
+            res *= parseAndComplete(it, scripts_space);
+        return res;
+    }
+
+
     auto degs = tryToSplitTokenAmongActions(expr, toSet({'^'}), ' ');
     if (degs.size() > 1)
     {
@@ -339,26 +414,9 @@ AlgExpr parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
             result = pow(parseAndComplete(it->second, scripts_space), std::move(result));
         return result;
     }
-    if (isMinusMultiplySomething(expr))
-        return parseMinusMultiplySomething(expr, scripts_space);
-    if (isFunction(expr, scripts_space))
-        return parseFunction(expr, scripts_space);
-    if (isVariable(expr, scripts_space))
-        return scripts_space.getVariable(expr);
-    if (isIntegerNumber(expr))
-        return parseIntegerNumber(expr);
-    auto impl_mult_res = tryToParseImplicitMultiplicationOfNumberAndStuff(expr, scripts_space);
-    if (impl_mult_res.second)
-        return impl_mult_res.first;
 
-    auto mult_split = tryToSplitAmongBreaketsMultiplications(expr);
-    if (mult_split.size() > 1)
-    {
-        AlgExpr res = 1;
-        for (auto &it : mult_split)
-            res *= parseAndComplete(it, scripts_space);
-        return res;
-    }
+
+
     if (isDerivativeObject(expr))
         return parseDerivativeObject(expr, scripts_space);
 

@@ -6,7 +6,7 @@
 #include "random"
 #include "QDataStream"
 #include <mainapplicationspace.h>
-//#define IN_MOSCOW
+#define IN_MOSCOW
 #ifdef IN_MOSCOW
 #include <G:\QTProjects\mo2\ExprMake\texpr_builder.h>
 #include <G:\QTProjects\mo2\testpaintwidget.h>
@@ -35,6 +35,8 @@ int rand(int min, int max)
 #include "algebra/polynomials_factorization.h"
 #include "algebra/solving_differential_equations.h"
 #include "algebra/solving_equations.h"
+#include "algebra/exception.h"
+#include "form.h"
 #include "parser.h"
 void out(const Polynom & p)
 {
@@ -47,11 +49,11 @@ void out(const Polynom & p)
             debug << " + " << p[i].toInt();
     }
 }
-
+#include <QException>
 int main(int argc, char *argv[])
 {
 
-    testAlgMod();
+   // testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -87,11 +89,33 @@ int main(int argc, char *argv[])
 
     AlgExpr dx = D(x);
     AlgExpr dy = D(y);
+
+
+
+ //   try {
+ //       c = (root(7*63*63*63, A(12))/(root(7, 3)+2));
+//
+  //  } catch (Exception ) {
+  //      qDebug() << "Fuck";
+  //  }
+
+
+
+
+
+
+
+
+
+
+
+
     //GaluaField::initialize(997);
     //Polynom pol({112, 58, -31, 107, -66});
    // Polynom pol({1, 12, -22, -163, 309, -119});
    // Polynom pol({1, -7, 10, 26, -60});
 
+//integral(pow(3, a*x + b), x);
 
    // Polynom pol({1, -3, -7, 12, -69, 502, -727, 1615, -4683, 2754, -5535, 8100});
     //Polynom pol({1, -2, -15, 36});
@@ -125,7 +149,7 @@ int main(int argc, char *argv[])
    // TExpr_Builder builder;
    // auto expr = builder.BuildExpr("x^2+x+1");
 
-    c = integral(1/(3-5*cos(x)), x);
+  //  c = integral(1/(3-5*cos(x)), x);
 
     //!!разобраться с этой хренью. то же самое с логарифмами
     //c = sqrt(-x*y) / sqrt(-y); c = sqrt(-x*y) + sqrt(-y)
@@ -145,7 +169,7 @@ int main(int argc, char *argv[])
     //c = sin(acos(sqrt(1 - sin(x)*sin(x))));
   //  c = integral(sin(x)/pow(cos(x), 2), x) - (2/((-1*tan((1*x/2)))+(1))/((1)+(tan((1*x/2)))));
 
-    //auto res = solveEquation(ln(abs(x)) + ln(abs(y)) + c, y);
+   // auto res = solveEquation(ln(abs(x)) + ln(abs(y)) + c, y);
    // auto res = solveEquation((2*pow(x, 4) - 3*pow(x, 3) - x*x -3*x + 2), x);
     //auto res = solveEquation((2*x4 - 15*x3 + 35*x2 - 30* x + 8 ), x);
    // auto res = solveEquation(x + 2*sqrt(x)-15, x);
@@ -204,7 +228,7 @@ int main(int argc, char *argv[])
     //auto res = solveDifur(2*dy/dx - 3*y*cos(x) + pow(euler(), -2*x) *(2+ 3*cos(x))/y, x, y); //y = e^(3/2*sin(x))*sqrt(e^(-3*sin(x) - 2*x) + C8)  and  C8 is in  R
 
 
-    auto res = solveDifur((2*x - y + 1)*dx + (2*y - x - 1)*dy , x, y);  //y = 1/2 (1 + x + sqrt(-3*x^2 - 2*x + C3))   and  C3 is in  R"   "y = 1/2 (-1*sqrt(-3*x^2 - 2*x + C5) + 1 + x)   and  C5 is in  R
+   // auto res = solveDifur((2*x - y + 1)*dx + (2*y - x - 1)*dy , x, y);  //y = 1/2 (1 + x + sqrt(-3*x^2 - 2*x + C3))   and  C3 is in  R"   "y = 1/2 (-1*sqrt(-3*x^2 - 2*x + C5) + 1 + x)   and  C5 is in  R
   //  auto res = solveDifur((3*x2 - 3*y2 + 4*x)*dx - (6*x*y + 4*y)*dy, x, y); //y = sqrt(2*C2 + 3*x^4 + 3*x*C2 + 4*x^2 + 8*x^3)*C7/(2 + 3*x)  and  C2 is in  R  and  C7 is in  { -1 } U { 1 }
    // auto res = solveDifur((6*y - 3*x2 + 3*y2)*dx + (6*x + 6*x*y)*dy, x, y);    //y =  (sqrt(x)*C7 + sqrt(x^3 + 3*x + C3)*C9) *C11/sqrt(x)  and  C3 is in  R  and  C7 is in  { -3 } U { sqrt(3) }  and  C9 is in  { sqrt(3) } U { 3 }  and  C11 is in  { -1/3 } U { 1/3 }
     //auto res = solveDifur(2*x*(1 - pow(euler(), y))*dx/pow(1 + x2, 2) + pow(euler(), y)*dy/(1 + x2), x, y);  //"y = ln(C13 + x^2*C13 + C14)  and  C13 is in  (-inf; 0)  and  C14 is in  { -1 } U { 1 }"  "y = ln(-1*C11 - x^2*C11 + 1)  and  C11 is in  (-inf; 0)"  "y = 0"
@@ -235,9 +259,9 @@ int main(int argc, char *argv[])
     //auto res = solveDifur(derivObj(y, x, 2) + 9*y + 18*sin(3*x) + 18*pow(euler(), 3*x), x, y);   //y = -1/2 (-6*x*cos(3*x) + sin(3*x) + cos(3*x)*C8 + sin(3*x)*C9 + 2*e^(3*x))   and  C8 is in  R  and  C9 is in  R
 
   //  auto res = solveDifur(derivObj(y, x, 3) + derivObj(y, x, 1), x, y);  //y = cos(x)*C1 + sin(x)*C2 + C  and  C is in  R  and  C1 is in  R  and  C2 is in  R
-    qDebug() << "RES: ";
-    for (auto &it : res.first)
-        qDebug() << it.toString();
+    //qDebug() << "RES: ";
+   // for (auto &it : res.first)
+   //     qDebug() << it.toString();
 
 //ScriptsNameSpace sp;
  //   c = parseAndComplete("2 + 3", sp);
@@ -254,16 +278,27 @@ int main(int argc, char *argv[])
     //c = parseAndComplete("Integrate[x, x]", sp);
     qDebug();
     qDebug() << "######################################################";
+    c = x2 + x + 1;
     qDebug() << c.toString();
 
 
     QApplication sdsd(argc, argv);
 #ifdef IN_MOSCOW
+   /* Form window;
+
     TestPaintWidget widg;
+
     widg.setFontSize(18);
 
     widg.setExpr(c.toString());
     widg.show();
+
+    window.show();*/
+  //  TestPaintWidget widg;
+      //  widg.setFontSize(18);
+
+     //   widg.setExpr("a + b");
+     //   widg.show();
 #endif
    MainApplicationSpace appl;
    appl.launch();

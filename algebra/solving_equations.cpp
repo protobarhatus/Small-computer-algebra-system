@@ -999,6 +999,14 @@ std::list<abs_ex> factorizeAsQuadraticFunction(const abs_ex & polynom)
                 if (res->getId() == FRACTAL)
                 {
                     auto fr = static_cast<Fractal*>(res.get());
+                    if (!fr->getCoefficient().isOne())
+                    {
+                        if (fr->getCoefficient().getNumerator() == 1)
+                        {
+                            *fr->getFractal().first->begin() = *fr->getFractal().first->begin() * numToAbs(fr->getCoefficient().getDenominator()) + zero;
+                        }
+                        fr->setCoefficinet(1);
+                    }
                     if (fr->getCoefficient().isOne() && fr->getFractal().second->size() == 0 &&
                             fr->getFractal().first->size() == 2 && fr->getFractal().first->begin()->get()->getId() == POLYNOMIAL &&
                             next(fr->getFractal().first->begin())->get()->getId() == POLYNOMIAL)
@@ -1168,6 +1176,7 @@ std::pair<abs_ex, int> tryToDistingushFullDegreeWithPrecisionOfCoefficientWithou
             }
         }
         auto g_polynom = pow(g, n) + zero;
+       // qDebug() << g_polynom->toString();
         auto pol = checkIfItsPolynom(g_polynom, var);
         if (its_pol.size() == pol.size())
         {

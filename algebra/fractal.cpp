@@ -228,7 +228,7 @@ bool Fractal::canDowncastTo()
 }
 abs_ex Fractal::downcastTo()
 {
-    assert(this->canDowncastTo());
+    //assert(this->canDowncastTo());
     if (this->numerator.empty() && this->denominator.empty())
     {
         return toAbsEx(this->coefficient);
@@ -243,7 +243,9 @@ abs_ex Fractal::downcastTo()
       //  qDebug() << this->toString();
         return integratingConstantExpr(this->getRange());
     }
-    return std::move( *this->numerator.begin());
+    if ((this->denominator.empty() && this->coefficient.getDenominator() == 1 && this->coefficient.getNumerator() == 1 && this->numerator.size() == 1))
+         return std::move( *this->numerator.begin());
+    return nullptr;
 }
 bool Fractal::isZero() const
 {
@@ -335,7 +337,7 @@ std::unique_ptr<Fractal> Fractal::operator-(const std::unique_ptr<Fractal> &subt
 void Fractal::simplify()
 {
     SIM_IF_NEED
-      //      qDebug() << this->toString();
+
     for (auto &it: this->numerator)
     {
         it->simplify();
@@ -421,8 +423,10 @@ void Fractal::simplify()
     this->setSameMembersIntoDegree();
     this->castTrigonometry();
     this->castTrigonometryArguments();
+
     if (this->hasIntegratingConstantMultiplierThatCanBeChanged())
     {
+      //  qDebug() << this->toString();
         this->pullSomeMultipliersIntoIntegratingConstant();
         if (this->numerator.size() > 0 && isIntegratingConstantAndCanChangeIt(this->numerator.back()->getId()) &&
                 VariablesDistributor::get().getVariablesDefinition(this->numerator.back()->getId())->getRange().isSymmetricRelativelyZero())
@@ -630,7 +634,7 @@ void Fractal::turnDegreesIntoList()
             Degree * it_deg = static_cast<Degree*>(it->get());
             if (it_deg->canGetListOfArguments())
             {
-                auto list = std::move(it_deg->getListOfArguments());
+                auto list = it_deg->getListOfArguments();
                 if (!list.second)
                 {
                     for (auto &it1 : *list.first)
@@ -1139,22 +1143,31 @@ QString Fractal::makeWolframString() const
 QString Fractal::toString() const
 {
     QString result ;
+
+    bool was_last_thing_it_need_to_set_sign_after = false;
     if (!this->coefficient.isOne())
         result += this->coefficient.toString();
     for (auto &it : this->numerator)
         if (it->getId() != POLYNOMIAL)
-            result += "*" + it->toString();
+        {
+            QString str = it->toString();
+            if (!was_last_thing_it_need_to_set_sign_after && (str.size() == 1 || (it->getId() == DEGREE && Degree::getArgumentOfDegree(it.get())->toString().size() == 1)))
+                result += " " + it->toString();
+            else
+                result += "*" + it->toString();
+            was_last_thing_it_need_to_set_sign_after = str.size() > 1;
+        }
         else
-            result += " (" + it->toString() + ") ";
+            result += " (" + it->toString() + ")";
     if (result.size() == 0)
         result += "1";
    // else if (numerator.size() > 0 && numerator.back()->getId() == POLYNOMIAL)
      //   result += ' ';
     for (auto &it : this->denominator)
         if (it->getId() != POLYNOMIAL)
-            result += "/" + it->toString();
+            result += " / " + it->toString();
         else
-            result += "/(" + it->toString() + ")";
+            result += " / (" + it->toString() + ")";
     if (result[0] == "*")
         result = result.remove(0, 1);
     return result;
@@ -1293,8 +1306,9 @@ void Fractal::getRidOfIrrationalityInDenominator()
         for (auto it = this->denominator.begin(); it != this->denominator.end(); ++it)
             if (it->get()->getId() == POLYNOMIAL && static_cast<Polynomial*>(it->get())->isIrrationalSum())
             {
+               //  qDebug() << this->toString();
                 auto res = static_cast<Polynomial*>(it->get())->multiplyIrrationalSumOnAppropriateFormula();
-              //  qDebug()<<"F: " << res.first->makeStringOfExpression();
+               // qDebug()<<"F: " << res.first->makeStringOfExpression();
               //  qDebug() <<"S: " << res.second->makeStringOfExpression();
                 this->pushBackToNumerator(std::move(res.second));
                 *it = std::move(res.first);
@@ -4447,6 +4461,7 @@ bool Fractal::hasIntegratingConstantMultiplierThatCanBeChanged() const
     for (auto &it : denominator)
         if (isIntegratingConstantAndCanChangeIt(it->getId()))
             return true;
+    return false;
 }
 
 abs_ex Fractal::takeAwayConstantMultiplierThatCanBeChanged()

@@ -163,6 +163,8 @@ void testAlgMod()
 },
             []()->bool {
             AlgExpr a = var();
+           // qDebug() << (pow(8, a) - pow(2, 3*a)).toString();
+          //  qDebug() << (pow(8, a) == pow(2, 3 * a));
             return pow(8, a) == pow(2, 3 * a);
 },
             []()->bool {

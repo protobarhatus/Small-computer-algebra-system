@@ -73,7 +73,7 @@ ScriptsNameSpace::ScriptsNameSpace()
                                 auto integr = integral(std::move(args[0]), args[1]);
                                 if (integr.getExpr() == nullptr)
                                     throw QIODevice::tr("Не удается взять интеграл от ") + args[0].toString();
-                                return integr;
+                                return integr + integratingConstantExpr();
                             }, true)});
     this->functions.insert({"Integrate", FunctionLiteral("Integrate", 1, [](std::vector<AlgExpr>&& args) {
                                 if (!hasDifferentialAsMultiplier(args[0].getExpr()))
@@ -81,9 +81,11 @@ ScriptsNameSpace::ScriptsNameSpace()
                                 auto integr = integral(std::move(args[0]));
                                 if (integr.getExpr() == nullptr)
                                     throw QIODevice::tr("Не удается взять интеграл от ") + args[0].toString();
-                                return integral(std::move(args[0]));})});
+                                return integr + integratingConstantExpr();
+                            })});
 
     this->functions.insert({"Factorize", FunctionLiteral("Factorize", 1, [](std::vector<AlgExpr>&& args) { return factorize(std::move(args[0]));}, true)});
+
 
 this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<AlgExpr>&& args) { return expand(std::move(args[0]));}, true)});
 }
