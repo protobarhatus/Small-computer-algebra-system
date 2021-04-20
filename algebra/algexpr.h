@@ -107,6 +107,13 @@ private:
     bool isEqualTo(const AlgExpr & sec) const;
     abs_ex expression;
 };
+
+bool operator>(const AlgExpr & a, const AlgExpr & b);
+bool operator<(const AlgExpr & a, const AlgExpr & b);
+bool operator>=(const AlgExpr & a, const AlgExpr & b);
+bool operator<=(const AlgExpr & a, const AlgExpr & b);
+
+int compare(const AlgExpr & a, const AlgExpr & b);
 //после преобразований, в получившимся выражении константы интегрирования обладают большими индексами, в то время, как C, C1, C2... не присутствуют в выражении
 //данная функция изменит имена этих констант, добавив при этом в имя html тег
 void downgradeIntegratingConstantsIndexes(AlgExpr & expr);

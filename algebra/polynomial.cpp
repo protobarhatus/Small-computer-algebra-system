@@ -860,7 +860,7 @@ abs_ex Polynomial::reduceCommonPart()
 bool Polynomial::isIrrationalSum()
 {
     //polynoms with one summary can not exist becouse they downcast itself before. exceptions are variables with non-numeric degrees
-    return this->getSetOfVariables().empty();
+    return this->getSetOfVariables().empty() && this->getSetOfFunctions().empty();
 }
 bool Polynomial::canGetRidOfIrrationalytyByMultiplying()
 {

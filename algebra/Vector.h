@@ -69,12 +69,25 @@ public:
 
 
 };
+
+class AlgExpr;
+typedef Vector<AlgExpr> AlgVector;
+
+
 template<typename T>
 Vector<T> operator*(const T& num, const Vector<T>& vec);
+
+template<typename T>
+Vector<T> operator*(const Vector<T> & a, const Vector<T> & b);
+
+
 template<typename T>
 T scalar(const Vector<T>& a, const Vector<T>& b);
 template<typename T>
 T distance(const Vector<T>& a, const Vector<T>& b);
+template<typename T>
+T len(const Vector<T>& a);
+
 template<typename T,typename D>
 void _fillVector(std::vector<T>& vec, int ind_of_start, D arg)
 {

@@ -252,4 +252,23 @@ T distance(const Vector<T>& a, const Vector<T>& b)
         res = res + (a[i] - b[i]) * (a[i] - b[i]);
 	return sqrt(res);
 }
+
+
+template<typename T>
+Vector<T> operator*(const Vector<T> & a, const Vector<T> & b)
+{
+    if (a.size() != 3 || b.size() != 3)
+        throw "Cannot multiply non 3 dimensional vectors";
+     return Vector<T>(a.y() * b.z() - a.z() * b.y(), a.z() * b.x() - a.x() * b.z(), a.x() * b.y() - a.y() * b.x());
+}
+
+template<typename T>
+T len(const Vector<T>& a)
+{
+    T res = 0;
+    for (int i = 0; i < a.size(); ++i)
+        res = res + a[i] * a[i];
+    return sqrt(res);
+}
+
 #endif

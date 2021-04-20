@@ -761,3 +761,32 @@ std::pair<std::vector<DifurResult>, std::vector<RootCondition> > selectRootsAndC
         res.push_back(DifurResult(copy(it.getExpr()), DifurResult::SOLVED_FOR_Y));
     return {std::move(res), std::move(preres.second)};
 }
+
+
+
+
+
+bool operator>(const AlgExpr &a, const AlgExpr &b)
+{
+    return (a - b).getExpr()->getPositionRelativelyZero() > 0;
+}
+
+bool operator<(const AlgExpr &a, const AlgExpr &b)
+{
+    return (a - b).getExpr()->getPositionRelativelyZero() < 0;
+}
+
+int compare(const AlgExpr &a, const AlgExpr &b)
+{
+    return (a - b).getExpr()->getPositionRelativelyZero();
+}
+
+bool operator>=(const AlgExpr &a, const AlgExpr &b)
+{
+    return (a - b).getExpr()->getPositionRelativelyZero() >= 0;
+}
+
+bool operator<=(const AlgExpr &a, const AlgExpr &b)
+{
+    return (a - b).getExpr()->getPositionRelativelyZero() <= 0;
+}

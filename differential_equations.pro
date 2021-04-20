@@ -106,6 +106,9 @@ SOURCES += \
     algebra/variablesdefinition.cpp \
     algebra/variablesdistributor.cpp \
     algebra/variablesnamedistributor.cpp \
+    analitical_geometry/geometry_3d.cpp \
+    analitical_geometry/line3d.cpp \
+    analitical_geometry/plane.cpp \
     commandresponse.cpp \
     form.cpp \
     functionliteral.cpp \
@@ -213,6 +216,9 @@ HEADERS += \
     algebra/variablesdefinition.h \
     algebra/variablesdistributor.h \
     algebra/variablesnamedistributor.h \
+    analitical_geometry/geometry_3d.h \
+    analitical_geometry/line3d.h \
+    analitical_geometry/plane.h \
     commandresponse.h \
     form.h \
     functionliteral.h \
@@ -246,7 +252,7 @@ DISTFILES += \
     ../../mo2/icon.rc \
     ../../mo2/icon.svg \
     algebra/algebra_mod.qmodel \
-    algebra/algebra_modul_behavior.qmodel
+    algebra/algebra_modul_behavior.qmodel \
 
 SUBDIRS += \
     ../../mo2/ExprGuide.pro

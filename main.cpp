@@ -38,6 +38,7 @@ int rand(int min, int max)
 #include "algebra/exception.h"
 #include "form.h"
 #include "parser.h"
+#include "analitical_geometry/geometry_3d.h"
 void out(const Polynom & p)
 {
     auto debug = qDebug();
@@ -49,10 +50,21 @@ void out(const Polynom & p)
             debug << " + " << p[i].toInt();
     }
 }
+void geoTest()
+{
+
+    AlgVector a(A(1), A(2), A(3)), b(A(0), A(0), A(0)), c(sqrt(5)/2, sqrt(3/A(2)), A(-4));
+    Plane plane = getPlaneThroughPointAndTwoVectors(a, b - a, c - a);
+
+    qDebug() << "  A:  " << plane.a().toString() << "  B:  " << plane.b().toString() << "   C:   " << plane.c().toString() << "   D:   " << plane.d().toString();
+
+
+}
+
 #include <QException>
 int main(int argc, char *argv[])
 {
-
+    geoTest();
    // testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);

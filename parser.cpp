@@ -218,6 +218,8 @@ bool isIntegerNumber(const QString & expr)
 }
 std::pair<AlgExpr, bool> tryToParseImplicitMultiplicationOfNumberAndStuff(const QString & expr, const ScriptsNameSpace & scripts_space)
 {
+    if (expr.contains('^'))
+        return {0, false};
     if (expr.size() < 2 || !isDigit(expr[0]))
         return {0, false};
     int index = 0;
@@ -276,7 +278,8 @@ std::list<QString> tryToSplitAmongBreaketsMultiplications(const QString & expr)
     {
         if (isOpenBreaket(expr[i]))
         {
-            if (breakets_level == 0)
+            //условие для того чтобы учитывать ситуацию a^(x)
+            if (breakets_level == 0 && (i == 0 || expr[i - 1] != '^'))
             {
                 if (current_mult != "")
                     res.push_back(current_mult);

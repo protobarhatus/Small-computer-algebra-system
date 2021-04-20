@@ -689,8 +689,11 @@ std::list<abs_ex> _solveEquation(const abs_ex & equation, int var)
         {
             return res;
         }
-        res.push_back( (-qc_f[1] + sqrt(D))/(two*qc_f[0]));
-        res.push_back( (-qc_f[1] - sqrt(D))/(two*qc_f[0]));
+        auto root_D = sqrt(D);
+        if (root_D->getId() == ABSOLUTE_VALUE)
+            root_D = static_cast<AbsoluteValue*>(root_D.get())->getExpressionCopy();
+        res.push_back( (-qc_f[1] + root_D)/(two*qc_f[0]));
+        res.push_back( (-qc_f[1] - root_D)/(two*qc_f[0]));
         return res;
     }
     if (isPolynomOfAllVariables(equation))
@@ -989,11 +992,13 @@ std::list<abs_ex> factorizeAsQuadraticFunction(const abs_ex & polynom)
             {
                 assert(false);
             }
-            if (D->getPositionRelativelyZero() > 0)
+            if (D->getPositionRelativelyZero() >= 0)
             {
-
-                auto w = (-qc_f[1] + sqrt(D))/two/qc_f[0];
-                auto u = (-qc_f[1] - sqrt(D))/two/qc_f[0];
+                auto root_D = sqrt(D);
+                if (root_D->getId() == ABSOLUTE_VALUE)
+                    root_D = static_cast<AbsoluteValue*>(root_D.get())->getExpressionCopy();
+                auto w = (-qc_f[1] + root_D)/two/qc_f[0];
+                auto u = (-qc_f[1] - root_D)/two/qc_f[0];
                 abs_ex x (new Variable(getVariable(it)));
                 auto res = qc_f[0]*(x - w)*(x - u);
                 if (res->getId() == FRACTAL)
@@ -1003,9 +1008,10 @@ std::list<abs_ex> factorizeAsQuadraticFunction(const abs_ex & polynom)
                     {
                         if (fr->getCoefficient().getNumerator() == 1)
                         {
-                            *fr->getFractal().first->begin() = *fr->getFractal().first->begin() * numToAbs(fr->getCoefficient().getDenominator()) + zero;
+                            result.push_back(toAbsEx(fr->getCoefficient()));
+                            fr->setCoefficinet(1);
                         }
-                        fr->setCoefficinet(1);
+
                     }
                     if (fr->getCoefficient().isOne() && fr->getFractal().second->size() == 0 &&
                             fr->getFractal().first->size() == 2 && fr->getFractal().first->begin()->get()->getId() == POLYNOMIAL &&
@@ -1064,6 +1070,7 @@ std::list<abs_ex> factorizePolynomOfSeveralVariables(const abs_ex & polynom)
         return std::move(deg_res.first);
     }
     auto res = factorizePolynomOfSeveralVariablesByAlgorithmOfCoefsFacts(polynom);
+
     for (auto it = res.begin(); it != res.end(); )
     {
         auto facts = factorizeAsQuadraticFunction(*it);
@@ -1079,6 +1086,11 @@ std::list<abs_ex> factorizePolynomOfSeveralVariables(const abs_ex & polynom)
         return res;
     for (auto it = res.begin(); it != res.end(); )
     {
+        if (it->get()->getId() != POLYNOMIAL)
+        {
+            ++it;
+            continue;
+        }
         auto facts = factorizePolynomOfSeveralVariables(*it);
         if (facts.size() > 1)
         {
@@ -1136,6 +1148,7 @@ std::pair<std::list<abs_ex >, Number> factorizePolynom(const abs_ex &polynom)
         res = factorizePolynomOfSeveralVariables(polynom);
 
     //это для того, чтобы одинаковые множители свернуть в степень
+
     Fractal fr(res);
     res = std::move(*fr.getFractal().first);
 

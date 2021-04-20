@@ -179,22 +179,25 @@ abs_ex Logarithm::downcastTo()
             }
             return res;
         }
-        abs_ex res = ln(toAbsEx(fr->getCoefficient() * -1));
-        if (fr->getFractal().first->empty())
+        if (!(fr->getFractal().first->size() == 1 && fr->getFractal().second->size() == 0))
         {
-            res = std::move(res) - ln(-(*fr->getFractal().second->begin()));
-            for (auto it = next(fr->getFractal().second->begin()); it != fr->getFractal().second->end(); ++it)
-                res = std::move(res) - ln(*it);
+            abs_ex res = ln(toAbsEx(fr->getCoefficient() * -1));
+            if (fr->getFractal().first->empty())
+            {
+                res = std::move(res) - ln(-(*fr->getFractal().second->begin()));
+                for (auto it = next(fr->getFractal().second->begin()); it != fr->getFractal().second->end(); ++it)
+                    res = std::move(res) - ln(*it);
+            }
+            else
+            {
+                res = std::move(res) + ln(-(*fr->getFractal().first->begin()));
+                for (auto it = next(fr->getFractal().first->begin()); it != fr->getFractal().first->end(); ++it)
+                    res = std::move(res) + ln(*it);
+                for (auto &it : *fr->getFractal().second)
+                    res = std::move(res) - ln(it);
+            }
+            return res;
         }
-        else
-        {
-            res = std::move(res) + ln(-(*fr->getFractal().first->begin()));
-            for (auto it = next(fr->getFractal().first->begin()); it != fr->getFractal().first->end(); ++it)
-                res = std::move(res) + ln(*it);
-            for (auto &it : *fr->getFractal().second)
-                res = std::move(res) - ln(it);
-        }
-        return res;
        // res = std::move(res) + ln()
     }
     if (this->argument->getId() == NUMBER)
