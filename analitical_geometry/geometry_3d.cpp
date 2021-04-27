@@ -55,3 +55,47 @@ AlgVector getIntersection(const Line3d& line, const Plane& plane)
     AlgExpr t = -(plane.a() * point.x() + plane.b() * point.y() + plane.c() * point.z() + plane.d()) / (plane.a() * base.x() + plane.b() * base.y() + plane.c() * base.z());
     return point + base * t;
 }
+
+AlgVector middle(const AlgVector &a, const AlgVector &b)
+{
+    assert(a.size() == b.size());
+    AlgVector mid = AlgVector::create(a.size());
+    for (int i = 0; i < a.size(); ++i)
+        mid[i] = (a[i] + b[i]) / 2;
+    return mid;
+}
+
+AlgVector ratio(const AlgVector &a, const AlgVector &b, int m, int n)
+{
+    return  a + (b - a) * (AlgExpr(m)/(m + n));
+}
+
+AlgExpr surface(const std::vector<AlgVector> &polygon)
+{
+    AlgExpr res = 0;
+    for (int i = 1; i <= polygon.size() - 2; ++i)
+    {
+        res += surface(polygon[0], polygon[i], polygon[i + 1]);
+    }
+    return res;
+}
+
+AlgExpr surface(const AlgVector &a, const AlgVector &b, const AlgVector &c)
+{
+   /* AlgExpr det1 = det(Matrix<AlgExpr>({Vector<AlgExpr>(1, a.x(), a.y()),
+                                   Vector<AlgExpr> (1, b.x(), b.y()),
+                                   Vector<AlgExpr> (1, c.x(), c.y())}));
+    AlgExpr det2 = det(Matrix<AlgExpr>({Vector<AlgExpr>(1, a.x(), a.z()),
+                                   Vector<AlgExpr> (1, b.x(), b.z()),
+                                   Vector<AlgExpr> (1, c.x(), c.z())}));
+    AlgExpr det3 = det(Matrix<AlgExpr>({Vector<AlgExpr>(1, a.y(), a.z()),
+                                   Vector<AlgExpr> (1, b.y(), b.z()),
+                                   Vector<AlgExpr> (1, c.y(), c.z())}));
+    return (sqrt(sqr(det1) + sqr(det2) + sqr(det3))) / 2;*/
+    return len((b - a) * (c - a))/2;
+}
+
+AlgExpr angle(const Plane &a, const Plane &b)
+{
+    return acos(abs(scalar(a.normal(), b.normal()) / (len(a.normal()) * len(b.normal()))));
+}

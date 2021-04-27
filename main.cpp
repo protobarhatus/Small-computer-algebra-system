@@ -50,15 +50,26 @@ void out(const Polynom & p)
             debug << " + " << p[i].toInt();
     }
 }
+void out(const AlgVector & vec)
+{
+    qDebug() << "(" << vec.x().toString() << "; " << vec.y().toString() << "; " << vec.z().toString() << ")";
+}
 void geoTest()
 {
+    auto prizm = makeRightPrizm(6, 4*sqrt(A(3)), "ABCDA1B1C1D1");
+    prizm.connectPoint(ratio(prizm["A"], prizm["B"], 1, 5), "M");
+    prizm.connectPoint(ratio(prizm["A1"], prizm["D1"], 1, 5), "N");
+    prizm.connectPoint(ratio(prizm["C1"], prizm["D1"], 1, 5), "K");
 
-    AlgVector a(A(1), A(2), A(3)), b(A(0), A(0), A(0)), c(sqrt(5)/2, sqrt(3/A(2)), A(-4));
-    Plane plane = getPlaneThroughPointAndTwoVectors(a, b - a, c - a);
-
-    qDebug() << "  A:  " << plane.a().toString() << "  B:  " << plane.b().toString() << "   C:   " << plane.c().toString() << "   D:   " << plane.d().toString();
-
-
+    auto sec = prizm.section(prizm.plane("MNK"));
+    out(sec[0]);
+    out(sec[1]);
+    out(sec[2]);
+    out(sec[3]);
+    out(sec[4]);
+    out(sec[5]);
+    qDebug() << surface(prizm.section(prizm.plane("MNK"))).toWolframString();
+    qDebug() << angle(prizm.plane("MNK"), prizm.plane("ABC")).toWolframString();
 }
 
 #include <QException>

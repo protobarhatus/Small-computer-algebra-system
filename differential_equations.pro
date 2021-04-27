@@ -109,6 +109,7 @@ SOURCES += \
     analitical_geometry/geometry_3d.cpp \
     analitical_geometry/line3d.cpp \
     analitical_geometry/plane.cpp \
+    analitical_geometry/polyhedron.cpp \
     commandresponse.cpp \
     form.cpp \
     functionliteral.cpp \
@@ -219,6 +220,7 @@ HEADERS += \
     analitical_geometry/geometry_3d.h \
     analitical_geometry/line3d.h \
     analitical_geometry/plane.h \
+    analitical_geometry/polyhedron.h \
     commandresponse.h \
     form.h \
     functionliteral.h \

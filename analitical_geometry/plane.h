@@ -41,5 +41,6 @@ private:
 };
 
 Plane getPlaneThroughPointAndTwoVectors(const AlgVector& point, const AlgVector& vector1, const AlgVector& vector2);
+Plane getPlaneThroughThreePoints(const AlgVector& point1, const AlgVector& point2, const AlgVector & point3);
 
 #endif // PLANE_H

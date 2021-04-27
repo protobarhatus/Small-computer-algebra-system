@@ -253,3 +253,8 @@ Plane getPlaneThroughPointAndTwoVectors(const AlgVector& point, const AlgVector&
 
     return Plane(D1, -D2, D3, -point.x() * D1 + point.y() * D2 - point.z() * D3);
 }
+
+Plane getPlaneThroughThreePoints(const AlgVector &point1, const AlgVector &point2, const AlgVector &point3)
+{
+    return getPlaneThroughPointAndTwoVectors(point1, point2 - point1, point3 - point1);
+}

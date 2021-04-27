@@ -15,8 +15,8 @@ template<typename T>
 Matrix<T>::Matrix(std::vector<Vector<T>>&& _matrix)
 {
     this->matrix = std::move(_matrix);
-    this->_lines = _matrix.size();
-    this->_columns = _matrix[0].size();
+    this->_lines = matrix.size();
+    this->_columns = matrix[0].size();
 }
 template<typename T>
 Matrix<T>::Matrix(int m, int n)
@@ -404,4 +404,13 @@ std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix)
 	return result;
 	
 }
+
+template<typename T>
+Matrix<T> rotationMatrix2D(const T& angle)
+{
+    return Matrix<T>({ Vector<T>(cos(angle), -sin(angle)), Vector<T>(sin(angle), cos(angle))});
+}
+
+
+
 #endif

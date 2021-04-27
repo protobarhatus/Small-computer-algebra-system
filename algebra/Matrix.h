@@ -53,6 +53,9 @@ template<typename T>
 std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix);
 template<typename T>
 Matrix<T> inverse(Matrix<T> matrix);
+//Угол в радианах и ПРОТИВ часовой стрелки. При повороте ПО часовой стрелке угол ОТРИЦАТЕЛЬНЫЙ
+template<typename T>
+Matrix<T> rotationMatrix2D(const T& angle);
 
 #include "Matrix.inl"
 #endif

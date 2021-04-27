@@ -8,13 +8,13 @@
 
 
 
-template <typename T,typename ... D>
+template <class T,class ... D>
 void _fillVector(std::vector<T>& vec, int ind_of_start, D ... args);
-template<typename T,typename D>
+template<class T,class D>
 void _fillVector(std::vector<T>& vec, int ind_of_start, D arg);
-template <typename T,typename first, typename ... others>
+template <class T,class first, class ... others>
 void _fillVector(std::vector<T>& vec, int ind_of_start, first arg, others ... args);
-template <typename T,typename ... type>
+template <class T,class ... type>
 std::vector<T> getVector(type ... args);
 
 template<typename T>
@@ -26,11 +26,11 @@ class Vector {
 	int _size;
 public:
 	Vector();
-	static Vector create(int size);
-	template <typename ... doubl>
-	Vector(doubl ... args)
+    static Vector create(int size);
+    template <class ... doubl>
+    Vector(T a, doubl ... args)
 	{
-		this->vector = getVector(args...);
+        this->vector = getVector<T>(a,  args...);
 		this->_size = this->vector.size();
 	}
 	Vector(const Vector& vec);
@@ -66,9 +66,17 @@ public:
 
 	
 	int size() const;
-
+    bool isZero() const;
 
 };
+template<typename T>
+Vector<T> addDimension(const Vector<T> & vec, const T & z);
+template<typename T>
+Vector<T> addDimension(Vector<T> && vec, const T & z);
+template<typename T>
+Vector<T> addDimension(const Vector<T> & vec, T && z);
+template<typename T>
+Vector<T> addDimension(Vector<T> && vec, T && z);
 
 class AlgExpr;
 typedef Vector<AlgExpr> AlgVector;
@@ -109,3 +117,4 @@ std::vector<T> getVector(type ... args)
 }
 #include "Vector.inl"
 #endif
+

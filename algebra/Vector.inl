@@ -270,5 +270,49 @@ T len(const Vector<T>& a)
         res = res + a[i] * a[i];
     return sqrt(res);
 }
+template<typename T>
+Vector<T> addDimension(const Vector<T> & vec, const T & z)
+{
+    Vector<T> new_vec = Vector<T>::create(vec.size() + 1);
+    for (int i = 0; i < vec.size(); ++i)
+        new_vec[i] = vec[i];
+    new_vec[vec.size()] = z;
+    return new_vec;
+}
+template<typename T>
+Vector<T> addDimension(Vector<T> && vec, const T & z)
+{
+    Vector<T> new_vec = Vector<T>::create(vec.size() + 1);
+    for (int i = 0; i < vec.size(); ++i)
+        new_vec[i] = std::move(vec[i]);
+    new_vec[vec.size()] = z;
+    return new_vec;
+}
+template<typename T>
+Vector<T> addDimension(const Vector<T> & vec, T && z)
+{
+    Vector<T> new_vec = Vector<T>::create(vec.size() + 1);
+    for (int i = 0; i < vec.size(); ++i)
+        new_vec[i] = vec[i];
+    new_vec[vec.size()] = std::move(z);
+    return new_vec;
+}
+template<typename T>
+Vector<T> addDimension(Vector<T> && vec, T && z)
+{
+    Vector<T> new_vec = Vector<T>::create(vec.size() + 1);
+    for (int i = 0; i < vec.size(); ++i)
+        new_vec[i] = std::move(vec[i]);
+    new_vec[vec.size()] = std::move(z);
+    return new_vec;
+}
+template<typename T>
+bool Vector<T>::isZero() const
+{
+    for (auto &it : this->vector)
+        if (it != 0)
+            return false;
+    return true;
+}
 
 #endif

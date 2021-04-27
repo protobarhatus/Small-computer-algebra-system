@@ -368,7 +368,7 @@ AlgExpr var(VariablesDefinition def)
     expr.expression = abs_ex(new Variable(VariablesDistributor::createVariable(def)));
     return expr;
 }
-AlgExpr abs(AlgExpr & arg)
+AlgExpr abs(const AlgExpr & arg)
 {
     AlgExpr expr;
     expr.expression = abs(arg.expression);
@@ -391,7 +391,7 @@ AlgExpr sqrt(int arg)
 {
     return sqrt(AlgExpr(arg));
 }
-AlgExpr sin(AlgExpr & arg)
+AlgExpr sin(const AlgExpr & arg)
 {
     AlgExpr expr;
     expr.expression= sin(arg.expression);
@@ -415,7 +415,7 @@ AlgExpr sin(int arg)
 {
     return sin(AlgExpr(arg));
 }
-AlgExpr cos(AlgExpr & arg)
+AlgExpr cos(const AlgExpr & arg)
 {
     AlgExpr expr;
     expr.expression = cos(arg.expression);
@@ -432,7 +432,7 @@ AlgExpr cos(int arg)
     return cos(AlgExpr(arg));
 }
 
-AlgExpr tan(AlgExpr &arg)
+AlgExpr tan(const AlgExpr &arg)
 {
     AlgExpr expr;
     expr.expression = tan(arg.expression);
@@ -450,7 +450,7 @@ AlgExpr tan(int arg)
 {
     return tan(AlgExpr(arg));
 }
-AlgExpr cot(AlgExpr &arg)
+AlgExpr cot(const AlgExpr &arg)
 {
     AlgExpr expr;
     expr.expression = cot(arg.expression);
@@ -469,7 +469,7 @@ AlgExpr cot(int arg)
     return cot(AlgExpr(arg));
 }
 
-AlgExpr ln(AlgExpr &arg)
+AlgExpr ln(const AlgExpr &arg)
 {
     AlgExpr expr;
     expr.expression = ln(arg.expression)->downcast();
@@ -488,17 +488,17 @@ AlgExpr ln(int arg)
     return ln(AlgExpr(arg));
 }
 
-AlgExpr log(AlgExpr &arg, AlgExpr &base)
+AlgExpr log(const AlgExpr &arg, const AlgExpr &base)
 {
     return ln(arg)/ln(base);
 }
 
-AlgExpr log(AlgExpr &&arg, AlgExpr &base)
+AlgExpr log(AlgExpr &&arg, const AlgExpr &base)
 {
     return ln(std::move(arg))/ln(base);
 }
 
-AlgExpr log(AlgExpr &arg, AlgExpr &&base)
+AlgExpr log(const AlgExpr &arg, AlgExpr &&base)
 {
     return ln(arg)/ln(std::move(base));
 }
@@ -776,17 +776,32 @@ bool operator<(const AlgExpr &a, const AlgExpr &b)
     return (a - b).getExpr()->getPositionRelativelyZero() < 0;
 }
 
-int compare(const AlgExpr &a, const AlgExpr &b)
-{
-    return (a - b).getExpr()->getPositionRelativelyZero();
-}
+
 
 bool operator>=(const AlgExpr &a, const AlgExpr &b)
 {
-    return (a - b).getExpr()->getPositionRelativelyZero() >= 0;
+    return (a - b).getExpr()->getPositionRelativelyZero() > 0 || a == b;
 }
 
 bool operator<=(const AlgExpr &a, const AlgExpr &b)
 {
-    return (a - b).getExpr()->getPositionRelativelyZero() <= 0;
+   // qDebug() << a.toString();
+    //qDebug() << b.toString();
+   // qDebug() << (a - b).getExpr()->getPositionRelativelyZero();
+    return (a - b).getExpr()->getPositionRelativelyZero() < 0 || a == b;
+}
+
+AlgExpr degToRad(const AlgExpr &deg)
+{
+    return deg / 180 * pi();
+}
+
+AlgExpr sqr(const AlgExpr &arg)
+{
+    return pow(arg, 2);
+}
+
+AlgExpr sqr(AlgExpr &&arg)
+{
+    return pow(std::move(arg), 2);
 }

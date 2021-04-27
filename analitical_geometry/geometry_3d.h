@@ -3,7 +3,7 @@
 
 #include "line3d.h"
 #include "plane.h"
-
+#include "polyhedron.h"
 
 AlgVector getPointOfNormalToPlane(const AlgVector& base_point, const Plane & plane);
 AlgExpr distance(const AlgVector & point, const Plane & plane);
@@ -18,5 +18,11 @@ bool isPointInsideTriangle(const AlgVector& point, const AlgVector& a, const Alg
 //линия не параллельна плоскости
 AlgVector getIntersection(const Line3d& line, const Plane& plane);
 
+AlgVector middle(const AlgVector & a, const AlgVector & b);
+AlgVector ratio(const AlgVector & a, const AlgVector & b, int m, int n);
 
+AlgExpr surface(const std::vector<AlgVector> & polygon);
+AlgExpr surface(const AlgVector &a, const AlgVector &b, const AlgVector &c);
+
+AlgExpr angle(const Plane & a, const Plane & b);
 #endif // GEOMETRY_3D_H
