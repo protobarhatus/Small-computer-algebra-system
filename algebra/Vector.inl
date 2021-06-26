@@ -314,5 +314,30 @@ bool Vector<T>::isZero() const
             return false;
     return true;
 }
+template<typename T>
+T divCollinear(const Vector<T> & a, const Vector<T> & b)
+{
+    if (a == b)
+        return 1;
+    if (b.x() != 0)
+        return a.x() / b.x();
+    if (b.y() != 0)
+        return a.y() / b.y();
+    if (b.z() != 0)
+        return a.z() / b.z();
+    assert(false);
+    return 0;
+}
+template<typename T>
+bool operator==(const Vector<T> & a, const Vector<T> & b)
+{
+    if (a.size() != b.size())
+        throw (QString)"Comparation of incomparable vectors of different size";
+    for (int i = 0; i < a.size(); ++i)
+        if (a[i] != b[i])
+            return false;
+    return true;
+}
+
 
 #endif

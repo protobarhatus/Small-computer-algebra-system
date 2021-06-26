@@ -16,7 +16,7 @@
 #include "polynomials_factorization.h"
 AlgExpr::AlgExpr()
 {
-
+    this->expression = copy(zero);
 }
 AlgExpr::AlgExpr(const AlgExpr & expr)
 {

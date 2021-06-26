@@ -54,27 +54,37 @@ void out(const AlgVector & vec)
 {
     qDebug() << "(" << vec.x().toString() << "; " << vec.y().toString() << "; " << vec.z().toString() << ")";
 }
+void out (const Plane & plane)
+{
+    qDebug() << "A: " << plane.a().toString();
+    qDebug() << "B: " << plane.b().toString();
+    qDebug() << "C: " << plane.c().toString();
+    qDebug() << "D: " << plane.d().toString();
+}
 void geoTest()
 {
-    auto prizm = makeRightPrizm(6, 4*sqrt(A(3)), "ABCDA1B1C1D1");
-    prizm.connectPoint(ratio(prizm["A"], prizm["B"], 1, 5), "M");
-    prizm.connectPoint(ratio(prizm["A1"], prizm["D1"], 1, 5), "N");
-    prizm.connectPoint(ratio(prizm["C1"], prizm["D1"], 1, 5), "K");
+    auto polygon = getBaseRightPolygon(4, 3);
+    auto pir = makePiramidOverPolygon(polygon, (polygon[0] + polygon[1])/ 2, 2, "TABC");
 
-    auto sec = prizm.section(prizm.plane("MNK"));
-    out(sec[0]);
-    out(sec[1]);
-    out(sec[2]);
-    out(sec[3]);
-    out(sec[4]);
-    out(sec[5]);
-    qDebug() << surface(prizm.section(prizm.plane("MNK"))).toWolframString();
-    qDebug() << angle(prizm.plane("MNK"), prizm.plane("ABC")).toWolframString();
+    pir.addPoint((pir["B"] + pir["C"]) / 2, "L");
+    out(pir.plane("TAB"));
+    auto alpha = getPlaneThroughTwoPointsAndPerpendicularToPlane(pir["T"], pir["L"], pir.plane("TAB"));
+    auto a = pir.section(alpha);
+    out(getPlaneThroughTwoPointsAndPerpendicularToPlane(pir["T"], pir["L"], pir.plane("TAB")));
+    qDebug() << surface(a).toString();
+    qDebug() << angle(pir.line("TC"), alpha).toString();
+
+   // qDebug() << surface(prizm.section(prizm.plane("MNK"))).toWolframString();
+   // qDebug() << angle(prizm.plane("MNK"), prizm.plane("ABC")).toWolframString();
 }
 
 #include <QException>
 int main(int argc, char *argv[])
 {
+   // auto res = gauss(Matrix<AlgExpr>({ {3, 4, 5, +6},
+    //                                  {4, 5, A(3)/2, -3},
+     //                                 {-10, -20, 4, -1}}));
+
     geoTest();
    // testAlgMod();
     qDebug() << "#########";

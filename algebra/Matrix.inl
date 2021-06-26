@@ -367,6 +367,9 @@ std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix)
             if (abs(extended_equation_matrix[i][j]) < 1e-15)
                 extended_equation_matrix[i][j] = 0;*/
 	int first_non_zero = height - 1;
+    //!ВОТ В ЭТОМ МОМЕНТЕ ИДЕТ СРАВНЕНИЕ С НУЛЕМ. ЕСЛИ используется тип double, то он может быть оочень маленьким тогда, когда он предполагается быть нулем
+    //! из-за этого может вылетать. Необходимо при использовании типа double раскомментить верхий коммент (с занулением) либо ввести универсальную шаблонную функцию
+    //! для сравнения с нулем
     for (first_non_zero = height - 1; extended_equation_matrix[first_non_zero][width - 2] == 0; --first_non_zero)
         if (extended_equation_matrix[first_non_zero][width - 1] != 0)
             return std::vector<std::vector<T> >();
@@ -401,6 +404,15 @@ std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix)
             extended_equation_matrix[j] = extended_equation_matrix[j] + (extended_equation_matrix[i] * (-extended_equation_matrix[j][current_params_index]));
 		}
 	}
+
+    for (int i = 0; i < result.size(); ++i)
+    {
+        if (result[i].size() == 0)
+        {
+            result[i].resize(amount_of_variables + 1);
+            result[i][i] = 1;
+        }
+    }
 	return result;
 	
 }
