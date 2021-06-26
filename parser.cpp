@@ -269,15 +269,18 @@ std::pair<QString, int> cutOffSingleExprUnit(const QString & expr, int start)
 
 }
 //придется учитывать степени скобок, чтобы можно было писать по типу (x-3)(x+2)^2(x+3) (это равно (x-3)*(x+2)^2*(x+3)
+//конструкции вида x(x + 3) не позволяются, т. к. x рассматривается только как функция с аргументов x + 3. Потому что иначе sin(x)^2 не работает (считается как sin* x^2)
 std::list<QString> tryToSplitAmongBreaketsMultiplications(const QString & expr)
 {
     QString current_mult;
     std::list<QString> res;
     int breakets_level = 0;
+    bool meeted_open_breaket = false;
     for (int i = 0; i  < expr.size(); ++i)
     {
         if (isOpenBreaket(expr[i]))
         {
+            meeted_open_breaket = true;
             //условие для того чтобы учитывать ситуацию a^(x)
             if (breakets_level == 0 && (i == 0 || expr[i - 1] != '^'))
             {
@@ -315,7 +318,7 @@ std::list<QString> tryToSplitAmongBreaketsMultiplications(const QString & expr)
             else
                 current_mult += expr[i];
         }
-        else
+        else if (meeted_open_breaket)
             current_mult += expr[i];
     }
     if (current_mult != "")
