@@ -64,6 +64,7 @@ SOURCES += \
     ../../mo2/exprguidewidget.cpp \
     ../../mo2/testexprmakewidget.cpp \
     ../../mo2/testpaintwidget.cpp \
+    abstractvalue.cpp \
     algebra/Matrix.inl \
     algebra/Vector.inl \
     algebra/Vector2.cpp \
@@ -106,23 +107,28 @@ SOURCES += \
     algebra/variablesdefinition.cpp \
     algebra/variablesdistributor.cpp \
     algebra/variablesnamedistributor.cpp \
+    algebraicexpressionvalue.cpp \
     analitical_geometry/geometry_3d.cpp \
     analitical_geometry/line3d.cpp \
     analitical_geometry/plane.cpp \
     analitical_geometry/polyhedron.cpp \
     commandresponse.cpp \
     form.cpp \
+    functioninterpretationtoken.cpp \
     functionliteral.cpp \
     main.cpp \
     mainapplicationspace.cpp \
     mainwindow.cpp \
+    mathexpression.cpp \
+    matrixvalue.cpp \
     parser.cpp \
     script.cpp \
     scriptsnamespace.cpp \
     scripttextfield.cpp \
     showstepsofdifursform.cpp \
     tests.cpp \
-    variableliteral.cpp
+    variableliteral.cpp \
+    vectorvalue.cpp
 
 HEADERS += \
     ../../mo2/Balloon/balloontip.h \
@@ -175,6 +181,7 @@ HEADERS += \
     ../../mo2/exprguidewidget.h \
     ../../mo2/testexprmakewidget.h \
     ../../mo2/testpaintwidget.h \
+    abstractvalue.h \
     algebra/Matrix.h \
     algebra/Vector.h \
     algebra/Vector2.h \
@@ -217,22 +224,27 @@ HEADERS += \
     algebra/variablesdefinition.h \
     algebra/variablesdistributor.h \
     algebra/variablesnamedistributor.h \
+    algebraicexpressionvalue.h \
     analitical_geometry/geometry_3d.h \
     analitical_geometry/line3d.h \
     analitical_geometry/plane.h \
     analitical_geometry/polyhedron.h \
     commandresponse.h \
     form.h \
+    functioninterpretationtoken.h \
     functionliteral.h \
     mainapplicationspace.h \
     mainwindow.h \
+    mathexpression.h \
+    matrixvalue.h \
     parser.h \
     script.h \
     scriptsnamespace.h \
     scripttextfield.h \
     showstepsofdifursform.h \
     tests.h \
-    variableliteral.h
+    variableliteral.h \
+    vectorvalue.h
 
 FORMS += \
     form.ui \

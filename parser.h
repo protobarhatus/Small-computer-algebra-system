@@ -1,6 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
-#include "algebra/algexpr.h"
+//#include "algebra/algexpr.h"
+#include "mathexpression.h"
 #include "QString"
 #include "scriptsnamespace.h"
 enum RequestType {
@@ -14,8 +15,8 @@ RequestType defineTypeOfRequest(const QString & request);
 std::pair<QString, std::vector<QString>> textParseFunction(const QString & func);
 QString deleteOuterBreakets(const QString & expr);
 bool isVariable(const QString & expr, const ScriptsNameSpace & scripts_space);
-AlgExpr parseAndComplete(QString  expr, const ScriptsNameSpace & scripts_space);
+MathExpression parseAndComplete(QString  expr, const ScriptsNameSpace & scripts_space);
 QString deleteSpaces(const QString & expr);
-bool isAppropriateVarialbeName(const QString & str);
+bool isAppropriateVarialbeSignature(const QString & str);
 
 #endif // PARSER_H

@@ -1,5 +1,7 @@
 #include "script.h"
 #include "parser.h"
+#include "algebra/algexpr.h"
+#include "functioninterpretationtoken.h"
 Script::Script()
 {
 
@@ -44,7 +46,10 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
     {
         std::list<AlgExpr> roots;
         try {
-            roots = solveEquation(equation, parseAndComplete(var, space));
+            auto varexpr = parseAndComplete(var, space);
+            if (varexpr.getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                throw QIODevice::tr("Решать можно только для переменных, представляющих объекты элементарной алгебры");
+            roots = solveEquation(equation, varexpr.getAlgExprValue());
         } catch (...) {
             return QIODevice::tr("Нет корней или программа не может найти корни");
         }
@@ -54,7 +59,7 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
         std::vector<AlgExpr> roots_vectors;
         for (auto &it : roots)
             roots_vectors.push_back(it);
-        auto selectes = selectRootsAndConditions(roots_vectors, space.getConditions(), parseAndComplete(var, space).getExpr()->getId());
+        auto selectes = selectRootsAndConditions(roots_vectors, space.getConditions(), parseAndComplete(var, space).getAlgExprValue().getExpr()->getId());
         QString res;
         for (auto &it : selectes.first)
             res += var + " = " + it.toString() + "<br>";
@@ -76,12 +81,14 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
             {
                 if (isVariable(func_solve.second[1], space))
                 {
-                    AlgExpr left = parseAndComplete(func_solve.second[0].left(func_solve.second[0].indexOf("==")), space);
-                    AlgExpr right = parseAndComplete(func_solve.second[0].right(func_solve.second[0].length() - func_solve.second[0].indexOf("==") - 2), space);
-                    AlgExpr eq = left - right;
-                    if (isDifferentialEquation(eq))
+                    MathExpression left = parseAndComplete(func_solve.second[0].left(func_solve.second[0].indexOf("==")), space);
+                    MathExpression right = parseAndComplete(func_solve.second[0].right(func_solve.second[0].length() - func_solve.second[0].indexOf("==") - 2), space);
+                    MathExpression eq = left - right;
+                    if (eq.getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                        throw QIODevice::tr("Программа решает уравнения только с объектами элементарной алгебры");
+                    if (isDifferentialEquation(eq.getAlgExprValue()))
                         throw QIODevice::tr("Функция 'SolveFor' может быть применена только для недифференциальных уравнений");
-                    return buildAnswerFromNonDifferentialEquation(eq, func_solve.second[1]);
+                    return buildAnswerFromNonDifferentialEquation(eq.getAlgExprValue(), func_solve.second[1]);
                 }
                 else
                     throw QIODevice::tr("Второй аргумент функции 'SolveFor' должен быть переменной");
@@ -93,10 +100,12 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
             throw QIODevice::tr("Функция 'SolveFor' должна иметь два аргумента");
         }
 
-    AlgExpr left = parseAndComplete(equation.left(equation.indexOf("==")), space);
-    AlgExpr right = parseAndComplete(equation.right(equation.length() - equation.indexOf("==") - 2), space);
+    MathExpression left = parseAndComplete(equation.left(equation.indexOf("==")), space);
+    MathExpression right = parseAndComplete(equation.right(equation.length() - equation.indexOf("==") - 2), space);
     auto eq = left - right;
-    if (isDifferentialEquation(eq))
+    if (eq.getType() != VALUE_ALGEBRAIC_EXPRESSION)
+        throw QIODevice::tr("Программа решает уравнения только с объектами элементарной алгебры");
+    if (isDifferentialEquation(eq.getAlgExprValue()))
     {
         //да, тут привязываемся к конкретным символам
         /*AlgExpr x = var();
@@ -109,7 +118,8 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
         for (auto &it : res1)
             qDebug() << it.toString();
         qDebug() << eq.toString();*/
-        auto roots = solveDifur(eq, parseAndComplete("x", space), parseAndComplete("y", space));
+        auto roots = solveDifur(eq.getAlgExprValue(), parseAndComplete("x", space).getAlgExprValue()
+                                , parseAndComplete("y", space).getAlgExprValue());
         if (roots.first.size() == 0)
             return QIODevice::tr("Нет решений или программа не может их найти");
         for (auto &it : roots.first)
@@ -117,7 +127,8 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
         std::vector<DifurResult> rtsvec;
         for (auto &it : roots.first)
             rtsvec.push_back(it);
-        auto selected = selectRootsAndConditions(rtsvec, space.getConditions(), parseAndComplete("y", space).getExpr()->getId());
+        auto selected = selectRootsAndConditions(rtsvec, space.getConditions(),
+                                                 parseAndComplete("y", space).getAlgExprValue().getExpr()->getId());
         QString res;
         for (auto &it : selected.first)
             res += it.toString() + "<br>";
@@ -134,19 +145,19 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
         res += "#$";
         return res;
     }
-    auto vars = eq.getExpr()->getSetOfVariables();
+    auto vars = eq.getAlgExprValue().getExpr()->getSetOfVariables();
     if (vars.size() > 1)
         throw QIODevice::tr("Для уравнения с двумя и более переменными используйте функцию \'SolveFor\'");
     if (vars.size() == 0)
         throw QIODevice::tr("Для уравнения необходима хоть одна переменная");
-    return buildAnswerFromNonDifferentialEquation(eq, getVariableExpr(*vars.begin())->toString());
+    return buildAnswerFromNonDifferentialEquation(eq.getAlgExprValue(), getVariableExpr(*vars.begin())->toString());
 }
 void executeAssignation(QString command, ScriptsNameSpace & space)
 {
     command = deleteOuterBreakets(deleteSpaces(command));
     QString left = command.left(command.indexOf("="));
     QString right = command.right(command.length() - command.indexOf("=") - 1);
-    if (isAppropriateVarialbeName(left))
+    if (isAppropriateVarialbeSignature(left))
     {
         if (isVariable(left, space))
         {
@@ -173,30 +184,23 @@ void executeAssignation(QString command, ScriptsNameSpace & space)
         throw QIODevice::tr("Задаваемая пользователем функция должна иметь хотя бы один аргумент. Иначе, задайте переменную");
 
     ScriptsNameSpace function_name_space = space;
-    for (auto &it : func.second)
-    {
-        if (!isAppropriateVarialbeName(it))
-            throw QIODevice::tr("Имена аргументов функций должны быть переменными");
-        if (isVariable(it, space))
-            throw QIODevice::tr("Запрещено использовать существующие переменные как имена аргументов функций");
-
-        function_name_space.addVariable(it, systemVarExpr());
-    }
-
-    AlgExpr func_def = parseAndComplete(right, function_name_space);
-    std::vector<int> arg_vars_indexes(func.second.size());
     for (int i = 0; i < func.second.size(); ++i)
     {
-        arg_vars_indexes[i] = parseAndComplete(func.second[i], function_name_space).getExpr()->getId();
-    }
-    auto action = [func_def, arg_vars_indexes](std::vector<AlgExpr> && args)->AlgExpr {
-        AlgExpr res = func_def;
-        for (int i = 0; i < args.size(); ++i)
-        {
-            setUpExpressionIntoVariable(res.getExpr(), args[i].getExpr(), arg_vars_indexes[i]);
-        }
-        return res;
+        if (!isAppropriateVarialbeSignature(func.second[i]))
+            throw QIODevice::tr("Неверное объявление аргумента");
+        if (isVariable(func.second[i], space))
+            throw QIODevice::tr("Запрещено использовать существующие переменные как имена аргументов функций");
 
+        function_name_space.addVariable(func.second[i], MathExpression(std::unique_ptr<AbstractValue>(
+            new FunctionInterpretationToken(FunctionLiteral("__VAR__", 0,
+                       [i](std::vector<MathExpression>&&arg) {return std::move(arg[i]);}, true), {}))));
+    }
+
+    MathExpression func_def = parseAndComplete(right, function_name_space);
+    auto action = [func_def](std::vector<MathExpression> && args)->MathExpression {
+        if (func_def.getType() == VALUE_FUNCTION_TOKEN)
+            return func_def.executeFunction(args);
+        return func_def;
     };
     if (space.hasFunctionWithThatAmountOfArguments(func.first, func.second.size()))
         space.changeFunction(func.first, func.second.size(), action);
@@ -226,7 +230,7 @@ std::vector<CommandResponse> Script::execute(const std::vector<QString> &command
         else if (request_type == REQUEST_TYPE_EXPRESSION)
         {
             try {
-                AlgExpr res = parseAndComplete(commands[i], space);
+                MathExpression res = parseAndComplete(commands[i], space);
                 result[i] = acceptedInputCommandRespond(input_counter++, res.toString());
             } catch (const QString &error) {
                 result[i] = errorCommandRespond(error);

@@ -2,16 +2,15 @@
 
 
 
-VariableLiteral::VariableLiteral(const QString &name, const AlgExpr &expr, bool is_constant)
+VariableLiteral::VariableLiteral(const QString &name, MathExpression && iexpr, bool is_constant) : expr(std::move(iexpr))
 {
     this->name = name;
-    this->expr = expr;
     this->is_constant = is_constant;
 }
 
 bool VariableLiteral::operator==(const VariableLiteral &var) const
 {
-    return this->name == var.name && this->expr == var.expr && this->is_constant == var.is_constant;
+    return this->name == var.name && this->is_constant == var.is_constant;
 }
 
 bool VariableLiteral::operator!=(const VariableLiteral &var) const
@@ -24,7 +23,7 @@ QString VariableLiteral::getName() const
     return this->name;
 }
 
-AlgExpr VariableLiteral::getExpr() const
+const MathExpression& VariableLiteral::getExpr() const
 {
     return this->expr;
 }
@@ -34,8 +33,8 @@ bool VariableLiteral::isConstant() const
     return this->is_constant;
 }
 
-void VariableLiteral::setExpr(const AlgExpr &expr)
+void VariableLiteral::setExpr(MathExpression &&expr)
 {
-    this->expr = expr;
+    this->expr = std::move(expr);
 }
 

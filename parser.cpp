@@ -1,11 +1,22 @@
 #include "parser.h"
 #include <QRegExp>
 #include <stack>
+#include "algebra/algexpr.h"
+#include "vectorvalue.h"
+#include "matrixvalue.h"
 bool isOpenBreaket( QChar  sym)
+{
+    return sym == '(' || sym == '[';
+}
+bool isClosingBreaket( QChar  sym)
+{
+    return sym == ')' || sym == ']';
+}
+bool isOpenGroupSeparator(QChar sym)
 {
     return sym == '(' || sym == '[' || sym == '{';
 }
-bool isClosingBreaket( QChar  sym)
+bool isClosingGroupSeparator(QChar sym)
 {
     return sym == ')' || sym == ']' || sym == '}';
 }
@@ -100,9 +111,9 @@ std::list<std::pair<QChar, QString>> tryToSplitTokenAmongActions(const QString &
     int amount_of_breakets = 0;
     for (auto &it : expr)
     {
-        if (isOpenBreaket(it))
+        if (isOpenGroupSeparator(it))
             ++amount_of_breakets;
-        if (isClosingBreaket(it))
+        if (isClosingGroupSeparator(it))
             --amount_of_breakets;
         if (amount_of_breakets < 0)
             throw (QString)("Syntax error: extra closing breaket in \"" + expr + "\"");
@@ -185,13 +196,13 @@ std::pair<QString, std::vector<QString>> textParseFunction(const QString & func)
     return {std::move(name), std::move(args)};
 }
 //ну естесна если надо делать замыкания, то это нужно переписывать, но вряд ли я их буду делать
-AlgExpr parseFunction(const QString & func, const ScriptsNameSpace & scripts_space)
+MathExpression parseFunction(const QString & func, const ScriptsNameSpace & scripts_space)
 {
     auto params = textParseFunction(func);
     QString name = params.first;
 
 
-    std::vector<AlgExpr> args;
+    std::vector<MathExpression> args;
     for (auto &it : params.second)
     {
         if (it.length() == 0)
@@ -216,24 +227,24 @@ bool isIntegerNumber(const QString & expr)
             return false;
     return true;
 }
-std::pair<AlgExpr, bool> tryToParseImplicitMultiplicationOfNumberAndStuff(const QString & expr, const ScriptsNameSpace & scripts_space)
+std::pair<MathExpression, bool> tryToParseImplicitMultiplicationOfNumberAndStuff(const QString & expr, const ScriptsNameSpace & scripts_space)
 {
     if (expr.contains('^'))
-        return {0, false};
+        return {nullptr, false};
     if (expr.size() < 2 || !isDigit(expr[0]))
-        return {0, false};
+        return {nullptr, false};
     int index = 0;
     while (index < expr.size() && isDigit(expr[index]))
         ++index;
     if (index == expr.size())
-        return {0, false};
-    AlgExpr num = parseAndComplete(expr.left(index), scripts_space);
-    AlgExpr right = parseAndComplete(expr.right(expr.size() - index), scripts_space);
+        return {nullptr, false};
+    MathExpression num = parseAndComplete(expr.left(index), scripts_space);
+    MathExpression right = parseAndComplete(expr.right(expr.size() - index), scripts_space);
     return {num * right, true};
 }
-AlgExpr parseIntegerNumber(const QString & expr)
+MathExpression parseIntegerNumber(const QString & expr)
 {
-    return expr.toInt();
+    return MathExpression(AlgExpr(expr.toInt()));
 }
 //возвращает строку со скобками и индекс после соответствующей закрывающей скобки
 std::pair<QString, int> cutOffBreaketGroup(const QString & expr, int ind_of_open)
@@ -331,7 +342,7 @@ bool isDerivativeObject(const QString & expr)
    // return expr.contains(QRegExp("^\\w[\\w\\d]*\'+$"));
     return expr.contains(QRegExp("^y\'+$"));
 }
-AlgExpr parseDerivativeObject(const QString & expr, const ScriptsNameSpace & scripts_space)
+MathExpression parseDerivativeObject(const QString & expr, const ScriptsNameSpace & scripts_space)
 {
     /*int index = 0;
     while (index < expr.size() && expr[index] != '\'')
@@ -342,33 +353,97 @@ AlgExpr parseDerivativeObject(const QString & expr, const ScriptsNameSpace & scr
         throw (QString)"x is considered as argument of "*/
     int order = expr.size() - 1;
 
-    return derivObj(scripts_space.getVariable("y"), scripts_space.getVariable("x"), order);
+    return derivObj(scripts_space.getVariable("y").getAlgExprValue(), scripts_space.getVariable("x").getAlgExprValue(), order);
 }
 bool isMinusMultiplySomething(const QString & expr)
 {
     return expr.size() > 1 && expr[0] == '-';
 }
-AlgExpr parseMinusMultiplySomething(const QString & expr, const ScriptsNameSpace & scripts_space)
+MathExpression parseMinusMultiplySomething(const QString & expr, const ScriptsNameSpace & scripts_space)
 {
-    return -1 * parseAndComplete(expr.right(expr.length() - 1), scripts_space);
+    return AlgExpr(-1) * parseAndComplete(expr.right(expr.length() - 1), scripts_space);
 }
-AlgExpr parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
+MathExpression parseContainer(QString  expr, const ScriptsNameSpace & scripts_space)
+{
+    expr = expr.mid(1, expr.size() - 2);
+    auto args = tryToSplitTokenAmongActions(expr, {';'},';');
+    if (args.size() == 0)
+        throw QIODevice::tr("Необходимо указать хотя бы один элемент в контейнере");
+    std::vector<MathExpression> parsed_args(args.size());
+    int i = 0;
+    for (auto &it : args)
+    {
+        parsed_args[i] = parseAndComplete(it.second, scripts_space);
+        ++i;
+    }
+    bool is_all_argexpr = true;
+    bool is_all_vectors = true;
+    for (auto &it : parsed_args)
+    {
+        if (it.getType() != VALUE_ALGEBRAIC_EXPRESSION)
+            is_all_argexpr = false;
+        if (it.getType() != VALUE_VECTOR)
+            is_all_vectors = false;
+    }
+    if (is_all_argexpr)
+    {
+        Vector<AlgExpr> vec = Vector<AlgExpr>::create(parsed_args.size());
+        for (int i = 0; i < parsed_args.size(); ++i)
+            vec[i] = parsed_args[i].getAlgExprValue();
+        return MathExpression(std::unique_ptr<AbstractValue>(new VectorValue(std::move(vec))));
+    }
+    if (is_all_vectors)
+    {
+        Matrix<AlgExpr> mat(parsed_args.size(), parsed_args[0].getVectorValue().size());
+        for (int i = 0; i < parsed_args.size(); ++i)
+        {
+            if (parsed_args[i].getVectorValue().size() != mat.columns())
+                throw QIODevice::tr("Строки в матрице должны быть одинаковой длины");
+            mat[i] = parsed_args[i].getVectorValue();
+        }
+        return MathExpression(std::unique_ptr<AbstractValue>(new MatrixValue(std::move(mat))));
+    }
+    throw QIODevice::tr("Элементы контейнера должны быть однородны");
+}
+bool isContainer(const QString& expr)
+{
+    if (!  (expr[0] == "{" && expr.back() == "}"))
+        return false;
+    int fig_breaket_balance = 1;
+    for (int i = 1; i < expr.length(); ++i)
+    {
+        if (expr[i] == '{')
+            ++fig_breaket_balance;
+        if (expr[i] == '}')
+            --fig_breaket_balance;
+        if (fig_breaket_balance == 0 && i != expr.length() - 1)
+            return false;
+    }
+    return true;
+}
+MathExpression parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
 {
     expr = deleteSpaces(expr);
     expr = deleteOuterBreakets(expr);
     if (expr.length() == 0)
         throw (QString)"Syntax error: expected expression";
-    AlgExpr result;
+    MathExpression result(nullptr);
+
+    if (isContainer(expr))
+        return parseContainer(expr, scripts_space);
 
     auto sum = tryToSplitTokenAmongActions(expr, toSet({'+', '-'}), '+');
     if (sum.size() > 1)
     {
-        result = 0;
-        for (auto &it : sum)
-            if (it.first == '+')
-                result += parseAndComplete(it.second, scripts_space);
+        auto it = sum.begin();
+        result = parseAndComplete(it->second, scripts_space);
+        for (++it; it != sum.end(); ++it)
+        {
+            if (it->first == '+')
+                result = result + parseAndComplete(it->second, scripts_space);
             else
-                result -= parseAndComplete(it.second, scripts_space);
+                result = result - parseAndComplete(it->second, scripts_space);
+        }
         return result;
     }
 
@@ -377,12 +452,15 @@ AlgExpr parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
     {
         if (mult.begin()->first == '/')
             throw (QString)"Syntax error: missed epxression before '/'\"" + expr + "\"";
-        result = 1;
-        for (auto &it : mult)
-            if (it.first == '*')
-                result *= parseAndComplete(it.second, scripts_space);
+        auto it = mult.begin();
+        result = parseAndComplete(it->second, scripts_space);
+        for (++it; it != mult.end(); ++it)
+        {
+            if (it->first == '*')
+                result = result * parseAndComplete(it->second, scripts_space);
             else
-                result /= parseAndComplete(it.second, scripts_space);
+                result = result / parseAndComplete(it->second, scripts_space);
+        }
         return result;
     }
     if (isMinusMultiplySomething(expr))
@@ -391,7 +469,7 @@ AlgExpr parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
 
     auto impl_mult_res = tryToParseImplicitMultiplicationOfNumberAndStuff(expr, scripts_space);
     if (impl_mult_res.second)
-        return impl_mult_res.first;
+        return std::move(impl_mult_res.first);
 
     if (isFunction(expr, scripts_space))
         return parseFunction(expr, scripts_space);
@@ -403,9 +481,10 @@ AlgExpr parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
     auto mult_split = tryToSplitAmongBreaketsMultiplications(expr);
     if (mult_split.size() > 1)
     {
-        AlgExpr res = 1;
-        for (auto &it : mult_split)
-            res *= parseAndComplete(it, scripts_space);
+        auto it = mult_split.begin();
+        MathExpression res = parseAndComplete(*it, scripts_space);
+        for (++it; it != mult_split.end(); ++it)
+            res = res * parseAndComplete(*it, scripts_space);
         return res;
     }
 
@@ -416,8 +495,10 @@ AlgExpr parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
         if (degs.begin()->first == '^')
             throw (QString)"Syntax error: missed expression before '^' \"" + expr + "\"";
         result = parseAndComplete(degs.back().second, scripts_space);
+        if (result.getType() != VALUE_ALGEBRAIC_EXPRESSION)
+            throw QString("Only objects of elementary algebra can be raised to power");
         for (auto it = next(degs.rbegin()); it != degs.rend(); ++it)
-            result = pow(parseAndComplete(it->second, scripts_space), std::move(result));
+            result = pow(parseAndComplete(it->second, scripts_space).getAlgExprValue(), std::move(result.getAlgExprValue()));
         return result;
     }
 
@@ -458,8 +539,7 @@ RequestType defineTypeOfRequest(const QString &request)
         return REQUEST_TYPE_ASSIGNATION;
     return REQUEST_TYPE_EXPRESSION;
 }
-
-bool isAppropriateVarialbeName(const QString &str)
+bool isAppropriateVariableName(const QString &str)
 {
     if (!isStartNameAvailableLitera(str[0]))
         return false;
@@ -469,4 +549,13 @@ bool isAppropriateVarialbeName(const QString &str)
             return false;
     }
     return true;
+}
+bool isAppropriateVarialbeSignature(const QString &str)
+{
+    auto sign = str.split(' ');
+    if (sign.size() == 1)
+        return isAppropriateVariableName(*sign.begin());
+    if (sign.size() > 2)
+        return false;
+    return valueTypeFromStringName(*sign.begin()) != VALUE_INCORRECT && isAppropriateVariableName(*++sign.begin());
 }

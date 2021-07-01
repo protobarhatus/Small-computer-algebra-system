@@ -123,7 +123,7 @@ template<typename T>
 Matrix<T> Matrix<T>::operator-(const Matrix<T>& sec) const
 {
 	if (this->_lines != sec._lines || this->_columns != sec._columns)
-        throw "Addition of different size Matrix<T>es";
+        throw "Subtraction of different size Matrix<T>es";
     Matrix<T> res(this->_lines, this->_columns);
 	for (int i = 0; i < this->_lines; ++i)
 		for (int j = 0; j < this->_columns; ++j)
@@ -243,7 +243,7 @@ T det(const Matrix<T>& matrix)
         return matrix[0][0] * matrix[1][1] - matrix[0][1] * matrix[1][0];
     T d = 0;
     for (int i = 0; i < matrix.columns(); ++i)
-        d = d + (i % 2 == 0 ? 1 : -1) * det(Matrix<T>(matrix.lines() - 1, matrix.columns() - 1, [i, &matrix](int k, int j)->T { return matrix[k + 1][j + (j >= i ? 1 : 0)]; }));
+        d = d + (i % 2 == 0 ? 1 : -1) * matrix[i][0] * det(Matrix<T>(matrix.lines() - 1, matrix.columns() - 1, [i, &matrix](int k, int j)->T { return matrix[k + (k >= i ? 1 : 0)][j + 1]; }));
 	return d;
 }
 template<typename T>

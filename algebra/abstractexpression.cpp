@@ -960,7 +960,6 @@ abs_ex operator+(const abs_ex & left, const abs_ex & right)
     if (left->getId() == NUMBER && right->getId() == NUMBER)
         return toAbsEx(*static_cast<Number*>(left.get()) + *static_cast<Number*>(right.get()));
     abs_ex polynom = abs_ex(new Polynomial(toFrac(left), toFrac(right)));
-
     return polynom->downcast();
 }
 abs_ex operator-(const abs_ex & left, const abs_ex & right)

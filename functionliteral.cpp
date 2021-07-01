@@ -1,5 +1,5 @@
 #include "functionliteral.h"
-
+#include "functioninterpretationtoken.h"
 FunctionLiteral::FunctionLiteral()
 {
 
@@ -57,14 +57,14 @@ FunctionArgumentType functionArgumentType(const FunctionLiteral &func)
     return FunctionArgumentType(func);
 }
 
-FunctionLiteral::FunctionLiteral(QString name, const  std::function<AlgExpr (const std::vector<AlgExpr> &)>& action, bool is_const)
+FunctionLiteral::FunctionLiteral(QString name, const  std::function<MathExpression (const std::vector<MathExpression> &)>& action, bool is_const)
 {
     this->name = name;
     this->its_action = action;
     this->is_const = is_const;
 }
 
-FunctionLiteral::FunctionLiteral(QString name, int amount_of_vars, const std::function<AlgExpr (std::vector<AlgExpr> &&)> &action, bool is_const)
+FunctionLiteral::FunctionLiteral(QString name, int amount_of_vars, const std::function<MathExpression (std::vector<MathExpression> &&)> &action, bool is_const)
 {
     this->name = name;
     this->its_action = action;
@@ -105,8 +105,14 @@ FunctionLiteral &FunctionLiteral::operator=(const FunctionLiteral &func)
     return *this;
 }
 
-AlgExpr FunctionLiteral::callAction(std::vector<AlgExpr> &&args) const
+MathExpression FunctionLiteral::callAction(std::vector<MathExpression> &&args) const
 {
+    for (auto &it : args)
+        if (it.getType() == VALUE_FUNCTION_TOKEN)
+            return MathExpression(std::unique_ptr<AbstractValue>(new FunctionInterpretationToken(
+               FunctionLiteral(this->name, this->amountOfArguments(),
+                               [this](std::vector<MathExpression> &&args){return this->callAction(std::move(args));}, true),
+                                  std::move(args))));
     return this->its_action(std::move(args));
 }
 
@@ -120,7 +126,7 @@ int FunctionLiteral::amountOfArguments() const
     return this->arguments.size();
 }
 
-void FunctionLiteral::setAction(const std::function<AlgExpr (std::vector<AlgExpr> &&)> &action)
+void FunctionLiteral::setAction(const std::function<MathExpression (std::vector<MathExpression> &&)> &action)
 {
     this->its_action = action;
 }
