@@ -1,12 +1,15 @@
-#ifndef FUNCTIONINTERPRETATIONTOKEN_H
-#define FUNCTIONINTERPRETATIONTOKEN_H
+#ifndef STRINGVALUE_H
+#define STRINGVALUE_H
+
 #include "abstractvalue.h"
-#include "mathexpression.h"
-#include "functionliteral.h"
-class FunctionInterpretationToken : public AbstractValue
+#include <QString>
+class StringValue : public AbstractValue
 {
 public:
-    FunctionInterpretationToken(const FunctionLiteral& action, std::vector<MathExpression> && arguments, bool is_variable_function = false);
+    StringValue();
+    StringValue(const QString & str);
+    StringValue(QString && str);
+
     virtual QString toString() const override;
     virtual AbstractValueType getId() const override;
 
@@ -14,12 +17,10 @@ public:
     virtual std::unique_ptr<AbstractValue> operator-(const std::unique_ptr<AbstractValue> & b) const override;
     virtual std::unique_ptr<AbstractValue> operator*(const std::unique_ptr<AbstractValue> & b) const override;
     virtual std::unique_ptr<AbstractValue> operator/(const std::unique_ptr<AbstractValue> & b) const override;
-
-    MathExpression getResult(const std::vector<MathExpression> & variables_values) const;
+    //НЕ ДОБАВЛЯЕТ КАВЫЧКИ
+    QString getValue() const;
 private:
-    bool is_variable_function = false;
-    std::vector<MathExpression> arguments;
-    FunctionLiteral action;
+    QString value;
 };
 
-#endif // FUNCTIONINTERPRETATIONTOKEN_H
+#endif // STRINGVALUE_H

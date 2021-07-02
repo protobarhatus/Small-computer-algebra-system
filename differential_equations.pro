@@ -122,10 +122,12 @@ SOURCES += \
     mathexpression.cpp \
     matrixvalue.cpp \
     parser.cpp \
+    polygonvalue.cpp \
     script.cpp \
     scriptsnamespace.cpp \
     scripttextfield.cpp \
     showstepsofdifursform.cpp \
+    stringvalue.cpp \
     tests.cpp \
     variableliteral.cpp \
     vectorvalue.cpp
@@ -238,10 +240,12 @@ HEADERS += \
     mathexpression.h \
     matrixvalue.h \
     parser.h \
+    polygonvalue.h \
     script.h \
     scriptsnamespace.h \
     scripttextfield.h \
     showstepsofdifursform.h \
+    stringvalue.h \
     tests.h \
     variableliteral.h \
     vectorvalue.h

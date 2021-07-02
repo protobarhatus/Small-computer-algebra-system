@@ -805,3 +805,13 @@ AlgExpr sqr(AlgExpr &&arg)
 {
     return pow(std::move(arg), 2);
 }
+
+bool isIntegerNumber(const AlgExpr &expr)
+{
+    return isIntegerNumber(expr.getExpr());
+}
+
+int toInt(const AlgExpr &expr)
+{
+    return toIntegerNumber(expr.getExpr());
+}

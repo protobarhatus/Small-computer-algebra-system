@@ -35,10 +35,12 @@ public:
     std::vector<AlgVector> section(const Plane & plane);
 
 };
+std::vector<QString> splitPointsNames(const QString & points);
 //возвращает вектор 2 размерности, последняя точка - центр
 std::vector<AlgVector> getBaseRightPolygonWithCenter(const AlgExpr &base_edge, int n);
 std::vector<AlgVector> getBaseRightPolygon(const AlgExpr &base_edge, int n);
 std::vector<AlgVector> getBaseRectangular(const AlgExpr & a, const AlgExpr & b);
+std::vector<AlgVector> getRightTriangle(const AlgExpr & a, const AlgExpr & b);
 
 //name - точки, составляющие пирамиду, первая точка берется как вершина, X ось координат берется вдоль линии второй и третьей точки, пример задания - TABCD: пирамида
 //с вершиной T и основанием A, B, C, D. Имена точек не анализируются, важно лишь их количество и то, переданы ли они в пирамиду или призму.

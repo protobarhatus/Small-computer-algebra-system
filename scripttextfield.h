@@ -13,12 +13,14 @@ public:
     void setHtml(QString text);
 
 private:
+    int countCursorPositionAtHtmlText() const;
     void deleteSystemMarks();
     bool holds_shift = false;
 
     MainApplicationSpace * space_subscribed;
     //[..)
     QString text_without_system_marks;
+    QString html_tagged_text;
 
 };
 

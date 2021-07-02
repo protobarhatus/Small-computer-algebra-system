@@ -127,9 +127,21 @@ std::pair<std::vector<AlgVector>, AlgVector> getBaseRightPolynomAndCenter(const 
 
     Vector<AlgExpr> vertex_vector ( - base_edge / 2, - dist_from_edge_to_center);
     Matrix<AlgExpr> rot_matrix = rotationMatrix2D<AlgExpr>(degToRad(AlgExpr(360) / n));
+
+    for (int i = 0; i < rot_matrix.lines(); ++i)
+        for (int j = 0; j < rot_matrix.columns(); ++j)
+            qDebug() << rot_matrix[i][j].toString() << "  ;  ";
+
     for (int i = 0; i < n; ++i)
     {
+        qDebug() << "STEP: " << i;
         base[i] = AlgVector(base_edge / 2 + vertex_vector.x(), dist_from_edge_to_center + vertex_vector.y());
+        qDebug() << " ( " << vertex_vector.x().toString() << " ; " << vertex_vector.y().toString() << " )";
+        vertex_vector.x().getExpr()->setSimplified(false);
+        vertex_vector.y().getExpr()->setSimplified(false);
+        vertex_vector.x().getExpr()->simplify();
+        vertex_vector.y().getExpr()->simplify();
+        qDebug() << " ( " << vertex_vector.x().toString() << " ; " << vertex_vector.y().toString() << " )";
         vertex_vector = rot_matrix * vertex_vector;
     }
 
@@ -224,7 +236,14 @@ std::vector<AlgVector> getBaseRectangular(const AlgExpr &a, const AlgExpr &b)
     base[3] = AlgVector(0, b);
     return base;
 }
-
+std::vector<AlgVector> getRightTriangle(const AlgExpr &a, const AlgExpr &b)
+{
+    std::vector<AlgVector> base(3);
+    base[0] = AlgVector(AlgExpr(0), 0);
+    base[1] = AlgVector(a, 0);
+    base[2] = AlgVector(0, b);
+    return base;
+}
 
 Polyhedron makePiramidOverRectangleWithHeightInCenter(const AlgExpr &a, const AlgExpr &b, const AlgExpr &height, const QString &name)
 {
@@ -342,3 +361,5 @@ Polyhedron makePiramidOverPolygon(const std::vector<AlgVector> &base, const AlgV
     piram.addPoint(addDimension(height_base, AlgExpr(0)), "O");
     return piram;
 }
+
+

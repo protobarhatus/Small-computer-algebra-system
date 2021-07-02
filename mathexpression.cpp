@@ -4,6 +4,8 @@
 #include "matrixvalue.h"
 #include "functioninterpretationtoken.h"
 #include "scriptsnamespace.h"
+#include "polygonvalue.h"
+#include "stringvalue.h"
 //MathExpression::MathExpression()
 //{
 //}
@@ -52,6 +54,26 @@ MathExpression::MathExpression(const Matrix<AlgExpr> &expr)
 MathExpression::MathExpression(Matrix<AlgExpr> &&expr)
 {
     this->value = std::make_unique<MatrixValue>(std::move(expr));
+}
+
+MathExpression::MathExpression(const std::vector<AlgVector> &vert, const std::vector<QString> &names)
+{
+    this->value = std::unique_ptr<AbstractValue>( new PolygonValue(vert, names));
+}
+
+MathExpression::MathExpression(std::vector<AlgVector> &&vert, std::vector<QString> &&names)
+{
+    this->value = std::unique_ptr<AbstractValue>( new PolygonValue(std::move(vert), std::move(names)));
+}
+
+MathExpression::MathExpression(const QString &str)
+{
+    this->value = std::make_unique<StringValue>(str);
+}
+
+MathExpression::MathExpression(QString &&str)
+{
+    this->value = std::make_unique<StringValue> (std::move(str));
 }
 
 MathExpression::MathExpression(std::unique_ptr<AbstractValue> &&expr)
@@ -103,6 +125,12 @@ const Matrix<AlgExpr>& MathExpression::getMatrixValue() const
 {
     assert(this->getType() == VALUE_MATRIX);
     return toMatrixPtr(this->value)->getValue();
+}
+
+QString MathExpression::getStringValue() const
+{
+    assert(this->getType() == VALUE_STRING);
+    return static_cast<StringValue*>(this->value.get())->getValue();
 }
 
 MathExpression MathExpression::executeFunction(const std::vector<MathExpression> &variables) const

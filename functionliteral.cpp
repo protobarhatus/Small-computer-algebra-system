@@ -110,8 +110,8 @@ MathExpression FunctionLiteral::callAction(std::vector<MathExpression> &&args) c
     for (auto &it : args)
         if (it.getType() == VALUE_FUNCTION_TOKEN)
             return MathExpression(std::unique_ptr<AbstractValue>(new FunctionInterpretationToken(
-               FunctionLiteral(this->name, this->amountOfArguments(),
-                               [this](std::vector<MathExpression> &&args){return this->callAction(std::move(args));}, true),
+               FunctionLiteral(this->name, this->amountOfArguments(),its_action
+                              /* [this](std::vector<MathExpression> &&args){return this->callAction(std::move(args));}*/, true),
                                   std::move(args))));
     return this->its_action(std::move(args));
 }

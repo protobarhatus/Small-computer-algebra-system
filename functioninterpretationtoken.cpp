@@ -2,8 +2,8 @@
 #include <assert.h>
 
 
-FunctionInterpretationToken::FunctionInterpretationToken(const FunctionLiteral &func, std::vector<MathExpression> &&args):
-    action(func), arguments(std::move(args))
+FunctionInterpretationToken::FunctionInterpretationToken(const FunctionLiteral &func, std::vector<MathExpression> &&args, bool is_variable):
+    action(func), arguments(std::move(args)), is_variable_function(is_variable)
 {
 
 }
@@ -42,6 +42,8 @@ std::unique_ptr<AbstractValue> FunctionInterpretationToken::operator/(const std:
 
 MathExpression FunctionInterpretationToken::getResult(const std::vector<MathExpression> &variables_values) const
 {
+    if (this->is_variable_function)
+        return this->action.callAction(std::vector<MathExpression>(variables_values));
     std::vector<MathExpression> counted_arguments(this->arguments.size());
     for (int i = 0; i < this->arguments.size(); ++i)
     {

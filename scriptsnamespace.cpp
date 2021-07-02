@@ -3,6 +3,8 @@
 #include "algebra/variablesnamedistributor.h"
 #include "algebra/variablesdistributor.h"
 #include "algebra/algexpr.h"
+#include "analitical_geometry/polyhedron.h"
+#include "polygonvalue.h"
 ScriptsNameSpace::ScriptsNameSpace()
 {
     for (int i = 0; i < 26; ++i)
@@ -163,25 +165,37 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
                                 throw QString("Argument of Expand() should be object of elementary algebra");
                             return MathExpression(expand(std::move(args[0].getAlgExprValue())));}, true)});
 
-    this->functions.insert({"VECT", FunctionLiteral("VECT", 2, [](std::vector<MathExpression>&& args) {
+    this->functions.insert({"Vect", FunctionLiteral("VECT", 2, [](std::vector<MathExpression>&& args) {
                                 if (args[0].getType() != VALUE_VECTOR || args[1].getType() != VALUE_VECTOR)
                                     throw QString("Arguments of VECT() should be vectors");
                                 return MathExpression(args[0].getVectorValue() * args[1].getVectorValue());}, true)});
-    this->functions.insert({"scalar", FunctionLiteral("scalar", 2, [](std::vector<MathExpression>&& args) {
+    this->functions.insert({"Scalar", FunctionLiteral("scalar", 2, [](std::vector<MathExpression>&& args) {
                                 if (args[0].getType() != VALUE_VECTOR || args[1].getType() != VALUE_VECTOR)
                                     throw QString("Arguments of scalar() should be vectors");
                                 return MathExpression(scalar(args[0].getVectorValue(), args[1].getVectorValue()));
                             }, true)});
-    this->functions.insert({"det", FunctionLiteral("det", 1, [](std::vector<MathExpression>&& args) {
+    this->functions.insert({"Det", FunctionLiteral("det", 1, [](std::vector<MathExpression>&& args) {
                                 if (args[0].getType() != VALUE_MATRIX)
                                     throw "Argument of det() must be matrix";
                                 return MathExpression(det(std::move(args[0]).getMatrixValue()));
                             }, true)});
-    this->functions.insert({"inverse", FunctionLiteral("inverse", 1, [](std::vector<MathExpression>&&args) {
+    this->functions.insert({"Inverse", FunctionLiteral("inverse", 1, [](std::vector<MathExpression>&&args) {
                                 if (args[0].getType() != VALUE_MATRIX)
                                     throw "Argument of inverse() must be matrix";
                                 return MathExpression(inverse(std::move(args[0].getMatrixValue())));
                             }, true)});
+    this->functions.insert({"RegularPolygon", FunctionLiteral("RegularPolygon", 2, [](std::vector<MathExpression>&&args) {
+                                if (args[0].getType() != VALUE_STRING || args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("RegularPolygon принимает строку и длину");
+                               // if (!isIntegerNumber(args[1].getAlgExprValue())
+                               //     throw QIODevice::tr("Второй аргумент RegularPolygon должен быть целым числом и не содержать переменные");
+                               // int val = toInt(args[1].getAlgExprValue());
+
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                //if (names.size() != 2 && names.size() != 3 && names.size() != 4 && names.size() != 6 && names.size() != 12)
+                                  //  throw QIODevice::tr("Поддерживаются только 2-х, 3-х, 4-х, 6-и, 12-ти вершинные многоугольники")
+                                return MathExpression(getBaseRightPolygon(args[1].getAlgExprValue(), names.size()), names);
+                            })});
 
 
 

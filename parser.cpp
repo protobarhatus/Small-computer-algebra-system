@@ -421,8 +421,16 @@ bool isContainer(const QString& expr)
     }
     return true;
 }
+bool isString(const QString & expr)
+{
+    if (expr[0] == '"' && expr.back() == '"' && expr.count('"') == 2)
+        return true;
+    return false;
+}
 MathExpression parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
 {
+    if (expr == "AMOGUS" || expr == "amogus" || expr == "Amogus")
+        throw QString("SUS");
     expr = deleteSpaces(expr);
     expr = deleteOuterBreakets(expr);
     if (expr.length() == 0)
@@ -431,7 +439,8 @@ MathExpression parseAndComplete(QString expr, const ScriptsNameSpace & scripts_s
 
     if (isContainer(expr))
         return parseContainer(expr, scripts_space);
-
+    if (isString(expr))
+        return MathExpression(expr.mid(1, expr.length() - 2));
     auto sum = tryToSplitTokenAmongActions(expr, toSet({'+', '-'}), '+');
     if (sum.size() > 1)
     {

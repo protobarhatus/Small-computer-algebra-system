@@ -193,7 +193,8 @@ void executeAssignation(QString command, ScriptsNameSpace & space)
 
         function_name_space.addVariable(func.second[i], MathExpression(std::unique_ptr<AbstractValue>(
             new FunctionInterpretationToken(FunctionLiteral("__VAR__", 0,
-                       [i](std::vector<MathExpression>&&arg) {return std::move(arg[i]);}, true), {}))));
+                       [i](std::vector<MathExpression>&&arg) {return std::move(arg[i]);}, true),
+        {}, true))));
     }
 
     MathExpression func_def = parseAndComplete(right, function_name_space);
@@ -269,5 +270,5 @@ std::vector<CommandResponse> Script::execute(const std::vector<QString> &command
 
 QChar systemUnreadableSymbol()
 {
-    return QChar(1517);
+    return QChar(8291);
 }

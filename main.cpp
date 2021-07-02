@@ -63,6 +63,8 @@ void out (const Plane & plane)
 }
 void geoTest()
 {
+   // getBaseRightPolygon(1, 5);
+
     auto polygon = getBaseRightPolygon(4, 3);
     auto pir = makePiramidOverPolygon(polygon, (polygon[0] + polygon[1])/ 2, 2, "TABC");
 
@@ -85,7 +87,7 @@ int main(int argc, char *argv[])
     //                                  {4, 5, A(3)/2, -3},
      //                                 {-10, -20, 4, -1}}));
 
-    geoTest();
+   // geoTest();
    // testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);

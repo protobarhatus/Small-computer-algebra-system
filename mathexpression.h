@@ -19,7 +19,12 @@ public:
     MathExpression( Vector<AlgExpr> && expr);
     MathExpression(const Matrix<AlgExpr> & expr);
     MathExpression(Matrix<AlgExpr> && expr);
+    MathExpression(const std::vector<AlgVector> & vert, const std::vector<QString> & names);
+    MathExpression(std::vector<AlgVector> && vert, std::vector<QString> && names);
+    MathExpression(const QString & str);
+    MathExpression(QString && str);
     MathExpression(std::unique_ptr<AbstractValue> && expr);
+
 
     MathExpression(const MathExpression& expr);
     const MathExpression& operator=(const MathExpression & expr);
@@ -38,6 +43,8 @@ public:
     const AlgExpr& getAlgExprValue() const;
     const Vector<AlgExpr>& getVectorValue() const;
     const Matrix<AlgExpr>& getMatrixValue() const;
+    //отличия от toString() в том, что это работает только для VALUE_STRING, и при этом НЕ добавляет кавычки для него
+    QString getStringValue() const;
 
     MathExpression executeFunction(const std::vector<MathExpression> & variables) const;
 private:

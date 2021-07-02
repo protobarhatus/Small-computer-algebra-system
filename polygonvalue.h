@@ -1,12 +1,17 @@
-#ifndef FUNCTIONINTERPRETATIONTOKEN_H
-#define FUNCTIONINTERPRETATIONTOKEN_H
+#ifndef POLYGONVALUE_H
+#define POLYGONVALUE_H
 #include "abstractvalue.h"
-#include "mathexpression.h"
-#include "functionliteral.h"
-class FunctionInterpretationToken : public AbstractValue
+#include "vector"
+#include "algebra/Vector.h"
+#include <QString>
+class PolygonValue : public AbstractValue
 {
 public:
-    FunctionInterpretationToken(const FunctionLiteral& action, std::vector<MathExpression> && arguments, bool is_variable_function = false);
+    PolygonValue();
+
+    PolygonValue(const std::vector<AlgVector> & pol, const std::vector<QString>& names);
+    PolygonValue(std::vector<AlgVector> && pol, std::vector<QString> && names);
+
     virtual QString toString() const override;
     virtual AbstractValueType getId() const override;
 
@@ -15,11 +20,9 @@ public:
     virtual std::unique_ptr<AbstractValue> operator*(const std::unique_ptr<AbstractValue> & b) const override;
     virtual std::unique_ptr<AbstractValue> operator/(const std::unique_ptr<AbstractValue> & b) const override;
 
-    MathExpression getResult(const std::vector<MathExpression> & variables_values) const;
 private:
-    bool is_variable_function = false;
-    std::vector<MathExpression> arguments;
-    FunctionLiteral action;
+    std::vector<AlgVector> polygon;
+    std::vector<QString> names;
 };
 
-#endif // FUNCTIONINTERPRETATIONTOKEN_H
+#endif // POLYGONVALUE_H
