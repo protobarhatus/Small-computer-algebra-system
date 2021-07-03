@@ -18,6 +18,23 @@ PolygonValue::PolygonValue(std::vector<AlgVector> &&pol, std::vector<QString> &&
     this->names = std::move(names);
 }
 
+PolygonValue::PolygonValue(const std::vector<AlgVector> &pol, const std::vector<QString> &names, const AlgVector &center)
+{
+    this->polygon = pol;
+    this->names = names;
+    this->center = center;
+    this->has_center_of_outscribed_circle = true;
+
+}
+
+PolygonValue::PolygonValue(std::vector<AlgVector> &&pol, std::vector<QString> &&names, AlgVector &&center)
+{
+    this->polygon = std::move(pol);
+    this->names = std::move(names);
+    this->center = std::move(center);
+    this->has_center_of_outscribed_circle = true;
+}
+
 QString PolygonValue::toString() const
 {
     QString res = "";
@@ -55,5 +72,25 @@ std::unique_ptr<AbstractValue> PolygonValue::operator/(const std::unique_ptr<Abs
 {
     throw QIODevice::tr("Нельзя применять этот оператор к геометрическому объекту");
     return nullptr;
+}
+
+MathExpression PolygonValue::getCenter() const
+{
+    if (!this->has_center_of_outscribed_circle)
+        throw QIODevice::tr("Около этого многоугольника нельзя описать окружность");
+    return MathExpression(this->center);
+}
+
+QString PolygonValue::name() const
+{
+    QString res;
+    for (auto &it : this->names)
+        res += it;
+    return res;
+}
+
+std::vector<AlgVector> PolygonValue::getPolygon() const
+{
+    return this->polygon;
 }
 

@@ -77,7 +77,7 @@ public:
     //пятое - имеет ли тангенс,
     //шестое - имеет ли котангенс квадрат, седьмое - имеет ли котангенс
     std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> checkTrigonometricalFunctions();
-    void checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > & params);
+    void checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > & params, bool in_fractal = false);
     virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
     virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
     std::unique_ptr<Fractal> toCommonDenominator();
@@ -110,7 +110,7 @@ public:
     abs_ex takeAwayIntegragingConstantThatCanBeChanged();
     bool tryToMergeIdenticalBehindConstantExpressions(const abs_ex &second) override;
     abs_ex tryToFindExponentialFunction(int var) const override;
-    void convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> &instructions);
+    void convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> &instructions, bool in_fractal = false);
 
     void getRidOfAbsoluteValues() override;
 
@@ -119,6 +119,8 @@ public:
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
 
     bool canBeZero() const override;
+
+    int amountOfAddictivesWithTrigonometryFunctionOfThis(const QString & argument);
 private:
     bool hasIntegratingConstantAddictiveThatCanBeChanged() const;
     void pullSomeMembersIntoOneIntegratingConstant();

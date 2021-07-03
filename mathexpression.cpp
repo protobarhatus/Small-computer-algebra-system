@@ -6,6 +6,7 @@
 #include "scriptsnamespace.h"
 #include "polygonvalue.h"
 #include "stringvalue.h"
+#include "polyhedronvalue.h"
 //MathExpression::MathExpression()
 //{
 //}
@@ -64,6 +65,26 @@ MathExpression::MathExpression(const std::vector<AlgVector> &vert, const std::ve
 MathExpression::MathExpression(std::vector<AlgVector> &&vert, std::vector<QString> &&names)
 {
     this->value = std::unique_ptr<AbstractValue>( new PolygonValue(std::move(vert), std::move(names)));
+}
+
+MathExpression::MathExpression(const std::vector<AlgVector> &vert, const std::vector<QString> &names, const AlgVector &center)
+{
+    this->value = std::unique_ptr<AbstractValue>( new PolygonValue(vert, names, center));
+}
+
+MathExpression::MathExpression(std::vector<AlgVector> &&vert, std::vector<QString> &&names, AlgVector &&center)
+{
+    this->value = std::unique_ptr<AbstractValue>( new PolygonValue(std::move(vert), std::move(names), std::move(center)));
+}
+
+MathExpression::MathExpression(const Polyhedron &pol)
+{
+    this->value = std::unique_ptr<AbstractValue>( new PolyhedronValue(pol));
+}
+
+MathExpression::MathExpression(Polyhedron &&pol)
+{
+    this->value = std::unique_ptr<AbstractValue>(new PolyhedronValue(std::move(pol)));
 }
 
 MathExpression::MathExpression(const QString &str)
@@ -125,6 +146,12 @@ const Matrix<AlgExpr>& MathExpression::getMatrixValue() const
 {
     assert(this->getType() == VALUE_MATRIX);
     return toMatrixPtr(this->value)->getValue();
+}
+
+const PolygonValue &MathExpression::getPolygon() const
+{
+    assert(this->getType() == VALUE_POLYGON);
+    return *static_cast<PolygonValue*>(this->value.get());
 }
 
 QString MathExpression::getStringValue() const

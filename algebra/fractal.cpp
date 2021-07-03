@@ -1443,6 +1443,9 @@ void Fractal::convertTrigonometricalFunctionsByFormulas(const std::map<QString, 
         if (!isDegreeOfTrigonometricalFunction(convertible))
             return;
         auto convert_type = instructions.find(getStringArgumentOfTrigonometricalFunction(convertible.get()))->second;
+
+
+
         if (convert_type == NONE)
             return;
         if (convert_type == COSINUS_TO_SINUS || convert_type == SINUS_TO_COSINUS || convert_type == TANGENT_TO_COSINUS || convert_type == COSINUS_TO_TANGENT ||
@@ -1520,13 +1523,13 @@ void Fractal::convertTrigonometricalFunctionsByFormulas(const std::map<QString, 
     for (auto &it : this->numerator)
     {
         if (it->getId() == POLYNOMIAL)
-            static_cast<Polynomial*>(it.get())->convertTrigonometricalFunctionsByFormulas(instructions);
+            static_cast<Polynomial*>(it.get())->convertTrigonometricalFunctionsByFormulas(instructions, true);
         convert(it);
     }
     for (auto &it : this->denominator)
     {
         if (it->getId() == POLYNOMIAL)
-            static_cast<Polynomial*>(it.get())->convertTrigonometricalFunctionsByFormulas(instructions);
+            static_cast<Polynomial*>(it.get())->convertTrigonometricalFunctionsByFormulas(instructions, true);
         convert(it);
     }
 }
@@ -1559,14 +1562,14 @@ void Fractal::checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bo
     for (auto &it : this->numerator)
     {
         if (it->getId() == POLYNOMIAL)
-            static_cast<Polynomial*>(it.get())->checkTrigonometricalFunctionsItHas(params);
+            static_cast<Polynomial*>(it.get())->checkTrigonometricalFunctionsItHas(params, true);
         else
             check(it);
     }
     for (auto &it : this->denominator)
     {
         if (it->getId() == POLYNOMIAL)
-            static_cast<Polynomial*>(it.get())->checkTrigonometricalFunctionsItHas(params);
+            static_cast<Polynomial*>(it.get())->checkTrigonometricalFunctionsItHas(params, true);
         else
             check(it);
     }

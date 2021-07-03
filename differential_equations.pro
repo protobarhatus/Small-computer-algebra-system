@@ -123,6 +123,7 @@ SOURCES += \
     matrixvalue.cpp \
     parser.cpp \
     polygonvalue.cpp \
+    polyhedronvalue.cpp \
     script.cpp \
     scriptsnamespace.cpp \
     scripttextfield.cpp \
@@ -241,6 +242,7 @@ HEADERS += \
     matrixvalue.h \
     parser.h \
     polygonvalue.h \
+    polyhedronvalue.h \
     script.h \
     scriptsnamespace.h \
     scripttextfield.h \

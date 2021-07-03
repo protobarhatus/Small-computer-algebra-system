@@ -2077,11 +2077,38 @@ std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > P
     return params;
 }
 
-void Polynomial::checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > &params)
+void Polynomial::checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > &params, bool in_fractal)
 {
-    for (auto &it : this->monomials)
+    //нужно чтобы если многочлен был множетелем дроби, то про аргументы, которых несколько слагаемых, дробь не узнавала,
+    //иначе в конструкции наподобие sin(x)*(1+cos(x)+cos(x)^2) получается бесконечная рекурсия, т. к.
+    //fraction требует перевести cos(x)^2 в 1-sin(x)^2, а многочлен сам по себе требует наоборот сразу же
+    //система изначально вообще не рассчитывала учитывать это, поэтому городим хрень
+    if (in_fractal)
     {
-        it->checkTrigonometricalFunctionsItHas(params);
+        auto copy  = params;
+        for (auto &it : this->monomials)
+        {
+            it->checkTrigonometricalFunctionsItHas(params);
+        }
+        for (auto &it : params)
+        {
+            if (this->amountOfAddictivesWithTrigonometryFunctionOfThis(it.first) > 1)
+            {
+                //делаем так, потому что в copy может и не быть этого аргумента
+                auto it_c = copy.find(it.first);
+                if (it_c == copy.end())
+                    it.second = {false, false, false, false, false, false, false, false};
+                else
+                    it.second = it_c->second;
+            }
+        }
+    }
+    else
+    {
+        for (auto &it : this->monomials)
+        {
+            it->checkTrigonometricalFunctionsItHas(params);
+        }
     }
 }
 
@@ -2712,10 +2739,24 @@ abs_ex Polynomial::tryToFindExponentialFunction(int var) const
     return nullptr;
 }
 
-void Polynomial::convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> &instructions)
+void Polynomial::convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> &instructions, bool in_fractal)
 {
-    for (auto &it : this->monomials)
-        it->convertTrigonometricalFunctionsByFormulas(instructions);
+
+    /*if (in_fractal)
+    {
+         std::map<QString, TrigonometricalFunctionsCastType> new_instructions;
+         for (auto &it : instructions)
+             if (this->amountOfAddictivesWithTrigonometryFunctionOfThis(it.first) <= 1)
+                 new_instructions.insert({it.first, it.second});
+            else
+                 new_instructions.insert({it.first, NONE});
+         for (auto &it : this->monomials)
+             it->convertTrigonometricalFunctionsByFormulas(new_instructions);
+    }
+    else */{
+        for (auto &it : this->monomials)
+            it->convertTrigonometricalFunctionsByFormulas(instructions);
+    }
 }
 
 void Polynomial::getRidOfAbsoluteValues()
@@ -2757,6 +2798,21 @@ bool Polynomial::canBeZero() const
         if (!it->canBeZero())
             return false;
     return true;
+}
+
+int Polynomial::amountOfAddictivesWithTrigonometryFunctionOfThis(const QString &argument)
+{
+    int amount = 0;
+    for (auto &it : this->monomials)
+    {
+        auto funcs = it->getTrigonometricalFunctions();
+        for (auto &it1 : funcs)
+        {
+            if (getArgumentOfFunction(it1)->makeStringOfExpression() == argument)
+                ++amount;
+        }
+    }
+    return amount;
 }
 
 bool Polynomial::hasIntegratingConstantAddictiveThatCanBeChanged() const

@@ -5,6 +5,7 @@
 #include "functioninterpretationtoken.h"
 #include "stringvalue.h"
 #include "polygonvalue.h"
+#include "polyhedronvalue.h"
 AbstractValue::AbstractValue()
 {
 
@@ -46,6 +47,8 @@ std::unique_ptr<AbstractValue> copy(const std::unique_ptr<AbstractValue> &val)
         return std::unique_ptr<AbstractValue>(new StringValue(*static_cast<StringValue*>(val.get())));
     case VALUE_POLYGON:
         return std::unique_ptr<AbstractValue>(new PolygonValue(*static_cast<PolygonValue*>(val.get())));
+    case VALUE_POLYHEDRON:
+        return std::unique_ptr<AbstractValue>(new PolyhedronValue(*static_cast<PolyhedronValue*>(val.get())));
     default:
         assert(false);
 

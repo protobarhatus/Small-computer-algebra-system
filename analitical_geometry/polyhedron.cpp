@@ -33,6 +33,15 @@ std::vector<QString> splitPointsNames(const QString & points)
     } while (ind < points.size());
     return res;
 }
+bool isAppropriatePointName(const QString &str)
+{
+    if (! (str[0] >= 'A' && str[0] <= 'Z'))
+            return false;
+    for (int i = 1; i < str.length(); ++i)
+        if (! ((str[i] >= 'a' && str[i] <= 'z') || (str[i] >= '0' && str[i] <= '9')))
+            return false;
+    return true;
+}
 Line3d Polyhedron::line(const QString &name) const
 {
     auto names = splitPointsNames(name);
@@ -115,11 +124,16 @@ std::vector<AlgVector> Polyhedron::section(const Plane &plane)
 
     return  order3DPolygonVertexes(res);
 }
+
+const std::map<QString, AlgVector *> &Polyhedron::getBasePoints() const
+{
+    return this->base_points;
+}
 AlgExpr getOutcribedRadOfRightPolygon(const AlgExpr & edge, int n)
 {
     return edge / (2 * sin(degToRad(AlgExpr(180) / n)));
 }
-std::pair<std::vector<AlgVector>, AlgVector> getBaseRightPolynomAndCenter(const AlgExpr &base_edge, int n)
+std::pair<std::vector<AlgVector>, AlgVector> getBaseRightPolygonAndCenter(const AlgExpr &base_edge, int n)
 {
     std::vector<AlgVector> base(n);
     AlgExpr outscribed_rad = getOutcribedRadOfRightPolygon(base_edge, n);
@@ -128,20 +142,20 @@ std::pair<std::vector<AlgVector>, AlgVector> getBaseRightPolynomAndCenter(const 
     Vector<AlgExpr> vertex_vector ( - base_edge / 2, - dist_from_edge_to_center);
     Matrix<AlgExpr> rot_matrix = rotationMatrix2D<AlgExpr>(degToRad(AlgExpr(360) / n));
 
-    for (int i = 0; i < rot_matrix.lines(); ++i)
+ /*   for (int i = 0; i < rot_matrix.lines(); ++i)
         for (int j = 0; j < rot_matrix.columns(); ++j)
-            qDebug() << rot_matrix[i][j].toString() << "  ;  ";
+            qDebug() << rot_matrix[i][j].toString() << "  ;  ";*/
 
     for (int i = 0; i < n; ++i)
     {
-        qDebug() << "STEP: " << i;
+        //qDebug() << "STEP: " << i;
         base[i] = AlgVector(base_edge / 2 + vertex_vector.x(), dist_from_edge_to_center + vertex_vector.y());
-        qDebug() << " ( " << vertex_vector.x().toString() << " ; " << vertex_vector.y().toString() << " )";
-        vertex_vector.x().getExpr()->setSimplified(false);
-        vertex_vector.y().getExpr()->setSimplified(false);
-        vertex_vector.x().getExpr()->simplify();
-        vertex_vector.y().getExpr()->simplify();
-        qDebug() << " ( " << vertex_vector.x().toString() << " ; " << vertex_vector.y().toString() << " )";
+        //qDebug() << " ( " << vertex_vector.x().toString() << " ; " << vertex_vector.y().toString() << " )";
+       // vertex_vector.x().getExpr()->setSimplified(false);
+       // vertex_vector.y().getExpr()->setSimplified(false);
+       // vertex_vector.x().getExpr()->simplify();
+       // vertex_vector.y().getExpr()->simplify();
+       // qDebug() << " ( " << vertex_vector.x().toString() << " ; " << vertex_vector.y().toString() << " )";
         vertex_vector = rot_matrix * vertex_vector;
     }
 
@@ -149,19 +163,19 @@ std::pair<std::vector<AlgVector>, AlgVector> getBaseRightPolynomAndCenter(const 
 }
 std::vector<AlgVector> getBaseRightPolygonWithCenter(const AlgExpr &base_edge, int n)
 {
-    auto polygon = getBaseRightPolynomAndCenter(base_edge, n);
+    auto polygon = getBaseRightPolygonAndCenter(base_edge, n);
     polygon.first.push_back(std::move(polygon.second));
     return polygon.first;
 }
 std::vector<AlgVector> getBaseRightPolygon(const AlgExpr &base_edge, int n)
 {
 
-    return getBaseRightPolynomAndCenter(base_edge, n).first;
+    return getBaseRightPolygonAndCenter(base_edge, n).first;
 }
 Polyhedron makeRightPiramid(const AlgExpr &base_edge, const AlgExpr & height, const QString &name)
 {
     auto points = splitPointsNames(name);
-    auto base = getBaseRightPolynomAndCenter(base_edge, points.size() - 1);
+    auto base = getBaseRightPolygonAndCenter(base_edge, points.size() - 1);
     return makePiramidOverPolygonWithHeightInCenter(base.first, base.second, height, name);
 
 
@@ -361,5 +375,7 @@ Polyhedron makePiramidOverPolygon(const std::vector<AlgVector> &base, const AlgV
     piram.addPoint(addDimension(height_base, AlgExpr(0)), "O");
     return piram;
 }
+
+
 
 

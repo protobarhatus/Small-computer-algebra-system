@@ -9,7 +9,8 @@ enum AbstractValueType
     VALUE_MATRIX,
     VALUE_FUNCTION_TOKEN,
     VALUE_STRING,
-    VALUE_POLYGON
+    VALUE_POLYGON,
+    VALUE_POLYHEDRON
 };
 class AlgebraicExpressionValue;
 class MatrixValue;

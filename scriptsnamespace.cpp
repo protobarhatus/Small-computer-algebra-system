@@ -184,7 +184,7 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
                                     throw "Argument of inverse() must be matrix";
                                 return MathExpression(inverse(std::move(args[0].getMatrixValue())));
                             }, true)});
-    this->functions.insert({"RegularPolygon", FunctionLiteral("RegularPolygon", 2, [](std::vector<MathExpression>&&args) {
+    this->functions.insert({"RegularPolygon", FunctionLiteral("RegularPolygon", 2, [this](std::vector<MathExpression>&&args) {
                                 if (args[0].getType() != VALUE_STRING || args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
                                     throw QIODevice::tr("RegularPolygon принимает строку и длину");
                                // if (!isIntegerNumber(args[1].getAlgExprValue())
@@ -192,10 +192,54 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
                                // int val = toInt(args[1].getAlgExprValue());
 
                                 auto names = splitPointsNames(args[0].getStringValue());
-                                //if (names.size() != 2 && names.size() != 3 && names.size() != 4 && names.size() != 6 && names.size() != 12)
-                                  //  throw QIODevice::tr("Поддерживаются только 2-х, 3-х, 4-х, 6-и, 12-ти вершинные многоугольники")
-                                return MathExpression(getBaseRightPolygon(args[1].getAlgExprValue(), names.size()), names);
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная с именем ") + it + QIODevice::tr(" уже существует; не получается создать соответствующую точку");
+
+                                auto polygon = getBaseRightPolygonAndCenter(args[1].getAlgExprValue(), names.size());
+                                for (int i = 0; i < names.size(); ++i)
+                                    this->addVariable(names[i], polygon.first[i]);
+                                return MathExpression(std::move(polygon.first), std::move(names), std::move(polygon.second));
                             })});
+    this->functions.insert({"Center", FunctionLiteral("Center", 1, [](std::vector<MathExpression>&&args) {
+                                if (args[0].getType() != VALUE_POLYGON)
+                                    throw QIODevice::tr("Center() применима только к многоугольнику");
+                                return args[0].getPolygon().getCenter();
+                            }, true)});
+    this->functions.insert({"RightTriangle", FunctionLiteral("RightTriangle", 3, [this](std::vector<MathExpression>&&args) {
+                                if (args[0].getType() != VALUE_STRING || args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION || args[2].getType() != args[1].getType())
+                                    throw QIODevice::tr("RightTriangle() принимает имя и два катета в качестве аргумента");
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная с именем ") + it + QIODevice::tr(" уже существует; не получается создать соответствующую точку");
+                                auto tr = getRightTriangle(args[1].getAlgExprValue(), args[2].getAlgExprValue());
+                                for (int i = 0; i < names.size(); ++i)
+                                    this->addVariable(names[i], tr[i]);
+                                return MathExpression(std::move(tr), std::move(names), (tr[1] + tr[2])/2);
+                            }, true)});
+    this->functions.insert({"Piramid", FunctionLiteral("Piramid", 4, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_POLYGON)
+                                    throw QIODevice::tr("Первый аргумент Piramid() должен быть многоугольником");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент Piramid() должен быть высотой");
+                                if (args[2].getType() != VALUE_VECTOR)
+                                    throw QIODevice::tr("Третий аргумент Piramid() должен быть точкой основания высоты");
+                                if (args[3].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Четвертый аргумент Piramid() должен быть именем вершины");
+                                auto base = args[2].getVectorValue();
+                                if (base.size() != 2)
+                                    throw QIODevice::tr("Основание высоты должно выражаться 2-мерным вектором");
+                                if (!isAppropriatePointName(args[3].getStringValue()))
+                                    throw QIODevice::tr("Неправильное имя точки для вершины");
+                                if (this->hasVariable(args[3].getStringValue()))
+                                    throw QIODevice::tr("Переменная с именем вершины уже существует");
+
+                                this->addVariable(args[3].getStringValue(), addDimension(args[2].getVectorValue(), args[1].getAlgExprValue()));
+
+                                return MathExpression(Polyhedron(makePiramidOverPolygon(args[0].getPolygon().getPolygon(), args[2].getVectorValue(),
+                                    args[1].getAlgExprValue(), args[3].getStringValue() + args[0].getPolygon().name())));
+                            }, true)});
 
 
 

@@ -1043,8 +1043,10 @@ void testAlgMod()
                 AlgExpr x = var(), a = var();
                 return integral(pow(sin(a*x), 6), x) == (1*((-15*cos((x*a))*sin((x*a)))+(-10*cos((x*a))*pow(sin((x*a)), 3))+(-8*cos((x*a))*pow(sin((x*a)), 5))+(15*x*a))/a)/48;
             },
-            []()->bool {
+            []()->bool { // (1*(8*sin(x)*cos(x)^5+10*sin(x)*cos(x)^3+15*x+15*cos(x)*sin(x))/a)/48
                 AlgExpr x = var(), a = var();
+                integral(pow(cos(a*x), 6), x);
+                (1*((8*sin((x*a))*pow(cos((x*a)),5))+(10*sin((x*a))*pow(cos((x*a)),3))+(15*x*a)+(15*cos((x*a))*sin((x*a))))/a)/48;
                 return integral(pow(cos(a*x), 6), x) == (1*((8*sin((x*a))*pow(cos((x*a)),5))+(10*sin((x*a))*pow(cos((x*a)),3))+(15*x*a)+(15*cos((x*a))*sin((x*a))))/a)/48;
             },
             []()->bool {
@@ -1400,6 +1402,11 @@ void testAlgMod()
 []()->bool {
     AlgExpr x = var();
     return integral(asin(cbrt(2*x + 3)), x) ==  (sqrt(-1*pow((2*x + 3), (A(2)/3)) + 1)*pow((2*x + 3), (A(2)/3)) + 2*sqrt(-1*pow((2*x + 3),(A(2)/3)) + 1) + 6*x*asin(cbrt(2*x + 3)) + 9*asin(cbrt(2*x + 3)))/6 ;
+},
+[]()->bool {//300
+    AlgExpr x = var();
+    //тест на бесконечную рекурсию
+    return sin(x)*(1+cos(x)+pow(cos(x), 2))==sin(x)*(1+cos(x)+pow(cos(x), 2));
 }
     };
 

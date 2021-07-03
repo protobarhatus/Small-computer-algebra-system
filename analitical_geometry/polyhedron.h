@@ -34,8 +34,12 @@ public:
 
     std::vector<AlgVector> section(const Plane & plane);
 
+    const std::map<QString, AlgVector*> & getBasePoints() const;
+
 };
+bool isAppropriatePointName(const QString & str);
 std::vector<QString> splitPointsNames(const QString & points);
+std::pair<std::vector<AlgVector>, AlgVector> getBaseRightPolygonAndCenter(const AlgExpr &base_edge, int n);
 //возвращает вектор 2 размерности, последняя точка - центр
 std::vector<AlgVector> getBaseRightPolygonWithCenter(const AlgExpr &base_edge, int n);
 std::vector<AlgVector> getBaseRightPolygon(const AlgExpr &base_edge, int n);

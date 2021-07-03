@@ -88,7 +88,8 @@ int main(int argc, char *argv[])
      //                                 {-10, -20, 4, -1}}));
 
    // geoTest();
-   // testAlgMod();
+
+  //  testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -111,6 +112,9 @@ int main(int argc, char *argv[])
     AlgExpr b = var();
     AlgExpr c = var();
     AlgExpr d = var();
+
+
+
     AlgExpr e = var();
     AlgExpr f = var();
     AlgExpr g = var();
@@ -313,7 +317,7 @@ int main(int argc, char *argv[])
     //c = parseAndComplete("Integrate[x, x]", sp);
     qDebug();
     qDebug() << "######################################################";
-    c = x2 + x + 1;
+    c = 1; //x2 + x + 1;
     qDebug() << c.toString();
 
 

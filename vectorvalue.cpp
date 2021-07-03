@@ -19,7 +19,16 @@ VectorValue::VectorValue(Vector<AlgExpr> &&expr)
 
 QString VectorValue::toString() const
 {
-    return "{" + this->value[0].toString() + " ;" + this->value[1].toString() + " ;" + this->value[2].toString() + "}";
+    QString str = "{";
+    for (int i = 0; i < this->value.size(); ++i)
+    {
+        str += this->value[i].toString();
+        if (i < this->value.size() - 1)
+            str += "; ";
+        else
+            str += "}";
+    }
+    return str;
 }
 
 AbstractValueType VectorValue::getId() const

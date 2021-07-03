@@ -1,12 +1,15 @@
 #ifndef MATHEXPRESSION_H
 #define MATHEXPRESSION_H
 #include "abstractvalue.h"
+#include "analitical_geometry/polyhedron.h"
 #include <memory>
 class AlgExpr;
 class ScriptsNameSpace;
 #include <algebra/Matrix.h>
 
 AbstractValueType valueTypeFromStringName(const QString & name);
+
+class PolygonValue;
 class MathExpression
 {
 public:
@@ -21,6 +24,10 @@ public:
     MathExpression(Matrix<AlgExpr> && expr);
     MathExpression(const std::vector<AlgVector> & vert, const std::vector<QString> & names);
     MathExpression(std::vector<AlgVector> && vert, std::vector<QString> && names);
+    MathExpression(const std::vector<AlgVector> & vert, const std::vector<QString> & names, const AlgVector & center);
+    MathExpression(std::vector<AlgVector> && vert, std::vector<QString> && names, AlgVector && center);
+    MathExpression(const Polyhedron & pol);
+    MathExpression(Polyhedron && pol);
     MathExpression(const QString & str);
     MathExpression(QString && str);
     MathExpression(std::unique_ptr<AbstractValue> && expr);
@@ -43,6 +50,8 @@ public:
     const AlgExpr& getAlgExprValue() const;
     const Vector<AlgExpr>& getVectorValue() const;
     const Matrix<AlgExpr>& getMatrixValue() const;
+
+    const PolygonValue & getPolygon() const;
     //отличия от toString() в том, что это работает только для VALUE_STRING, и при этом НЕ добавляет кавычки для него
     QString getStringValue() const;
 
