@@ -427,6 +427,33 @@ bool isString(const QString & expr)
         return true;
     return false;
 }
+bool isPointsCombination(const QString & expr, const ScriptsNameSpace & scripts_space)
+{
+    auto spl = splitPointsNames(expr);
+    if (spl.size() <= 1)
+        return false;
+    for (auto &it : spl)
+        if (!scripts_space.hasVariable(it))
+            return false;
+    return true;
+}
+MathExpression parsePointsCombination(const QString & expr, const ScriptsNameSpace & scripts_space)
+{
+    auto spl = splitPointsNames(expr);
+    if (spl.size() == 2)
+    {
+        return MathExpression(Line3d(scripts_space.getVariable(spl[0]).getVectorValue(),
+                              scripts_space.getVariable(spl[1]).getVectorValue()));
+    }
+    if (spl.size() == 3)
+    {
+        return MathExpression(getPlaneThroughThreePoints(scripts_space.getVariable(spl[0]).getVectorValue(),
+                              scripts_space.getVariable(spl[1]).getVectorValue(),
+                                scripts_space.getVariable(spl[2]).getVectorValue()
+                                  ));
+    }
+    throw expr + ": " + QIODevice::tr("Нельзя составить объект более чем из трех точек");
+}
 MathExpression parseAndComplete(QString expr, const ScriptsNameSpace & scripts_space)
 {
     if (expr == "AMOGUS" || expr == "amogus" || expr == "Amogus")
@@ -441,6 +468,8 @@ MathExpression parseAndComplete(QString expr, const ScriptsNameSpace & scripts_s
         return parseContainer(expr, scripts_space);
     if (isString(expr))
         return MathExpression(expr.mid(1, expr.length() - 2));
+
+
     auto sum = tryToSplitTokenAmongActions(expr, toSet({'+', '-'}), '+');
     if (sum.size() > 1)
     {
@@ -515,6 +544,9 @@ MathExpression parseAndComplete(QString expr, const ScriptsNameSpace & scripts_s
 
     if (isDerivativeObject(expr))
         return parseDerivativeObject(expr, scripts_space);
+
+    if (isPointsCombination(expr, scripts_space))
+        return parsePointsCombination(expr, scripts_space);
 
     throw (QString)"Syntax error: uknown token \"" + expr + "\"";
 

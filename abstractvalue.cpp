@@ -6,6 +6,8 @@
 #include "stringvalue.h"
 #include "polygonvalue.h"
 #include "polyhedronvalue.h"
+#include "linevalue.h"
+#include "planevalue.h"
 AbstractValue::AbstractValue()
 {
 
@@ -49,6 +51,10 @@ std::unique_ptr<AbstractValue> copy(const std::unique_ptr<AbstractValue> &val)
         return std::unique_ptr<AbstractValue>(new PolygonValue(*static_cast<PolygonValue*>(val.get())));
     case VALUE_POLYHEDRON:
         return std::unique_ptr<AbstractValue>(new PolyhedronValue(*static_cast<PolyhedronValue*>(val.get())));
+    case VALUE_LINE:
+        return std::unique_ptr<AbstractValue>(new LineValue(*static_cast<LineValue*>(val.get())));
+    case VALUE_PLANE:
+        return std::unique_ptr<AbstractValue>(new PlaneValue(*static_cast<PlaneValue*>(val.get())));
     default:
         assert(false);
 

@@ -30,6 +30,11 @@ public:
     MathExpression(Polyhedron && pol);
     MathExpression(const QString & str);
     MathExpression(QString && str);
+    MathExpression(const Line3d & line);
+    MathExpression(Line3d && line);
+    MathExpression(const Plane & plane);
+    MathExpression(Plane && plane);
+
     MathExpression(std::unique_ptr<AbstractValue> && expr);
 
 

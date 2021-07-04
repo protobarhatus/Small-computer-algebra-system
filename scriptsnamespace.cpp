@@ -218,7 +218,7 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
                                     this->addVariable(names[i], tr[i]);
                                 return MathExpression(std::move(tr), std::move(names), (tr[1] + tr[2])/2);
                             }, true)});
-    this->functions.insert({"Piramid", FunctionLiteral("Piramid", 4, [this](std::vector<MathExpression> && args) {
+    this->functions.insert({"Pyramid", FunctionLiteral("Piramid", 4, [this](std::vector<MathExpression> && args) {
                                 if (args[0].getType() != VALUE_POLYGON)
                                     throw QIODevice::tr("Первый аргумент Piramid() должен быть многоугольником");
                                 if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
@@ -237,9 +237,125 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
 
                                 this->addVariable(args[3].getStringValue(), addDimension(args[2].getVectorValue(), args[1].getAlgExprValue()));
 
-                                return MathExpression(Polyhedron(makePiramidOverPolygon(args[0].getPolygon().getPolygon(), args[2].getVectorValue(),
-                                    args[1].getAlgExprValue(), args[3].getStringValue() + args[0].getPolygon().name())));
+                                return MathExpression(makePiramidOverPolygon(args[0].getPolygon().getPolygon(), args[2].getVectorValue(),
+                                    args[1].getAlgExprValue(), args[3].getStringValue() + args[0].getPolygon().name()));
                             }, true)});
+    this->functions.insert({"Tetrahedron", FunctionLiteral("Tetrahedron", 2, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Первый аргумент Tetrahedron() должен быть именем");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент Tetrahedron() должен быть длиной");
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                if (names.size() != 4)
+                                    throw QIODevice::tr("Имя должно содержать 4 точки");
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная с именем ") + it + QIODevice::tr(" уже существует");
+                                auto res = makeTetrahedron(args[1].getAlgExprValue(), args[0].getStringValue());
+                                for (auto &it : names)
+                                    this->addVariable(it, res[it]);
+
+                                return res;
+
+                            }, true)});
+    this->functions.insert({"RegularPyramid", FunctionLiteral("RegularPiramid", 3, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Первый аргумент RegularPiramid() должен быть строкой");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент RegularPiramid() должен быть длиной ребра");
+                                if (args[2].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Третий аргумент RegularPiramid() должен быть высотой");
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная с именем ") + it + QIODevice::tr(" уже существует");
+                                auto res = makeRightPiramid(args[1].getAlgExprValue(), args[2].getAlgExprValue(), args[0].getStringValue());
+                                for (auto &it : names)
+                                    this->addVariable(it, res[it]);
+                                return res;
+                            }, true)});
+    this->functions.insert({"EquilateralPyramid", FunctionLiteral("EquilateralPyramid", 2, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Первый аргумент EquilateralPyramid() должен быть строкой");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент EquilateralPyramid() должен быть длиной");
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная с именем ") + it + QIODevice::tr(" уже существует");
+                                auto res = makeRightEquilateralPiramid(args[1].getAlgExprValue(), args[0].getStringValue());
+                                for (auto &it : names)
+                                    this->addVariable(it, res[it]);
+                                return res;
+                            }, true)});
+    this->functions.insert({"RegularPyramidWithGivenSideEdge", FunctionLiteral("PyramidWithGivenSideEdge", 3, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Первый аргумент должен быть строкой");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент должен быть длиной");
+                                if (args[2].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент должен быть длиной");
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная с именем ") + it + QIODevice::tr(" уже существует");
+                                auto res = makeRightPiramidWithGivenBaseEdgeAndSideEdge(args[1].getAlgExprValue(), args[2].getAlgExprValue(), args[0].getStringValue());
+                                for (auto &it : names)
+                                    this->addVariable(it, res[it]);
+                                return res;
+                            }, true)});
+    this->functions.insert({"Prizm", FunctionLiteral("Prizm", 2, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_POLYGON)
+                                    throw QIODevice::tr("Первый аргумент Prizm() должен быть многоугольником");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент Prizm() должен быть высотой");
+                                auto names = splitPointsNames(args[0].getPolygon().name());
+                                QString name = args[0].getPolygon().name();
+                                for (auto &it : names)
+                                    name += it + "1";
+                                auto res = makePrizmOverPolygon(args[0].getPolygon().getPolygon(), args[1].getAlgExprValue(), name);
+                                for (auto &it : names)
+                                    this->addVariable(it, res[it]);
+                                return res;
+                            }, true)});
+    this->functions.insert({"RegularPrizm", FunctionLiteral("RegularPrizm",3, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Первый аргумент RegularPrizm() должен быть строкой");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент RegularPrizm() должен быть длиной");
+                                if (args[2].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Третий аргумент RegularPrizm() должен быть высотой");
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная ") + it + QIODevice::tr(" уже существует");
+                                auto res = makeRightPrizm(args[1].getAlgExprValue(), args[2].getAlgExprValue(), args[0].getStringValue());
+                                for (auto &it : names)
+                                    this->addVariable(it, res[it]);
+                                return res;
+                            }, true)});
+    this->functions.insert({"RectParallelepiped", FunctionLiteral("RectParallelepiped", 4, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Первый аргумент должен быть строкой");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент должен быть длиной");
+                                if (args[2].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Третий аргумент должен быть шириной");
+                                if (args[3].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Четвертый аргумент должен быть высотой");
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная ") + it + QIODevice::tr(" уже существует");
+                                auto res = makeRectangularParallelepiped(args[1].getAlgExprValue(), args[2].getAlgExprValue(),
+                                    args[3].getAlgExprValue(), args[0].getStringValue());
+                                for (auto &it : names)
+                                    this->addVariable(it, res[it]);
+                                return res;
+                            }, true)});
+
+
+
 
 
 

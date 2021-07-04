@@ -7,6 +7,8 @@
 #include "polygonvalue.h"
 #include "stringvalue.h"
 #include "polyhedronvalue.h"
+#include "linevalue.h"
+#include "planevalue.h"
 //MathExpression::MathExpression()
 //{
 //}
@@ -95,6 +97,26 @@ MathExpression::MathExpression(const QString &str)
 MathExpression::MathExpression(QString &&str)
 {
     this->value = std::make_unique<StringValue> (std::move(str));
+}
+
+MathExpression::MathExpression(const Line3d &line)
+{
+    this->value = std::make_unique<LineValue>(line);
+}
+
+MathExpression::MathExpression(Line3d &&line)
+{
+    this->value = std::make_unique<LineValue>(std::move(line));
+}
+
+MathExpression::MathExpression(const Plane &plane)
+{
+    this->value = std::make_unique<PlaneValue>(plane);
+}
+
+MathExpression::MathExpression(Plane &&plane)
+{
+    this->value = std::make_unique<PlaneValue>(std::move(plane));
 }
 
 MathExpression::MathExpression(std::unique_ptr<AbstractValue> &&expr)

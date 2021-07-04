@@ -210,7 +210,8 @@ Polyhedron makeTetrahedron(const AlgExpr &edge, const QString & name)
 Polyhedron makeRightPrizm(const AlgExpr &edge, const AlgExpr &height, const QString &name)
 {
     auto points = splitPointsNames(name);
-    assert(points.size() % 2 == 0);
+    if (points.size() % 2 != 0)
+        throw QIODevice::tr("Имя призмы должно содержать четное количество точек");
     auto base = getBaseRightPolygon(edge, points.size() / 2);
     return makePrizmOverPolygon(base, height, name);
 

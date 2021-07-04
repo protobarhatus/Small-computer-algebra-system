@@ -116,12 +116,14 @@ SOURCES += \
     form.cpp \
     functioninterpretationtoken.cpp \
     functionliteral.cpp \
+    linevalue.cpp \
     main.cpp \
     mainapplicationspace.cpp \
     mainwindow.cpp \
     mathexpression.cpp \
     matrixvalue.cpp \
     parser.cpp \
+    planevalue.cpp \
     polygonvalue.cpp \
     polyhedronvalue.cpp \
     script.cpp \
@@ -236,11 +238,13 @@ HEADERS += \
     form.h \
     functioninterpretationtoken.h \
     functionliteral.h \
+    linevalue.h \
     mainapplicationspace.h \
     mainwindow.h \
     mathexpression.h \
     matrixvalue.h \
     parser.h \
+    planevalue.h \
     polygonvalue.h \
     polyhedronvalue.h \
     script.h \
