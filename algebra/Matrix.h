@@ -43,7 +43,7 @@ public:
     Matrix& operator*=(const T& num);
     Matrix& operator/=(const T& num);
 	bool isSquare() const;
-    //void out() const;
+   // void out() const;
 };
 template<typename T>
 Matrix<T> makeUnitMatrix(int size);

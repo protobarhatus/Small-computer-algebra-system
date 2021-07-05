@@ -338,6 +338,23 @@ bool operator==(const Vector<T> & a, const Vector<T> & b)
             return false;
     return true;
 }
-
+template<typename T>
+bool areColliniar(const Vector<T> & a, const Vector<T> & b)
+{
+    if (a.size() != b.size())
+        return false;
+    if (a.isZero())
+        return b.isZero();
+    int first_non_zero = 0;
+    while (a[first_non_zero] == 0)
+        ++first_non_zero;
+    if (b[first_non_zero] == 0)
+        return false;
+    T n = a[first_non_zero] / b[first_non_zero];
+    for (int i = first_non_zero; i < a.size(); ++i)
+        if (a[i] != n * b[i])
+            return false;
+    return true;
+}
 
 #endif

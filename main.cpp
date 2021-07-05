@@ -83,12 +83,11 @@ void geoTest()
 #include <QException>
 int main(int argc, char *argv[])
 {
-   // auto res = gauss(Matrix<AlgExpr>({ {3, 4, 5, +6},
-    //                                  {4, 5, A(3)/2, -3},
-     //                                 {-10, -20, 4, -1}}));
+  //  auto res = gauss(Matrix<AlgExpr>({ {3, 4, 5, +6},
+  //                                    {4, 5, A(3)/2, -3},
+   //                                   {-10, -20, 4, -1}}));
 
    // geoTest();
-
   //  testAlgMod();
     qDebug() << "#########";
    // GaluaField::initialize(11);

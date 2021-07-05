@@ -5,6 +5,9 @@
 #include "algebra/algexpr.h"
 #include "analitical_geometry/polyhedron.h"
 #include "polygonvalue.h"
+#include "analitical_geometry/geometry_3d.h"
+#include "planevalue.h"
+#include "linevalue.h"
 ScriptsNameSpace::ScriptsNameSpace()
 {
     for (int i = 0; i < 26; ++i)
@@ -15,7 +18,7 @@ ScriptsNameSpace::ScriptsNameSpace()
             this->variables.insert({"e", VariableLiteral("e", e(), true)});
         this->variables.insert({var_expr.toString(),  VariableLiteral(var_expr.toString(), var_expr, true)});
     }
-    this->variables.insert({"E", VariableLiteral("E", e(), true)});
+   // this->variables.insert({"E", VariableLiteral("E", e(), true)});
     this->variables.insert({"pi", VariableLiteral("pi", pi(), true)});
     this->variables.insert({"Pi", VariableLiteral("Pi", pi(), true)});
 
@@ -353,6 +356,136 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
                                     this->addVariable(it, res[it]);
                                 return res;
                             }, true)});
+
+
+
+
+    this->functions.insert({"Dist", FunctionLiteral("Dist", 2, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR)
+                                    return distance(args[0].getVectorValue(), args[1].getVectorValue());
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_PLANE)
+                                    return distance(args[0].getVectorValue(), args[1].getPlaneValue().getValue());
+                                if (args[0].getType() == VALUE_PLANE && args[1].getType() == VALUE_VECTOR)
+                                    return distance(args[1].getVectorValue(), args[0].getPlaneValue().getValue());
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_LINE)
+                                    return distance(args[0].getVectorValue(), args[1].getLineValue().getValue());
+                                if (args[0].getType() == VALUE_LINE && args[1].getType() == VALUE_VECTOR)
+                                    return distance(args[1].getVectorValue(), args[0].getLineValue().getValue());
+                                if (args[0].getType() == VALUE_LINE && args[1].getType() == VALUE_LINE)
+                                    return distance(args[0].getLineValue().getValue(), args[1].getLineValue().getValue());
+                                if (args[0].getType() == VALUE_LINE && args[1].getType() == VALUE_PLANE)
+                                    return distance(args[0].getLineValue().getValue(), args[1].getPlaneValue().getValue());
+                                if (args[0].getType() == VALUE_PLANE && args[1].getType() == VALUE_LINE)
+                                    return distance(args[1].getLineValue().getValue(), args[0].getPlaneValue().getValue());
+                                if (args[0].getType() == VALUE_PLANE && args[1].getType() == VALUE_PLANE)
+                                    return distance(args[0].getPlaneValue().getValue(), args[1].getPlaneValue().getValue());
+                                throw QIODevice::tr("Отсутствует функция Dist() для этих типов");
+                            }, true)});
+    this->functions.insert({"Angle", FunctionLiteral("Angle", 2, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR)
+                                    return angle(args[0].getVectorValue(), args[1].getVectorValue());
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_PLANE)
+                                    return angle(args[0].getVectorValue(), args[1].getPlaneValue().getValue());
+                                if (args[0].getType() == VALUE_PLANE && args[1].getType() == VALUE_VECTOR)
+                                    return angle(args[1].getVectorValue(), args[0].getPlaneValue().getValue());
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_LINE)
+                                    return angle(args[0].getVectorValue(), args[1].getLineValue().getValue());
+                                if (args[0].getType() == VALUE_LINE && args[1].getType() == VALUE_VECTOR)
+                                    return angle(args[1].getVectorValue(), args[0].getLineValue().getValue());
+                                if (args[0].getType() == VALUE_LINE && args[1].getType() == VALUE_LINE)
+                                    return angle(args[0].getLineValue().getValue(), args[1].getLineValue().getValue());
+                                if (args[0].getType() == VALUE_LINE && args[1].getType() == VALUE_PLANE)
+                                    return angle(args[0].getLineValue().getValue(), args[1].getPlaneValue().getValue());
+                                if (args[0].getType() == VALUE_PLANE && args[1].getType() == VALUE_LINE)
+                                    return angle(args[1].getLineValue().getValue(), args[0].getPlaneValue().getValue());
+                                if (args[0].getType() == VALUE_PLANE && args[1].getType() == VALUE_PLANE)
+                                    return angle(args[0].getPlaneValue().getValue(), args[1].getPlaneValue().getValue());
+                                throw QIODevice::tr("Отсутствует функция Angle() для этих типов");
+                            }, true)});
+    this->functions.insert({"Projection", FunctionLiteral("Projection", 2, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_LINE)
+                                    return projectionToLine(args[0].getVectorValue(), args[1].getLineValue().getValue());
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_PLANE)
+                                    return getPointOfNormalToPlane(args[0].getVectorValue(), args[1].getPlaneValue().getValue());
+
+                                throw QIODevice::tr("Отсутствует функция Projection() для этих типов");
+                            }, true)});
+    this->functions.insert({"Plane", FunctionLiteral("Plane", 3, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR && args[2].getType() == VALUE_VECTOR)
+                                    return getPlaneThroughThreePoints(args[0].getVectorValue(), args[1].getVectorValue(), args[2].getVectorValue());
+                                throw QIODevice::tr("Функция Plane() принимает три вектора");
+                            }, true)});
+    this->functions.insert({"Plane", FunctionLiteral("Plane", 4, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_ALGEBRAIC_EXPRESSION &&
+                                args[1].getType() == VALUE_ALGEBRAIC_EXPRESSION &&
+                                args[2].getType() == VALUE_ALGEBRAIC_EXPRESSION &&
+                                args[3].getType() == VALUE_ALGEBRAIC_EXPRESSION)
+                                    return Plane(args[0].getAlgExprValue(), args[1].getAlgExprValue(),
+                                        args[2].getAlgExprValue(), args[3].getAlgExprValue());
+                                throw QIODevice::tr("Функция Plane() принимает 4 объекта элементарной алгебры");
+                            }, true)});
+    this->functions.insert({"Line", FunctionLiteral("Line", 2, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR)
+                                    return Line3d(args[0].getVectorValue(), args[1].getVectorValue());
+                                throw QIODevice::tr("Функция Line() принимает 2 вектора");
+                            }, true)});
+    this->functions.insert({"PlaneThroughPointPerpendicularToVector", FunctionLiteral("PlaneThroughPointPerpendicularToVector", 2, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR)
+                                    return getPlaneThroughPointPerpendicularToVector(args[0].getVectorValue(), args[1].getVectorValue());
+                                throw QIODevice::tr("Аргументами функции должны быть два вектора");
+                            }, true)});
+    this->functions.insert({"PlaneThroughTwoPointsAndParallelToVector", FunctionLiteral("PlaneThroughTwoPointsAndParallelToVector", 3, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR && args[2].getType() == VALUE_VECTOR)
+                                    return getPlaneThroughTwoPointsAndParallelToVector(args[0].getVectorValue(), args[1].getVectorValue(), args[2].getVectorValue());
+                                throw QIODevice::tr("Аргументами функции должны быть три вектора");
+                            }, true)});
+    this->functions.insert({"PlaneThroughTwoPointsAndParallelToLine", FunctionLiteral("PlaneThroughTwoPointsAndParallelToLine", 3, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR &&
+                                        args[2].getType() == VALUE_LINE)
+                                    return getPlaneThroughTwoPointsAndParallelToLine(args[0].getVectorValue(),
+                                                args[1].getVectorValue(), args[2].getLineValue().getValue());
+                                throw QIODevice::tr("Аргументами функции должны быть два вектора и линия");
+                            }, true)});
+    this->functions.insert({"PlaneThroughTwoPointsAndPerpendicularToPlane", FunctionLiteral("PlaneThroughTwoPointsAndPerpendicularToPlane", 3, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR &&
+                                        args[2].getType() == VALUE_PLANE)
+                                    return getPlaneThroughTwoPointsAndPerpendicularToPlane(
+                                            args[0].getVectorValue(), args[1].getVectorValue(), args[2].getPlaneValue().getValue());
+                                throw QIODevice::tr("Аргументами функции должны быть два вектора и плоскость");
+                            }, true)});
+    this->functions.insert({"PlaneThroughLineParallelToLine", FunctionLiteral("PlaneThroughLineParallelToLine", 2, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_LINE && args[1].getType() == VALUE_LINE)
+                                    return getPlaneThroughLineParallelToLine(args[0].getLineValue().getValue(),
+                                                args[1].getLineValue().getValue());
+                                throw QIODevice::tr("Аргументами функции должны быть две линии");
+                            }, true)});
+    this->functions.insert({"Intersection", FunctionLiteral("Intersection", 2, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_LINE && args[0].getType() == VALUE_LINE)
+                                    return getIntersection(args[0].getLineValue().getValue(), args[1].getLineValue().getValue());
+                                if (args[0].getType() != VALUE_LINE && args[1].getType() == VALUE_PLANE)
+                                    return getIntersection(args[0].getLineValue().getValue(), args[1].getPlaneValue().getValue());
+                                if (args[0].getType() != VALUE_PLANE && args[1].getType() != VALUE_LINE)
+                                    return getIntersection(args[1].getLineValue().getValue(), args[0].getPlaneValue().getValue());
+                                if (args[0].getType() != VALUE_PLANE && args[1].getType() != VALUE_PLANE)
+                                    return args[0].getPlaneValue().getValue().getIntersection(args[1].getPlaneValue().getValue());
+                                throw QIODevice::tr("Отсутствует функция Intersection для этих аргументов");
+                            }, true)});
+    this->functions.insert({"Mid", FunctionLiteral("Mid", 2, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR)
+                                    return middle(args[0].getVectorValue(), args[1].getVectorValue());
+                                throw QIODevice::tr("Аргументы функции mid() должны быть векторы");
+                            }, true)});
+    this->functions.insert({"Ratio", FunctionLiteral("Ratio", 4, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_VECTOR
+                                    &&args[2].getType() == VALUE_ALGEBRAIC_EXPRESSION && args[3].getType() == VALUE_ALGEBRAIC_EXPRESSION)
+                                    return ratio(args[0].getVectorValue(), args[1].getVectorValue(),
+                                                    args[2].getAlgExprValue(), args[3].getAlgExprValue());
+                                throw QIODevice::tr("Неверный набор аргументов для функции Ratio()");
+
+                            }, true)});
+
+
+
 
 
 

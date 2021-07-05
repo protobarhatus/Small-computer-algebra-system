@@ -176,6 +176,18 @@ const PolygonValue &MathExpression::getPolygon() const
     return *static_cast<PolygonValue*>(this->value.get());
 }
 
+const PlaneValue &MathExpression::getPlaneValue() const
+{
+    assert(this->getType() == VALUE_PLANE);
+    return *static_cast<PlaneValue*>(this->value.get());
+}
+
+const LineValue &MathExpression::getLineValue() const
+{
+    assert(this->getType() == VALUE_LINE);
+    return *static_cast<LineValue*>(this->value.get());
+}
+
 QString MathExpression::getStringValue() const
 {
     assert(this->getType() == VALUE_STRING);

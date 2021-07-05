@@ -10,6 +10,8 @@ class ScriptsNameSpace;
 AbstractValueType valueTypeFromStringName(const QString & name);
 
 class PolygonValue;
+class PlaneValue;
+class LineValue;
 class MathExpression
 {
 public:
@@ -57,6 +59,9 @@ public:
     const Matrix<AlgExpr>& getMatrixValue() const;
 
     const PolygonValue & getPolygon() const;
+
+    const PlaneValue & getPlaneValue() const;
+    const LineValue & getLineValue() const;
     //отличия от toString() в том, что это работает только для VALUE_STRING, и при этом НЕ добавляет кавычки для него
     QString getStringValue() const;
 

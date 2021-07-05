@@ -189,7 +189,7 @@ bool Constant::operator<(const AbstractExpression &right) const
 }
 abs_ex getPi()
 {
-    return abs_ex(new Constant(3.14159265358979323846, QChar(L'π')));
+    return abs_ex(new Constant(3.14159265358979323846, QChar(960)));
 }
 abs_ex getEuler()
 {

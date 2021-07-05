@@ -17,7 +17,7 @@ bool isCursorChangingKey(QKeyEvent * e)
 #include <QDebug>
 void ScriptTextField::keyPressEvent(QKeyEvent *e)
 {
-    qDebug() << this->textCursor().position();
+   // qDebug() << this->textCursor().position();
     //qDebug() << "released";
     if (!isCursorChangingKey(e))
         this->deleteSystemMarks();

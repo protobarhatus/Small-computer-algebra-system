@@ -50,6 +50,8 @@ bool isPointInsideTriangle(const AlgVector& p, const AlgVector& a, const AlgVect
 
 AlgVector getIntersection(const Line3d& line, const Plane& plane)
 {
+    if (isLineParallelToThePlane(line, plane))
+        throw QIODevice::tr("Нельзя найти пересечение параллельных линии и плоскостей");
     AlgVector base = line.getBaseVector();
     AlgVector point = line.getPointOnLine();
     AlgExpr t = -(plane.a() * point.x() + plane.b() * point.y() + plane.c() * point.z() + plane.d()) / (plane.a() * base.x() + plane.b() * base.y() + plane.c() * base.z());
@@ -65,7 +67,7 @@ AlgVector middle(const AlgVector &a, const AlgVector &b)
     return mid;
 }
 
-AlgVector ratio(const AlgVector &a, const AlgVector &b, int m, int n)
+AlgVector ratio(const AlgVector &a, const AlgVector &b, AlgExpr m, AlgExpr n)
 {
     return  a + (b - a) * (AlgExpr(m)/(m + n));
 }
@@ -253,6 +255,103 @@ AlgExpr angle(const AlgVector &a, const Line3d &b)
 
 AlgExpr distance(const Line3d &a, const Line3d &b)
 {
-    AlgVector h = b.getPointOnLine() - a.getPointOnLine();
-    return abs(scalar(h, a.getBaseVector()*b.getBaseVector())/len(a.getBaseVector())/len(b.getBaseVector()));
+    if (areParallel(a, b))
+    {
+        AlgVector h = b.getPointOnLine() - a.getPointOnLine();
+        return abs(scalar(h, a.getBaseVector()*b.getBaseVector())/len(a.getBaseVector())/len(b.getBaseVector()));
+    }
+    return distance(a.getPointOnLine(), getPlaneThroughLineParallelToLine(b, a, false));
+}
+
+bool areParallel(const Line3d &a, const Line3d &b)
+{
+    return areColliniar(a.getBaseVector(), b.getBaseVector());
+}
+
+Plane getPlaneThroughLineParallelToLine(const Line3d & line_in_plane, const Line3d &parallel_line, bool check_parall)
+{
+    if (check_parall)
+        if (areParallel(line_in_plane, parallel_line))
+            throw QIODevice::tr("Нельзя выбрать плоскость проходящую через прямую, параллельную другой прямой, если эти прямые параллельны");
+    return getPlaneThroughTwoPointsAndParallelToLine(line_in_plane.getPointOnLine(), line_in_plane.getPointOnLine() + line_in_plane.getBaseVector(),
+                                                     parallel_line);
+}
+
+AlgExpr distance(const Line3d &a, const Plane &p)
+{
+    if (isLineParallelToThePlane(a, p))
+        return distance(a.getPointOnLine(), p);
+    throw QIODevice::tr("Нельзя посчитать расстояние между плоскостью и линией, пересекающейся с ней");
+}
+
+AlgExpr distance(const Plane &a, const Plane &b)
+{
+    if (areParallel(a, b))
+    {
+        if (b.a() != 0)
+            return abs (a.d() - b.d() * a.a() / b.a()) / sqrt(sqr(a.a()) + sqr(a.b()) + sqr(a.c()));
+        if (b.b() != 0)
+            return abs (a.d() - b.d() * a.b() / b.b()) / sqrt(sqr(a.a()) + sqr(a.b()) + sqr(a.c()));
+        return abs (a.d() - b.d() * a.c() / b.c()) / sqrt(sqr(a.a()) + sqr(a.b()) + sqr(a.c()));
+    }
+    throw QIODevice::tr("Нельз посчитать расстояние между пересекающимися плоскостями");
+}
+
+bool areParallel(const Plane &a, const Plane &b)
+{
+    return areColliniar(a.normal(), b.normal());
+}
+
+AlgExpr angle(const AlgVector &a, const Plane &b)
+{
+    return abs(pi() / 2 - angle(a, b.normal()));
+}
+bool areMathes(const Line3d & a, const Line3d & b)
+{
+    if (!areColliniar(a.getBaseVector(), b.getBaseVector()))
+        return false;
+    return a.getPointOnLine() == b.getPointOnLine() || areColliniar(b.getPointOnLine() - a.getPointOnLine(), a.getBaseVector());
+}
+AlgVector getIntersection(const Line3d &a, const Line3d &b)
+{
+    if (areMathes(a, b))
+        throw QIODevice::tr("Прямые совпадают");
+    if (areParallel(a, b))
+        throw QIODevice::tr("Прямые параллельны");
+    //L1 = p1 + t1 * b1
+    //L2 = p2 + t2 * b2
+    //p1 + t1 * b1 == p2 + t2 * b2
+
+    //x1 + t1 * b1.x == x2 + t2 * b2.x
+    //y1 + t1 * b1.y == y2 + t2 * b2.y
+    //z1 + t1 * b1.z == z2 + t2 * b2.z
+
+    // t1 * b1.x - t2 * b2.x == x2 - x1
+    // t1 * b1.y - t2 * b2.y == y2 - y1
+    auto M = Matrix<AlgExpr>(std::vector<Vector<AlgExpr>> ({ {a.getBaseVector().x(), -1*b.getBaseVector().x(), 0, b.getPointOnLine().x() - a.getPointOnLine().x()},
+                                                             {a.getBaseVector().y(), -1 * b.getBaseVector().y(), 0, b.getPointOnLine().y() - b.getPointOnLine().y()},
+                                                                                                    {a.getBaseVector().z(), -1 * b.getBaseVector().z(), 0, b.getPointOnLine().z() - a.getPointOnLine().z()}}));
+
+    auto eqres = gauss(Matrix<AlgExpr>(std::vector<Vector<AlgExpr>> ({ {a.getBaseVector().x(), -1*b.getBaseVector().x(), 0, b.getPointOnLine().x() - a.getPointOnLine().x()},
+                                {a.getBaseVector().y(), -1 * b.getBaseVector().y(), 0, b.getPointOnLine().y() - b.getPointOnLine().y()},
+                                                                       {a.getBaseVector().z(), -1 * b.getBaseVector().z(), 0, b.getPointOnLine().z() - a.getPointOnLine().z()}})));
+
+  //  for (int i = 0; i < 3; ++i)
+    //{
+      //  auto d = qDebug() ;
+        //for (int j = 0; j < 4; ++j)
+          //  d << M[i][j].toString() << " | ";
+   // }
+
+
+
+
+    if (eqres.size() == 0)
+        throw QIODevice::tr("Прямые скрещиваются");
+    AlgExpr t1 = eqres[0].back();
+    AlgExpr t2 = eqres[1].back();
+
+    if (a.getPointOnLine() + t1 * a.getBaseVector() == b.getPointOnLine() + t2 * b.getBaseVector())
+        return a.getPointOnLine() + t1 * a.getBaseVector();
+    throw QIODevice::tr("Прямые скрещиваются");
 }

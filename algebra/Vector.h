@@ -69,6 +69,8 @@ public:
 
 };
 template<typename T>
+bool areColliniar(const Vector<T> & a, const Vector<T> & b);
+template<typename T>
 bool operator==(const Vector<T> & a, const Vector<T> & b);
 template<typename T>
 Vector<T> addDimension(const Vector<T> & vec, const T & z);

@@ -215,6 +215,17 @@ bool Matrix<T>::isSquare() const
 {
     return this->_lines == this->_columns;
 }
+template <typename T>
+void out(const Matrix<T> & m)
+{
+    qDebug();
+    for (int i = 0; i < m.lines(); ++i)
+    {
+        auto d = qDebug();
+        for (int j = 0;j < m.columns(); ++j)
+            d << m[i][j].toString() << " | ";
+    }
+}
 /*template<typename T>
 void Matrix<T>::out() const
 {
@@ -356,7 +367,7 @@ std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix)
 			if (indexes_of_first_non_zero[i].second == indexes_of_first_non_zero[n].second)
                 extended_equation_matrix[i] = extended_equation_matrix[i] +
                 extended_equation_matrix[n] * (-extended_equation_matrix[i][indexes_of_first_non_zero[i].second] / extended_equation_matrix[n][indexes_of_first_non_zero[n].second]);
-            //outMatrix<T>(extended_equation_Matrix<T>);
+            //out(extended_equation_matrix);
 
 		}
 		sort_rows();
@@ -370,7 +381,14 @@ std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix)
     //!ВОТ В ЭТОМ МОМЕНТЕ ИДЕТ СРАВНЕНИЕ С НУЛЕМ. ЕСЛИ используется тип double, то он может быть оочень маленьким тогда, когда он предполагается быть нулем
     //! из-за этого может вылетать. Необходимо при использовании типа double раскомментить верхий коммент (с занулением) либо ввести универсальную шаблонную функцию
     //! для сравнения с нулем
-    for (first_non_zero = height - 1; extended_equation_matrix[first_non_zero][width - 2] == 0; --first_non_zero)
+
+    auto isZeroV = [](const Vector<T> v)->bool {
+        for (int i = 0; i < v.size() - 1; ++i)
+            if (v[i] != 0)
+                return false;
+        return true;
+    };
+    for (first_non_zero = height - 1; isZeroV(extended_equation_matrix[first_non_zero]); --first_non_zero)
         if (extended_equation_matrix[first_non_zero][width - 1] != 0)
             return std::vector<std::vector<T> >();
     auto div_on_lead_element = [](Vector<T>& vec)->void {
@@ -386,6 +404,9 @@ std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix)
 
     for (int i = 0; i < extended_equation_matrix.lines(); ++i)
         div_on_lead_element(extended_equation_matrix[i]);
+
+  //  out(extended_equation_matrix);
+
 	int amount_of_variables = width - 1;
 	//������ ������ - ������ ���������� ������� ��������, ������ - ������ �������, ������ ��� ���������� - ���������
     std::vector<std::vector<T> > result(amount_of_variables);
@@ -404,7 +425,7 @@ std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix)
             extended_equation_matrix[j] = extended_equation_matrix[j] + (extended_equation_matrix[i] * (-extended_equation_matrix[j][current_params_index]));
 		}
 	}
-
+   // out(result);
     for (int i = 0; i < result.size(); ++i)
     {
         if (result[i].size() == 0)
@@ -413,6 +434,7 @@ std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix)
             result[i][i] = 1;
         }
     }
+   // out(result);
 	return result;
 	
 }

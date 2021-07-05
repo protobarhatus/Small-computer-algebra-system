@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <cmath>
 #include <vector>
+#include "geometry_3d.h"
 Plane::Plane()
 {
 }
@@ -171,6 +172,10 @@ Line3d Plane::getIntersection(const Plane & plane)
     auto y = [&a, &b, &c, &d, &e, &f, &g, &h](double z) { return(-a*(g *z + h) + c *e *z + d *e) / (a *f - b *e); };
     return Line3d(Vector3d(x(0), y(0), 0), Vector3d(x(1), y(1), 1));*/
 
+
+
+    if (areParallel(*this, plane))
+        throw QIODevice::tr("Нельзя пересечь параллельные или совпадающие плоскости");
     //это методом гаусса. плоскости не совпадают и не параллельны
     std::vector<std::vector<AlgExpr>> extended_equation_mattrix =
     {
