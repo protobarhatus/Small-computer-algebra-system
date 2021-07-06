@@ -12,6 +12,7 @@ AbstractValueType valueTypeFromStringName(const QString & name);
 class PolygonValue;
 class PlaneValue;
 class LineValue;
+class PolyhedronValue;
 class MathExpression
 {
 public:
@@ -59,6 +60,7 @@ public:
     const Matrix<AlgExpr>& getMatrixValue() const;
 
     const PolygonValue & getPolygon() const;
+    const PolyhedronValue & getPolyhedron() const;
 
     const PlaneValue & getPlaneValue() const;
     const LineValue & getLineValue() const;

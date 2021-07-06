@@ -64,10 +64,15 @@ public:
     Vector& operator*=(const T& num);
     Vector& operator/=(const T& num);
 
+
 	int size() const;
     bool isZero() const;
 
 };
+
+template<typename T>
+bool operator<(const Vector<T> & a, const Vector<T> & b);
+
 template<typename T>
 bool areColliniar(const Vector<T> & a, const Vector<T> & b);
 template<typename T>

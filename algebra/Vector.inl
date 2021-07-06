@@ -261,7 +261,23 @@ Vector<T> operator*(const Vector<T> & a, const Vector<T> & b)
         throw "Cannot multiply non 3 dimensional vectors";
      return Vector<T>(a.y() * b.z() - a.z() * b.y(), a.z() * b.x() - a.x() * b.z(), a.x() * b.y() - a.y() * b.x());
 }
-
+template<typename T>
+bool operator<(const Vector<T> & a, const Vector<T> & b)
+{
+    if (a.size() < b.size())
+        return true;
+    if (a.size() > b.size())
+        return false;
+    for (int i = 0; i < a.size(); ++i)
+    {
+        T res = a[i] - b[i];
+        if (res < 0)
+            return true;
+        if (res > 0)
+            return false;
+    }
+    return false;
+}
 template<typename T>
 T len(const Vector<T>& a)
 {

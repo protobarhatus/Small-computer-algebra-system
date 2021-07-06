@@ -112,6 +112,7 @@ SOURCES += \
     analitical_geometry/line3d.cpp \
     analitical_geometry/plane.cpp \
     analitical_geometry/polyhedron.cpp \
+    analitical_geometry/polyhedrondefinitioncomponent.cpp \
     commandresponse.cpp \
     form.cpp \
     functioninterpretationtoken.cpp \
@@ -234,6 +235,7 @@ HEADERS += \
     analitical_geometry/line3d.h \
     analitical_geometry/plane.h \
     analitical_geometry/polyhedron.h \
+    analitical_geometry/polyhedrondefinitioncomponent.h \
     commandresponse.h \
     form.h \
     functioninterpretationtoken.h \

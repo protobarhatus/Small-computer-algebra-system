@@ -51,3 +51,8 @@ std::unique_ptr<AbstractValue> PolyhedronValue::operator/(const std::unique_ptr<
     throw QIODevice::tr("Нельзя применять оператор \'/\' к геометрическому объекту");
     return nullptr;
 }
+
+Polyhedron PolyhedronValue::getValue() const
+{
+    return value;
+}

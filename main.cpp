@@ -73,7 +73,7 @@ void geoTest()
     auto alpha = getPlaneThroughTwoPointsAndPerpendicularToPlane(pir["T"], pir["L"], pir.plane("TAB"));
     auto a = pir.section(alpha);
     out(getPlaneThroughTwoPointsAndPerpendicularToPlane(pir["T"], pir["L"], pir.plane("TAB")));
-    qDebug() << surface(a).toString();
+    qDebug() << area(a).toString();
     qDebug() << angle(pir.line("TC"), alpha).toString();
 
    // qDebug() << surface(prizm.section(prizm.plane("MNK"))).toWolframString();

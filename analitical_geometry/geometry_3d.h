@@ -37,8 +37,8 @@ AlgVector middle(const AlgVector & a, const AlgVector & b);
 AlgVector ratio(const AlgVector & a, const AlgVector & b, AlgExpr m, AlgExpr n);
 
 //вершины должны быть в ПРАВИЛЬНОМ порядке (в порядке выпуклого многоугольника)
-AlgExpr surface(const std::vector<AlgVector> & polygon);
-AlgExpr surface(const AlgVector &a, const AlgVector &b, const AlgVector &c);
+AlgExpr area(const std::vector<AlgVector> & polygon);
+AlgExpr area(const AlgVector &a, const AlgVector &b, const AlgVector &c);
 
 AlgExpr angle(const Plane & a, const Plane & b);
 AlgExpr angle(const Line3d & a, const Plane & b);
@@ -56,4 +56,10 @@ std::pair<std::vector<AlgVector>, std::vector<AlgVector>> translateTo2Dcoordinat
 
 std::vector<AlgVector> order2DPolygonVertexes(const std::vector<AlgVector>& vertexes);
 std::vector<AlgVector> order3DPolygonVertexes(const std::vector<AlgVector> & vertexes);
+
+
+AlgExpr pyramidVolume(const std::vector<AlgVector> & base, const AlgVector & top_vertex);
+
+AlgVector geoCenter(const Polyhedron & pol);
+
 #endif // GEOMETRY_3D_H

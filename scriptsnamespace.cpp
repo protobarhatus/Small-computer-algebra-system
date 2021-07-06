@@ -8,6 +8,7 @@
 #include "analitical_geometry/geometry_3d.h"
 #include "planevalue.h"
 #include "linevalue.h"
+#include "polyhedronvalue.h"
 ScriptsNameSpace::ScriptsNameSpace()
 {
     for (int i = 0; i < 26; ++i)
@@ -126,6 +127,12 @@ ScriptsNameSpace::ScriptsNameSpace()
                                 //в AlgExpr идет сначала аргумент, затем основание, здесь будет наоборот
                                 return MathExpression(log(std::move(args[1].getAlgExprValue()), std::move(args[0].getAlgExprValue())));}, true)});
 
+    this->functions.insert({"deg", FunctionLiteral("deg", 1, [](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Аргументом deg() должно быть число");
+                                return args[0].getAlgExprValue() / 180 * pi();
+                            }, true)});
+
     this->functions.insert({"D", FunctionLiteral("D", 1, [](std::vector<MathExpression>&& args) {
                                 if (args[0].getType() != VALUE_ALGEBRAIC_EXPRESSION)
                                     throw QString("Argument of D() should be object of elementary algebra");
@@ -204,6 +211,50 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
                                     this->addVariable(names[i], polygon.first[i]);
                                 return MathExpression(std::move(polygon.first), std::move(names), std::move(polygon.second));
                             })});
+    this->functions.insert({"Rect", FunctionLiteral("Rect", 3, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_STRING || args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION ||
+                                        args[2].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Rect принимает строку и две длины");
+                               // if (!isIntegerNumber(args[1].getAlgExprValue())
+                               //     throw QIODevice::tr("Второй аргумент RegularPolygon должен быть целым числом и не содержать переменные");
+                               // int val = toInt(args[1].getAlgExprValue());
+
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная с именем ") + it + QIODevice::tr(" уже существует; не получается создать соответствующую точку");
+                                if (names.size() != 4)
+                                    throw QIODevice::tr("Прямоугольник должен задаваться 4-мя вершинами");
+
+                                auto polygon = getBaseRectangular(args[1].getAlgExprValue(), args[2].getAlgExprValue());
+                                for (int i = 0; i < names.size(); ++i)
+                                    this->addVariable(names[i], polygon[i]);
+                                return MathExpression(std::move(polygon), std::move(names));
+                            }, true)});
+    this->functions.insert({"Parallelogramm", FunctionLiteral("Parallelogramm", 4, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_STRING || args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION ||
+                                        args[2].getType() != VALUE_ALGEBRAIC_EXPRESSION || args[3].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Parallelogramm принимает строку, две длины и угол");
+                                if (args[3].getAlgExprValue() == pi()/2)
+                                    return this->callFunctionsAction("Rect", {std::move(args[0]), std::move(args[1]), std::move(args[2])});
+                                auto names = splitPointsNames(args[0].getStringValue());
+                                if (names.size() != 4)
+                                    throw QIODevice::tr("Параллелограм должен задаваться 4-мя вершинами");
+                                for (auto &it : names)
+                                    if (this->hasVariable(it))
+                                        throw QIODevice::tr("Переменная с именем ") + it + QIODevice::tr(" уже существует; не получается создать соответствующую точку");
+                                auto polygon = getParallelogram(args[1].getAlgExprValue(), args[2].getAlgExprValue(), args[3].getAlgExprValue());
+                                for (int i = 0; i < names.size(); ++i)
+                                    this->addVariable(names[i], polygon[i]);
+                                return MathExpression(std::move(polygon), std::move(names));
+                            }, true)});
+    this->functions.insert({"Rhomb", FunctionLiteral("Rhomb", 3, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_STRING || args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION ||
+                                        args[2].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Rhomb принимает строку, длину и угол");
+                                return this->callFunctionsAction("Parallelogramm", {std::move(args[0]),
+                                            std::move(args[1]), std::move(args[1]), std::move(args[3])});
+                            }, true)});
     this->functions.insert({"Center", FunctionLiteral("Center", 1, [](std::vector<MathExpression>&&args) {
                                 if (args[0].getType() != VALUE_POLYGON)
                                     throw QIODevice::tr("Center() применима только к многоугольнику");
@@ -482,6 +533,52 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
                                                     args[2].getAlgExprValue(), args[3].getAlgExprValue());
                                 throw QIODevice::tr("Неверный набор аргументов для функции Ratio()");
 
+                            }, true)});
+    this->functions.insert({"Section", FunctionLiteral("Section", 2, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_POLYHEDRON)
+                                    throw QIODevice::tr("Первый аргумент Section() должен быть многогранником");
+                                if (args[1].getType() != VALUE_PLANE)
+                                    throw QIODevice::tr("Второй аргумент Section() должен быть сечением");
+                                auto res = args[0].getPolyhedron().getValue().section(args[1].getPlaneValue().getValue());
+                                int counter = 0;
+                                std::vector<QString> names(res.size());
+                                for (int i = 0; counter < res.size(); ++i)
+                                {
+                                    QString str = "S";
+                                    str.setNum(i);
+                                    if (!this->hasVariable(str))
+                                    {
+                                        names[counter] = str;
+                                        this->addVariable(str, res[counter]);
+                                        ++counter;
+                                    }
+                                }
+                                return MathExpression(res, names);
+                            }, true)});
+    this->functions.insert({"Area", FunctionLiteral("Area", 1, [](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_POLYGON)
+                                    throw QIODevice::tr("Area принимает многоугольник");
+                                return area(args[0].getPolygon().getPolygon());
+                            }, true)});
+    this->functions.insert({"Cube", FunctionLiteral("Cube", 2, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Первый аргумент Cube() должен быть строкой");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент Cube() должен быть длиной");
+                                return this->callFunctionsAction("RectParallelepiped", {args[0], args[1], args[1], args[1]});
+                            }, true)});
+    this->functions.insert({"Square", FunctionLiteral("Square", 2, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Первый аргумент функции Square() должен быть квадратом");
+                                if (args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Второй аргумент функции Square() должен быть длиной");
+                                return this->callFunctionsAction("RegularPolygon", {args[0], args[1]});
+                            }, true)});
+
+    this->functions.insert({"Volume", FunctionLiteral("Volume", 1, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_POLYHEDRON)
+                                    throw QIODevice::tr("Volume() принимает многогранник");
+                                return args[0].getPolyhedron().getValue().volume();
                             }, true)});
 
 

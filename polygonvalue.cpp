@@ -40,7 +40,10 @@ QString PolygonValue::toString() const
     QString res = "";
     for (int i = 0; i < polygon.size(); ++i)
     {
-        res += "<br>" + names[i] + ": (" + polygon[i].x().toString() + "; " + polygon[i].y().toString() + ")";
+        if (polygon[0].size() == 2)
+            res += "<br>" + names[i] + ": (" + polygon[i].x().toString() + "; " + polygon[i].y().toString() + ")";
+        else
+            res += "<br>" + names[i] + ": (" + polygon[i].x().toString() + "; " + polygon[i].y().toString() + "; " + polygon[i].z().toString() + ")";
     }
     return res;
 }

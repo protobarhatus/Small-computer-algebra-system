@@ -21,6 +21,7 @@ class AbstractValue
 {
 public:
     AbstractValue();
+    virtual ~AbstractValue();
     virtual QString toString() const = 0;
     virtual AbstractValueType getId() const = 0;
 

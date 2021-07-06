@@ -12,6 +12,11 @@ AbstractValue::AbstractValue()
 {
 
 }
+
+AbstractValue::~AbstractValue()
+{
+
+}
 const AlgebraicExpressionValue* toAlgPtr(const std::unique_ptr<AbstractValue> &b)
 {
     return static_cast<AlgebraicExpressionValue*>(

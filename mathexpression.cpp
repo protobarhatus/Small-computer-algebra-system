@@ -176,6 +176,12 @@ const PolygonValue &MathExpression::getPolygon() const
     return *static_cast<PolygonValue*>(this->value.get());
 }
 
+const PolyhedronValue &MathExpression::getPolyhedron() const
+{
+    assert(this->getType() == VALUE_POLYHEDRON);
+    return *static_cast<PolyhedronValue*>(this->value.get());
+}
+
 const PlaneValue &MathExpression::getPlaneValue() const
 {
     assert(this->getType() == VALUE_PLANE);

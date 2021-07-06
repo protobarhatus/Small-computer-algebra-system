@@ -72,17 +72,17 @@ AlgVector ratio(const AlgVector &a, const AlgVector &b, AlgExpr m, AlgExpr n)
     return  a + (b - a) * (AlgExpr(m)/(m + n));
 }
 
-AlgExpr surface(const std::vector<AlgVector> &polygon)
+AlgExpr area(const std::vector<AlgVector> &polygon)
 {
     AlgExpr res = 0;
     for (int i = 1; i <= polygon.size() - 2; ++i)
     {
-        res += surface(polygon[0], polygon[i], polygon[i + 1]);
+        res += area(polygon[0], polygon[i], polygon[i + 1]);
     }
     return res;
 }
 
-AlgExpr surface(const AlgVector &a, const AlgVector &b, const AlgVector &c)
+AlgExpr area(const AlgVector &a, const AlgVector &b, const AlgVector &c)
 {
    /* AlgExpr det1 = det(Matrix<AlgExpr>({Vector<AlgExpr>(1, a.x(), a.y()),
                                    Vector<AlgExpr> (1, b.x(), b.y()),
@@ -94,7 +94,11 @@ AlgExpr surface(const AlgVector &a, const AlgVector &b, const AlgVector &c)
                                    Vector<AlgExpr> (1, b.y(), b.z()),
                                    Vector<AlgExpr> (1, c.y(), c.z())}));
     return (sqrt(sqr(det1) + sqr(det2) + sqr(det3))) / 2;*/
-    return len((b - a) * (c - a))/2;
+    if (a.size() == 3)
+        return len((b - a) * (c - a))/2;
+    if (a.size() == 2)
+        return abs((b.x() - a.x()) * (c.y() - a.y()) - (c.x() - a.x()) * (b.y() - a.y())) / 2;
+    throw QIODevice::tr("Вектора должны 2-х или 3-х мерные");
 }
 
 AlgExpr angle(const Plane &a, const Plane &b)
@@ -354,4 +358,21 @@ AlgVector getIntersection(const Line3d &a, const Line3d &b)
     if (a.getPointOnLine() + t1 * a.getBaseVector() == b.getPointOnLine() + t2 * b.getBaseVector())
         return a.getPointOnLine() + t1 * a.getBaseVector();
     throw QIODevice::tr("Прямые скрещиваются");
+}
+
+AlgVector geoCenter(const Polyhedron &pol)
+{
+    auto vert = pol.getBasePoints();
+    AlgVector sum = Vector<AlgExpr>(0,0 ,0);
+    for (auto &it: vert)
+        sum += *it.second;
+    sum /= vert.size();
+    return sum;
+
+}
+
+AlgExpr pyramidVolume(const std::vector<AlgVector> &base, const AlgVector &top_vertex)
+{
+    auto h = distance(top_vertex, getPlaneThroughThreePoints(base[0], base[1], base[2]));
+    return area(base) * h / 3;
 }

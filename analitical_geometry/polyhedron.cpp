@@ -1,8 +1,48 @@
 #include "polyhedron.h"
 #include "geometry_3d.h"
+
 Polyhedron::Polyhedron()
 {
 
+}
+
+Polyhedron::Polyhedron(const Polyhedron &cop)
+{
+    this->points = cop.points;
+    this->base_points = cop.base_points;
+    this->dots_connections = cop.dots_connections;
+    this->definition = cop.definition->copy();
+}
+
+Polyhedron::Polyhedron(Polyhedron &&mov)
+{
+    this->points = std::move(mov.points);
+    this->base_points = std::move(mov.base_points);
+    this->dots_connections = std::move(mov.dots_connections);
+    this->definition = std::move(mov.definition);
+}
+
+const Polyhedron &Polyhedron::operator=(const Polyhedron &cop)
+{
+    this->points = cop.points;
+    this->base_points = cop.base_points;
+    this->dots_connections = cop.dots_connections;
+    this->definition = cop.definition->copy();
+    return *this;
+}
+
+const Polyhedron &Polyhedron::operator=(Polyhedron &&mov)
+{
+    this->points = std::move(mov.points);
+    this->base_points = std::move(mov.base_points);
+    this->dots_connections = std::move(mov.dots_connections);
+    this->definition = std::move(mov.definition);
+    return *this;
+}
+
+void Polyhedron::setDefinition(std::unique_ptr<PolyhedronDefinitionComponent> &&def)
+{
+    this->definition = std::move(def);
 }
 
 AlgVector Polyhedron::point(const QString &name) const
@@ -70,6 +110,8 @@ void Polyhedron::addVertex(AlgVector &&point, const QString &name)
     this->base_points.insert({name, &it.first->second});
 }
 
+
+
 void Polyhedron::addPoint(const AlgVector &point, const QString &name)
 {
     this->points.insert({name, point});
@@ -128,6 +170,11 @@ std::vector<AlgVector> Polyhedron::section(const Plane &plane)
 const std::map<QString, AlgVector *> &Polyhedron::getBasePoints() const
 {
     return this->base_points;
+}
+
+AlgExpr Polyhedron::volume() const
+{
+    return this->definition->volume();
 }
 AlgExpr getOutcribedRadOfRightPolygon(const AlgExpr & edge, int n)
 {
@@ -348,6 +395,15 @@ Polyhedron makePrizmOverPolygon(const std::vector<AlgVector> &base, const AlgExp
         prizm.addConnection(points[i], points[i + points.size() / 2]);
 
     }
+
+    std::vector<QString> low_base(points.size() / 2);
+    std::vector<QString> upp_base(points.size() / 2);
+    for (int i = 0; i < points.size() / 2; ++i)
+    {
+        low_base[i] = std::move(points[i]);
+        upp_base[i] = std::move(points[points.size() / 2 + i]);
+    }
+    initializeAsPrizm(low_base, upp_base, &prizm);
     return prizm;
 }
 
@@ -373,10 +429,40 @@ Polyhedron makePiramidOverPolygon(const std::vector<AlgVector> &base, const AlgV
         piram.addConnection(points[i + 1], points[(i + 1) % base.size() + 1]);
         piram.addConnection(points[i + 1], points[0]);
     }
-    piram.addPoint(addDimension(height_base, AlgExpr(0)), "O");
+  //  piram.addPoint(addDimension(height_base, AlgExpr(0)), "O");
+    std::vector<QString> base_names(points.size() - 1);
+    for (int i = 1; i < points.size(); ++i)
+        base_names[i - 1] = std::move(points[i]);
+    initializeAsPyramid(base_names, points[0], &piram);
     return piram;
 }
 
 
 
 
+
+std::vector<AlgVector> getParallelogram(const AlgExpr &a, const AlgExpr &b, const AlgExpr &angle)
+{
+    if (angle <= 0)
+        throw QIODevice::tr("Угол должен быть больше нуля");
+    if (angle >= pi())
+        throw QIODevice::tr("Угол должен быть меньше pi (или deg(180))");
+    std::vector<AlgVector> polygon(4);
+    polygon[0] = AlgVector(0, 0);
+    polygon[1] = AlgVector(a, 0);
+    AlgExpr x_bias = b*cos(angle);
+    AlgExpr y_bias = b*sin(angle);
+    polygon[2] = AlgVector(a + x_bias, y_bias);
+    polygon[3] = AlgVector(x_bias, y_bias);
+    return polygon;
+}
+
+void initializeAsPrizm(const std::vector<QString> &low_base, const std::vector<QString> &upp_base, Polyhedron *pol)
+{
+    pol->setDefinition(std::make_unique<PrizmDefinition>(low_base, upp_base, pol));
+}
+
+void initializeAsPyramid(const std::vector<QString> &base, const QString &top_vert, Polyhedron *pol)
+{
+    pol->setDefinition(std::make_unique<PyramidDefinition>(base, top_vert, pol));
+}

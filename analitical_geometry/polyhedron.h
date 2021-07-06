@@ -6,6 +6,7 @@
 #include <map>
 #include <set>
 #include <QString>
+#include "polyhedrondefinitioncomponent.h"
 class Polyhedron
 {
     //здесь также и точки, которые просто привязаны к многограннику (points)
@@ -14,8 +15,18 @@ class Polyhedron
     std::map<QString, AlgVector*> base_points;
     //здесь хранятся ребра, к каждой вершине хранятся вершины, с которыми она соединена (понятное дело, они дублируются)
     std::map<QString, std::set<QString>> dots_connections;
+
+
+
+    std::unique_ptr<PolyhedronDefinitionComponent> definition;
 public:
     Polyhedron();
+    Polyhedron(const Polyhedron & cop);
+    Polyhedron(Polyhedron && mov);
+    const Polyhedron& operator=(const Polyhedron & cop);
+    const Polyhedron& operator=(Polyhedron && mov);
+
+    void setDefinition(std::unique_ptr<PolyhedronDefinitionComponent> && def);
 
     AlgVector point(const QString & name) const;
     AlgVector operator[](const QString & name) const;
@@ -24,6 +35,8 @@ public:
     //для функций-фабрик
     void addVertex(const AlgVector & point, const QString & name);
     void addVertex(AlgVector && point, const QString & name);
+
+
 
     void addPoint(const AlgVector & point, const QString & name);
     void addPoint(AlgVector && point, const QString & name);
@@ -34,9 +47,17 @@ public:
 
     std::vector<AlgVector> section(const Plane & plane);
 
+
     const std::map<QString, AlgVector*> & getBasePoints() const;
 
+    AlgExpr volume() const;
+
 };
+
+void initializeAsPrizm(const std::vector<QString> & low_base, const std::vector<QString> & upp_base, Polyhedron * pol);
+void initializeAsPyramid(const std::vector<QString> & base, const QString & top_vert, Polyhedron * pol);
+
+//ПРИЗМЫ СЧИТАЮТСЯ ПРЯМЫЕ
 bool isAppropriatePointName(const QString & str);
 std::vector<QString> splitPointsNames(const QString & points);
 std::pair<std::vector<AlgVector>, AlgVector> getBaseRightPolygonAndCenter(const AlgExpr &base_edge, int n);
@@ -45,6 +66,7 @@ std::vector<AlgVector> getBaseRightPolygonWithCenter(const AlgExpr &base_edge, i
 std::vector<AlgVector> getBaseRightPolygon(const AlgExpr &base_edge, int n);
 std::vector<AlgVector> getBaseRectangular(const AlgExpr & a, const AlgExpr & b);
 std::vector<AlgVector> getRightTriangle(const AlgExpr & a, const AlgExpr & b);
+std::vector<AlgVector> getParallelogram(const AlgExpr & a, const AlgExpr & b, const AlgExpr & angle);
 
 //name - точки, составляющие пирамиду, первая точка берется как вершина, X ось координат берется вдоль линии второй и третьей точки, пример задания - TABCD: пирамида
 //с вершиной T и основанием A, B, C, D. Имена точек не анализируются, важно лишь их количество и то, переданы ли они в пирамиду или призму.
