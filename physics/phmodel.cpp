@@ -1,5 +1,6 @@
 #include "phmodel.h"
 #include "algebra/variablesdistributor.h"
+#include "algebra/solving_equations.h"
 PhModel::PhModel()
 {
 
@@ -29,6 +30,8 @@ void PhModel::completeContinuityCicle()
 
     for (auto &it : this->objects)
         it->countItsKinematicFunctions();
+
+    AlgExpr cicle_end = this->findContinuityCicleEnd();
 
 
 }
@@ -76,6 +79,53 @@ PhObjectPtr PhModel::makeSimpleKinematicObject(const AlgVector &pos, const AlgVe
 void PhModel::setDimensionNumber(int d)
 {
     this->dimensions = d;
+}
+
+void PhModel::addEquation(AlgExpr &&equation)
+{
+    this->equations.push_back(std::move(equation.getExpr()));
+}
+
+void PhModel::addEquation(const AlgExpr &equation)
+{
+    this->equations.push_back(copy(equation.getExpr()));
+}
+
+void PhModel::addEquation(AlgVector &&equation)
+{
+    for (int i = 0; i < equation.size(); ++i)
+        this->equations.push_back(std::move(equation[i].getExpr()));
+}
+
+void PhModel::addEquation(const AlgVector &equation)
+{
+    for (int i = 0; i < equation.size(); ++i)
+        this->equations.push_back(copy(equation[i].getExpr()));
+}
+
+AlgExpr PhModel::findContinuityCicleEnd()
+{
+    return AlgExpr(nullptr);
+}
+
+void PhModel::solveEquations()
+{
+    std::vector<int> eqs_variables;
+    for (auto &it : this->equations)
+    {
+        auto vars = it->getSetOfVariables();
+        for (auto &it1 : vars)
+            if (!has(this->known_variables, it1))
+                eqs_variables.push_back(it1);
+    }
+    auto res = solveSystemOfEquations(equations, eqs_variables);
+
+}
+
+void PhModel::recountAllWithNewVariablesValues(const std::map<int, abs_ex> &vars_values)
+{
+    for (auto &it : timeStagesMarks)
+        replaceSystemVariablesToExpressions(it.getExpr(), vars_values);
 }
 
 AlgVector PhModel::createPositionUknownVector()

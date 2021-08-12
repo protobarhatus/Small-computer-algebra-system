@@ -85,6 +85,21 @@ AlgVector PhObject::accelerationAt(const AlgExpr &time)
     return this->acceleration_function.result(time);
 }
 
+void PhObject::statePositionAt(const AlgExpr &time, const AlgVector &position)
+{
+    this->model->addEquation(this->positionAt(time) - position);
+}
+
+void PhObject::stateVelocityAt(const AlgExpr &time, const AlgVector &velocity)
+{
+    this->model->addEquation(this->velocityAt(time) - velocity);
+}
+
+void PhObject::stateAccelerationAt(const AlgExpr &time, const AlgVector &acceleration)
+{
+    this->model->addEquation(this->accelerationAt(time) - acceleration);
+}
+
 void PhObject::setForceInfluenceAbility(bool can_be)
 {
     this->can_be_force_influenced = can_be;

@@ -18,11 +18,17 @@ public:
     void setAccelerationFunction(const VectorFunction & func);
     void setVelocityFunction(const VectorFunction & func);
     void setPositionFunction(const VectorFunction & func);
+
+
     virtual void countItsKinematicFunctions();
 
     AlgVector positionAt(const AlgExpr & time);
     AlgVector velocityAt(const AlgExpr & time);
     AlgVector accelerationAt(const AlgExpr & time);
+
+    void statePositionAt(const AlgExpr & time, const AlgVector & position);
+    void stateVelocityAt(const AlgExpr & time, const AlgVector & velocity);
+    void stateAccelerationAt(const AlgExpr & time, const AlgVector & acceleration);
 
     void setForceInfluenceAbility(bool can_be);
     bool canBeInfluencedByForce() const;
