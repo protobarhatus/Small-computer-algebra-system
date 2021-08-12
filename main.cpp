@@ -39,6 +39,7 @@ int rand(int min, int max)
 #include "form.h"
 #include "parser.h"
 #include "analitical_geometry/geometry_3d.h"
+#include "physics/phmodel.h"
 void out(const Polynom & p)
 {
     auto debug = qDebug();
@@ -79,7 +80,16 @@ void geoTest()
    // qDebug() << surface(prizm.section(prizm.plane("MNK"))).toWolframString();
    // qDebug() << angle(prizm.plane("MNK"), prizm.plane("ABC")).toWolframString();
 }
+void physicsTest()
+{
+    qDebug() << "STARTING ";
+    PhModel model;
+    model.setDimensionNumber(1);
+    auto hui = model.addObject("hui", model.makeSimpleKinematicObject({3}, {2}, {1}));
 
+    model.completeContinuityCicle();
+    qDebug() << model[hui]->positionAt(5).x().toString();
+}
 #include <QException>
 int main(int argc, char *argv[])
 {
@@ -87,8 +97,13 @@ int main(int argc, char *argv[])
   //                                    {4, 5, A(3)/2, -3},
    //                                   {-10, -20, 4, -1}}));
 
+    //необходимо вызывать чтобы он создался
+    VariablesDistributor::get();
    // geoTest();
-  //  testAlgMod();
+    //testAlgMod();
+
+
+    physicsTest();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});

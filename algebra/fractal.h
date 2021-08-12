@@ -126,6 +126,8 @@ public:
     bool turnSinusAndCosinusMultiplicatorsIntoOneFunction();
 
     bool canBeZero() const override;
+
+    bool hasUndefinedVariable() const override;
 private:
     void takeAwayAbsoluteValues();
     bool hasIntegratingConstantMultiplierThatCanBeChanged() const;

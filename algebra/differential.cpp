@@ -250,6 +250,11 @@ bool Differential::canBeZero() const
     return true;
 }
 
+bool Differential::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable();
+}
+
 bool Differential::operator<(const AbstractExpression &expr) const
 {
     assert(expr.getId() == DIFFERENTIAL);

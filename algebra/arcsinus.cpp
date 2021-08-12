@@ -412,6 +412,11 @@ bool ArcSinus::canBeZero() const
     return this->argument->canBeZero();
 }
 
+bool ArcSinus::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable();
+}
+
 bool ArcSinus::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == ARCSINUS);

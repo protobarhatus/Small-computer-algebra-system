@@ -510,6 +510,11 @@ bool Sinus::canBeZero() const
     return true;
 }
 
+bool Sinus::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable();
+}
+
 abs_ex sin(const abs_ex &expr)
 {
     return abs_ex(new Sinus(expr))->downcast();

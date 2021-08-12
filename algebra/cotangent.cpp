@@ -477,6 +477,11 @@ bool Cotangent::canBeZero() const
     return true;
 }
 
+bool Cotangent::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable();
+}
+
 bool Cotangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == COTANGENT);

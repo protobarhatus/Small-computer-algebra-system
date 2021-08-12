@@ -373,6 +373,11 @@ bool ArcTangent::canBeZero() const
     return this->argument->canBeZero();
 }
 
+bool ArcTangent::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable();
+}
+
 bool ArcTangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == ARCTANGENT);

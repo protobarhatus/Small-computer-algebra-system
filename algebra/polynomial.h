@@ -121,6 +121,8 @@ public:
     bool canBeZero() const override;
 
     int amountOfAddictivesWithTrigonometryFunctionOfThis(const QString & argument);
+
+    bool hasUndefinedVariable() const override;
 private:
     bool hasIntegratingConstantAddictiveThatCanBeChanged() const;
     void pullSomeMembersIntoOneIntegratingConstant();

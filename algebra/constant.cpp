@@ -182,6 +182,11 @@ bool Constant::canBeZero() const
 {
     return this->value == 0;
 }
+
+bool Constant::hasUndefinedVariable() const
+{
+    return false;
+}
 bool Constant::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == CONSTANT);

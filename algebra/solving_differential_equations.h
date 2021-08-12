@@ -16,7 +16,7 @@ public:
     QString toString() const;
     const abs_ex &expr() const;
     Type getType() const;
-    abs_ex toCommonIntegral(int x, int y);
+    abs_ex toCommonIntegral(int x, int y) const;
     abs_ex & expr();
 private:
     abs_ex result;

@@ -522,6 +522,11 @@ bool Cosinus::canBeZero() const
     return true;
 }
 
+bool Cosinus::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable();
+}
+
 abs_ex cos(const abs_ex &expr)
 {
     return abs_ex(new Cosinus(expr))->downcast();

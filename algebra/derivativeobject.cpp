@@ -247,6 +247,11 @@ bool DerivativeObject::canBeZero() const
     return true;
 }
 
+bool DerivativeObject::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable();
+}
+
 int DerivativeObject::getPositionRelativelyZeroIfHasVariables()
 {
     return 0;

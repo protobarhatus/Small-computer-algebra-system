@@ -409,6 +409,11 @@ bool Number::canBeZero() const
     return this->numerator == 0;
 }
 
+bool Number::hasUndefinedVariable() const
+{
+    return false;
+}
+
 Number abs(Number num)
 {
     if (num.compareWith(0) < 0)

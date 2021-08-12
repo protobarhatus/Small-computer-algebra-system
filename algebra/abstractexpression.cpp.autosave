@@ -404,7 +404,7 @@ void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<in
 
    // qDebug() << "WITHOUT: " << expr->makeStringOfExpression();
 }
-void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int, abs_ex> & funcs)
+void replaceSystemVariablesToExpressions(AbstractExpression *expr, const std::map<int, abs_ex> & funcs)
 {
     //qDebug() << "WITH: " << expr->makeStringOfExpression();
     for (auto &it : funcs)

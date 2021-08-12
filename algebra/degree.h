@@ -73,6 +73,7 @@ public:
 
     bool canBeZero() const override;
 
+    bool hasUndefinedVariable() const override;
 private:
     virtual int getPositionRelativelyZeroIfHasVariables() override;
     void reducePolynomialArgument();

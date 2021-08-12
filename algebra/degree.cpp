@@ -1734,6 +1734,11 @@ bool Degree::canBeZero() const
     return this->argument->canBeZero();
 }
 
+bool Degree::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable() || this->degree->hasUndefinedVariable();
+}
+
 
 
 abs_ex sqrt(const abs_ex &arg)

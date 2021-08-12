@@ -4695,6 +4695,17 @@ bool Fractal::canBeZero() const
     return false;
 }
 
+bool Fractal::hasUndefinedVariable() const
+{
+    for (auto &it : this->numerator)
+        if (it->hasUndefinedVariable())
+            return true;
+    for (auto &it : this->denominator)
+        if (it->hasUndefinedVariable())
+            return true;
+    return false;
+}
+
 void Fractal::pullSomeMultipliersIntoIntegratingConstant()
 {
     FunctionRange range;

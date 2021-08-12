@@ -67,6 +67,7 @@ Variable VariablesDistributor::createVariable(VariablesDefinition definition)
     QString name = makeVariablesName(Variable::id_counter);
     VariablesNameDistributor::addVariable(Variable::id_counter, name);
     VariablesDistributor& distr = VariablesDistributor::get();
+
     distr.variables.push_back(new VariablesDefinition(definition));
     return Variable(Variable::id_counter, distr.variables[Variable::id_counter - 1]);
 }
@@ -75,8 +76,11 @@ Variable VariablesDistributor::createVariable(VariablesDefinition definition, co
 {
     if (Variable::id_counter >= get().first_system_num - 1)
         throw Exception();
+
     ++Variable::id_counter;
-    VariablesNameDistributor::addVariable(Variable::id_counter, name);
+    VariablesDistributor::addSpecialName(Variable::id_counter, name);
+
+    VariablesNameDistributor::addVariable(Variable::id_counter, VariablesNameDistributor::getNextIndexedName(name));
     VariablesDistributor& distr = VariablesDistributor::get();
     distr.variables.push_back(new VariablesDefinition(definition));
     return Variable(Variable::id_counter, distr.variables[Variable::id_counter - 1]);
@@ -148,6 +152,36 @@ QString VariablesDistributor::getSpecialName(int id)
 {
     return VariablesDistributor::get().special_names.find(id)->second;
 }
+
+void VariablesDistributor::clear()
+{
+    ::deleteVariables();
+    for (auto &it : VariablesDistributor::get().system_variables)
+        delete it;
+    VariablesDistributor::get().system_variables.clear();
+
+    for (auto &it : VariablesDistributor::get().integrating_constants)
+        delete it;
+    VariablesDistributor::get().integrating_constants.clear();
+
+    Variable::system_id_counter = VariablesDistributor::get().first_system_num;
+    Variable::integrating_constant_id_counter = VariablesDistributor::get().first_integrate_constant;
+
+    VariablesDistributor::get().special_names.clear();
+    VariablesDistributor::get().amount_of_integrating_constants.clear();
+}
+
+void VariablesDistributor::addDifferentialLine(const Variable &var, const std::vector<Variable> &line)
+{
+    assert(line.size() > 1);
+    line[0].definition->addDifferentialLine(var.getId(), {-1, line[1].getId()});
+    for (int i = 1; i < line.size() - 1; ++i)
+        line[i].definition->addDifferentialLine(var.getId(), {line[i - 1].getId(), line[i + 1].getId()});
+    line.back().definition->addDifferentialLine(var.getId(), {line[line.size() - 2].getId(), -1});
+
+}
+
+
 Variable systemVar(int num)
 {
     //return Variable(num + VariablesDistributor::firstSystemNum(), makeVariablesName(num + VariablesDistributor::firstSystemNum()));
@@ -156,6 +190,7 @@ Variable systemVar(int num)
 
 Variable systemVar()
 {
+   // qDebug() << Variable::system_id_counter;
     ++Variable::system_id_counter;
 
     VariablesDistributor::get().system_variables.push_back(new VariablesDefinition(*VariablesDistributor::get().system_var_def));

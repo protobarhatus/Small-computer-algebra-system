@@ -45,3 +45,34 @@ void VariablesDefinition::setRange(const FunctionRange &rang)
 {
     this->range = rang;
 }
+
+void VariablesDefinition::setUndefined()
+{
+    this->undefined = true;
+}
+
+bool VariablesDefinition::isUndefined() const
+{
+    return this->undefined;
+}
+
+void VariablesDefinition::addDifferentialLine(int arg, const std::pair<int, int> &line)
+{
+    this->differential_lines.insert({arg, line});
+}
+
+int VariablesDefinition::getSpecificDerivative(int deriv_var) const
+{
+    auto it = this->differential_lines.find(deriv_var);
+    if (it == this->differential_lines.end())
+        return -1;
+    return it->second.second;
+}
+
+int VariablesDefinition::getSpecificIntegral(int integr_var) const
+{
+    auto it = this->differential_lines.find(integr_var);
+    if (it == this->differential_lines.end())
+        return -1;
+    return it->second.first;
+}

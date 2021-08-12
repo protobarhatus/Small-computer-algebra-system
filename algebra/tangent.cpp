@@ -499,6 +499,11 @@ bool Tangent::canBeZero() const
     return true;
 }
 
+bool Tangent::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable();
+}
+
 bool Tangent::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == TANGENT);

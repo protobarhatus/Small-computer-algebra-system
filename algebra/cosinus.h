@@ -50,6 +50,8 @@ public:
 
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
     bool canBeZero() const override;
+
+    bool hasUndefinedVariable() const override;
 private:
     abs_ex argument;
     //Pi_member - это pi, домноженное на некоторое рациональное число. ничего больше в этой дроби быть не может

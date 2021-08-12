@@ -21,6 +21,10 @@ public:
     static void addSpecialName(int index, const QString & name);
     static bool hasSpecialName(int id);
     static QString getSpecialName(int id);
+
+    static void clear();
+    //к примеру {t, {x, v_x, a_x}}
+    static void addDifferentialLine(const Variable & var, const std::vector<Variable> & line);
 private:
     friend Variable getVariable(int id);
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени
@@ -40,6 +44,10 @@ private:
     std::vector<VariablesDefinition*> integrating_constants;
 
     std::vector<int> amount_of_integrating_constants;
+    //к примеру {t, {x, v_x, a_x}}
+    //std::vector<std::pair<Variable, std::vector<Variable>>> differential_line;
+
+
     friend bool isIntegratingConstant(int index);
     friend Variable integratingConstant();
     friend Variable integratingConstant(const FunctionRange & range);

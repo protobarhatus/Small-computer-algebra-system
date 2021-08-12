@@ -314,6 +314,11 @@ bool AbsoluteValue::canBeZero() const
     return this->expression->canBeZero();
 }
 
+bool AbsoluteValue::hasUndefinedVariable() const
+{
+    return this->expression->hasUndefinedVariable();
+}
+
 abs_ex abs(const abs_ex &expr)
 {
     return abs_ex(new AbsoluteValue(expr))->downcast();

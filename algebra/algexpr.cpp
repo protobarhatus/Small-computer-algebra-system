@@ -664,6 +664,7 @@ AlgExpr expand(const AlgExpr &expr)
 
 AlgExpr var(const QString &name)
 {
+
     return  abs_ex(new Variable(VariablesDistributor::createVariable(VariablesDefinition(), name)));
 }
 
@@ -814,4 +815,39 @@ bool isIntegerNumber(const AlgExpr &expr)
 int toInt(const AlgExpr &expr)
 {
     return toIntegerNumber(expr.getExpr());
+}
+
+AlgExpr undefinedVar(const QString &name)
+{
+    VariablesDefinition def;
+    def.setUndefined();
+    return var(def, name);
+}
+
+AlgExpr undefinedVar()
+{
+    VariablesDefinition def;
+    def.setUndefined();
+    return var(def);
+}
+
+AlgExpr var(const VariablesDefinition &def, const QString &name)
+{
+    return abs_ex(new Variable(VariablesDistributor::createVariable(def, name)));
+}
+
+AlgExpr undefinedVar(VariablesDefinition def, const QString &name)
+{
+    def.setUndefined();
+    return var(def, name);
+}
+
+AlgExpr positiveVar(const QString &name)
+{
+    return var(getPositiveDefinition(), name);
+}
+
+AlgExpr positiveUndefinedVar(const QString &name)
+{
+    return undefinedVar(getPositiveDefinition(), name);
 }

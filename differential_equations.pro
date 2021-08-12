@@ -124,6 +124,9 @@ SOURCES += \
     mathexpression.cpp \
     matrixvalue.cpp \
     parser.cpp \
+    physics/phmodel.cpp \
+    physics/phobject.cpp \
+    physics/vectorfunction.cpp \
     planevalue.cpp \
     polygonvalue.cpp \
     polyhedronvalue.cpp \
@@ -246,6 +249,9 @@ HEADERS += \
     mathexpression.h \
     matrixvalue.h \
     parser.h \
+    physics/phmodel.h \
+    physics/phobject.h \
+    physics/vectorfunction.h \
     planevalue.h \
     polygonvalue.h \
     polyhedronvalue.h \

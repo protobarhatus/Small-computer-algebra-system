@@ -486,6 +486,11 @@ bool Logarithm::canBeZero() const
     return (this->argument - one)->canBeZero();
 }
 
+bool Logarithm::hasUndefinedVariable() const
+{
+    return this->argument->hasUndefinedVariable();
+}
+
 bool Logarithm::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == LOGARITHM);

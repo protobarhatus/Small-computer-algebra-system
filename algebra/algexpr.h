@@ -144,9 +144,15 @@ AlgExpr operator/(AlgExpr && left, AlgExpr && right);
 //creates new variable with empty definition
 AlgExpr var();
 AlgExpr positiveVar();
+AlgExpr positiveVar(const QString & name);
 AlgExpr var(VariablesDefinition );
 AlgExpr var(int min, int max);
 AlgExpr var(const QString & name);
+AlgExpr var(const VariablesDefinition & def, const QString & name);
+AlgExpr undefinedVar(const QString & name);
+AlgExpr undefinedVar();
+AlgExpr undefinedVar(VariablesDefinition def, const QString & name);
+AlgExpr positiveUndefinedVar(const QString & name);
 AlgExpr operator+(long long int left, const AlgExpr & expr);
 AlgExpr operator-(long long int left, const AlgExpr & right);
 AlgExpr operator*(long long int left, const AlgExpr & right);

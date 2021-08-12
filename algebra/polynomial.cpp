@@ -2815,6 +2815,14 @@ int Polynomial::amountOfAddictivesWithTrigonometryFunctionOfThis(const QString &
     return amount;
 }
 
+bool Polynomial::hasUndefinedVariable() const
+{
+    for (auto &it : monomials)
+        if (it->hasUndefinedVariable())
+            return true;
+    return false;
+}
+
 bool Polynomial::hasIntegratingConstantAddictiveThatCanBeChanged() const
 {
     for (auto &it : this->monomials)

@@ -185,6 +185,10 @@ abs_ex Variable::changeSomePartOnExpression(QString part, abs_ex &on_what)
 
 abs_ex Variable::derivative(int var) const
 {
+    int spec_der = this->definition->getSpecificDerivative(var);
+    if (spec_der >= 0)
+        return getVariableExpr(spec_der);
+
     if (var == this->id)
         return copy(one);
     return copy(zero);
@@ -192,6 +196,10 @@ abs_ex Variable::derivative(int var) const
 
 abs_ex Variable::antiderivative(int var) const
 {
+    int spec_int = this->definition->getSpecificIntegral(var);
+    if (spec_int >= 0)
+        return getVariableExpr(spec_int);
+
     if (this->getId() != var)
         return abs_ex(new Variable(getVariable(var))) * copy(this);
     return takeDegreeOf(abs_ex(new Variable(getVariable(var))), 2) / two;
@@ -265,4 +273,16 @@ void Variable::setRange(const FunctionRange &range)
 bool Variable::canBeZero() const
 {
     return this->definition->getRange().containsZero();
+}
+
+bool Variable::hasUndefinedVariable() const
+{
+    return this->definition->isUndefined();
+}
+
+
+
+abs_ex varToAbsEx(const Variable &var)
+{
+    return abs_ex(new Variable(var));
 }

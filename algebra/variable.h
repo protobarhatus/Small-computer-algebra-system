@@ -53,6 +53,9 @@ public:
     void setRange(const FunctionRange & range);
 
     bool canBeZero() const override;
+
+    bool hasUndefinedVariable() const override;
+
 private:
     friend Variable getVariable(int id);
     friend Variable integratingConstant();
@@ -74,4 +77,6 @@ private:
     friend Variable systemVar(const abs_ex & min, const abs_ex & max, bool min_included, bool max_included);
     friend Variable systemVar(const FunctionRange & range);
 };
+
+abs_ex varToAbsEx(const Variable & var);
 #endif // VARIABLE_H

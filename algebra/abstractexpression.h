@@ -125,6 +125,8 @@ public:
     virtual bool canBeZero() const = 0;
 
     void setName(const QString & name);
+
+    virtual bool hasUndefinedVariable() const = 0;
 private:
     //subclasses assume that right is the same subclass, so they downcasting it momentally. if it not the same, assert is calling
     virtual bool operator<(const AbstractExpression & right) const = 0;
@@ -134,6 +136,8 @@ protected:
 
 
 };
+
+
 void getRidOfAbsoluteValues(abs_ex & expr);
 bool canBeConsideredAsConstant(const AbstractExpression * expr);
 bool canBeConsideredAsConstant(const abs_ex & expr);

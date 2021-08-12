@@ -45,6 +45,8 @@ public:
     void doSomethingInDerivativeObject(const std::function<void (int, int, int)> &func) const override;
 
     bool canBeZero() const override;
+
+    bool hasUndefinedVariable() const override;
 private:
     int func_argument_var;
     abs_ex argument;

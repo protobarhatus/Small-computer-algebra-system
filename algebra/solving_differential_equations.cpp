@@ -1848,7 +1848,7 @@ DifurResult::Type DifurResult::getType() const
     return this->type;
 }
 
-abs_ex DifurResult::toCommonIntegral(int x, int y)
+abs_ex DifurResult::toCommonIntegral(int x, int y) const
 {
     switch (this->type)
     {
