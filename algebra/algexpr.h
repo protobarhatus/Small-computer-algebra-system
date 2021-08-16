@@ -21,8 +21,6 @@ public:
     AlgExpr(const abs_ex & expr);
     AlgExpr(abs_ex && expr);
 
-    AlgExpr(nullptr_t);
-    bool operator==(nullptr_t);
 
 
     AlgExpr& operator=(const AlgExpr & expr);

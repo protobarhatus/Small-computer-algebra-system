@@ -160,8 +160,9 @@ StageResultDescriptor PhModel::findContinuityCicleEnd()
 
 std::vector<InterruptingEvent> PhModel::findCollisionEvents()
 {
-    for (auto &it : this->objects)
-        it-
+    //for (auto &it : this->objects)
+   //     it-
+    return std::vector<InterruptingEvent>();
 }
 
 void PhModel::solveEquations()

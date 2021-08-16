@@ -48,15 +48,7 @@ AlgExpr::AlgExpr(abs_ex && expr)
     this->expression = std::move(expr);
 }
 
-AlgExpr::AlgExpr(std::nullptr_t)
-{
-    this->expression = nullptr;
-}
 
-bool AlgExpr::operator==(std::nullptr_t)
-{
-    return this->expression == nullptr;
-}
 
 
 AlgExpr& AlgExpr::operator=(const AlgExpr &expr)

@@ -85,14 +85,14 @@ void physicsTest()
     qDebug() << "STARTING ";
    /* PhModel model;
     model.setDimensionNumber(1);
-    auto hui = model.addObject("hui", model.makeSimpleKinematicObject({0,0},{2, 1}, {0, -10}));
+    auto obj = model.addObject("obj", model.makeSimpleKinematicObject({0,0},{2, 1}, {0, -10}));
 
     model.completeContinuityCicle();
 
-   // model[hui]->statePositionAt(5, {40});
-    //model[hui]->statePositionAt(2, {10});
-    qDebug() << model[hui]->positionAt(A(1)/5).x().toString();
-    qDebug() << model[hui]->positionAt(A(1)/5).y().toString();*/
+   // model[obj]->statePositionAt(5, {40});
+    //model[obj]->statePositionAt(2, {10});
+    qDebug() << model[obj]->positionAt(A(1)/5).x().toString();
+    qDebug() << model[obj]->positionAt(A(1)/5).y().toString();*/
 
     AlgExpr v = var("v"), a = var("a"), m = var("m");
 
@@ -100,11 +100,11 @@ void physicsTest()
     model.setDimensionNumber(2);
     model.setGiven({v, a, m});
     model.setEnableGravityField(true);
-    auto hui = model.addObject("hui", model.makeSimpleDynamicObject({0, 0}, {v*cos(a), v*sin(a)}, {0,0}, m));
+    auto obj = model.addObject("obj", model.makeSimpleDynamicObject({0, 0}, {v*cos(a), v*sin(a)}, {0,0}, m));
 
     model.completeContinuityCicle();
 
-    AlgVector pos = model[hui]->positionAt(var("t"));
+    AlgVector pos = model[obj]->positionAt(var("t"));
     qDebug() << pos.x().toString();
     qDebug() << pos.y().toString();
     qDebug() << grav().toString();

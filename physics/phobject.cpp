@@ -144,22 +144,22 @@ AlgExpr PhObject::findCollisionTime(PhObject *obj)
             auto& obj_func = obj->position_function.getFunction();
             auto& func = this->position_function.getFunction();
             for (int i = 0; i < func.size(); ++i)
-                equations.push_back((obj_func[i] - func[i]).getExpr());
+                equations.push_back(std::move((obj_func[i] - func[i]).getExpr()));
             abs_ex v = systemVarExpr();
             auto res = solveEquationsForOneVariable(equations, getTimeArgumentVariable().getId(),
                                          EquationRootsConditions(RootCondition(v->getId(), RootCondition::BIGGER_THAN_ZERO, v)));
             //надо будет улучшить сортировку естессна а то иногда не понятно что первей
-            std::sort(res.begin(), res.end(), [](const abs_ex & a, const abs_ex & b)->bool {
+          /*  std::sort(res.begin(), res.end(), [](const abs_ex & a, const abs_ex & b)->bool {
                 return (a - b)->getPositionRelativelyZero() < 0;
-            });
+            }); */
             return *res.begin();
 
         }
         else
             //TODO
-            return nullptr;
+            return AlgExpr();
     }
-    return nullptr;
+    return AlgExpr();
 }
 
 ObjectType PhObject::type() const
