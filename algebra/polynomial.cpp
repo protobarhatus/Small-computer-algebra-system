@@ -16,6 +16,7 @@
 #include "solving_differential_equations.h"
 #include "sinus.h"
 #include "cosinus.h"
+#include "constant.h"
 
 Polynomial::Polynomial()
 {
@@ -44,6 +45,7 @@ void Polynomial::simplify()
   //  qDebug() << "S: " << randId << "   : " << this->makeStringOfExpression();
     for (auto &it : this->monomials)
         it->simplify();
+    this->checkForInfinity();
     std::map<QString, int> f;
     auto funcs = replaceEveryFunctionOnSystemVariable(this, f);
 
@@ -114,6 +116,8 @@ if (this->is_fractional_coefficients_allowed)
     if (this->hasIntegratingConstantAddictiveThatCanBeChanged())
         this->pullSomeMembersIntoOneIntegratingConstant();
    // qDebug() << "Finished#: " << randId;
+
+
     this->simplified = true;
 }
 void Polynomial::castTrigonometry()
@@ -252,6 +256,8 @@ bool Polynomial::canDowncastTo()
         return true;
     if (this->isOnlyVarsIntegratingConstantsThatCanBeChanged())
         return true;
+    if (this->has_inf || this->has_minus_inf)
+        return true;
     return this->monomials.size() == 1;
 }
 abs_ex Polynomial::downcastTo()
@@ -259,6 +265,11 @@ abs_ex Polynomial::downcastTo()
    // assert(canDowncastTo());
     if ( this->isZero())
         return abs_ex(new Number(0));
+
+    if (this->has_inf)
+        return getInf();
+    if (this->has_minus_inf)
+        return getMinusInf();
     if (this->monomials.size() == 1 && this->monomials.begin()->get()->getCoefficient() == 1 &&
             this->monomials.begin()->get()->getFractal().second->empty() &&
             this->monomials.begin()->get()->getFractal().first->size() == 1 &&
@@ -271,6 +282,8 @@ abs_ex Polynomial::downcastTo()
     }
     if (this->monomials.size() == 1)
         return this->monomials.begin()->get()->downcast();
+
+
     return nullptr;
 }
 AlgebraExpression Polynomial::getId() const
@@ -330,6 +343,19 @@ bool Polynomial::operator<(const AbstractExpression &right) const
         ++it1;
     }
     return false;
+}
+
+void Polynomial::checkForInfinity()
+{
+    for (auto &it : this->monomials)
+    {
+        if (it->isInf())
+            this->has_inf = true;
+        if (it->isMinusInf())
+            this->has_minus_inf = true;
+    }
+    if (this->has_inf && this->has_minus_inf)
+        throw QIODevice::tr("inf - inf неопределенность");
 }
 
 bool Polynomial::operator==(AbstractExpression &right)
@@ -2112,7 +2138,7 @@ void Polynomial::checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple
     }
 }
 
-abs_ex Polynomial::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Polynomial::changeSomePartOn(QString part, const abs_ex &on_what)
 {
     //NONCONST
     abs_ex its_part = nullptr;
@@ -2141,7 +2167,7 @@ abs_ex Polynomial::changeSomePartOn(QString part, abs_ex &on_what)
     return its_part;
 }
 
-abs_ex Polynomial::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Polynomial::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     NONCONST
             return changeSomePartOn(part, on_what);

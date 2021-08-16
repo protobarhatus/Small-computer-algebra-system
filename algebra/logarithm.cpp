@@ -139,6 +139,9 @@ bool Logarithm::canDowncastTo()
     }
     if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
+
+    if (isInf(this->argument))
+        return true;
     return false;
 }
 
@@ -221,6 +224,8 @@ abs_ex Logarithm::downcastTo()
     {
         return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
+    if (isInf(this->argument))
+        return getInf();
     return nullptr;
 }
 
@@ -293,7 +298,7 @@ abs_ex Logarithm::getArgumentMoved()
     return std::move(this->argument);
 }
 
-abs_ex Logarithm::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Logarithm::changeSomePartOn(QString part, const abs_ex &on_what)
 {
    // NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -305,7 +310,7 @@ abs_ex Logarithm::changeSomePartOn(QString part, abs_ex &on_what)
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-abs_ex Logarithm::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Logarithm::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     NONCONST
             return changeSomePartOn(part, on_what);

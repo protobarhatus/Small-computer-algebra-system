@@ -32,8 +32,8 @@ public:
     QString toString() const override;
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;
-    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
-    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOn(QString part, const abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOnExpression(QString part, const abs_ex & on_what) override;
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
     virtual void setSimplified(bool simpl) override;

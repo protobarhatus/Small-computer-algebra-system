@@ -11,6 +11,8 @@ public:
     static QString getName(int id);
 
     static QString getNextIndexedName(const QString & name);
+
+    static void _clear();
 private:
     VariablesNameDistributor();
     VariablesNameDistributor(const VariablesNameDistributor &) = delete;

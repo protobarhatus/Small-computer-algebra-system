@@ -352,11 +352,11 @@ std::vector<abs_ex > replaceEveryFunctionOnSystemVariable(abs_ex &expr)
     }
     return result;
 }*/
-std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex &expr, std::map<QString, int> &funcs)
+std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex &expr, std::map<QString, int> funcs)
 {
     return replaceEveryFunctionOnSystemVariable(expr.get(), funcs);
 }
-void replaceSystemVariablesBackToFunctions(abs_ex &expr, std::map<int, abs_ex> & funcs)
+void replaceSystemVariablesBackToFunctions(abs_ex &expr, const std::map<int, abs_ex> & funcs)
 {
     if (expr->getId() > 0)
     {
@@ -372,7 +372,7 @@ void replaceSystemVariablesBackToFunctions(abs_ex &expr, std::map<int, abs_ex> &
     }
     replaceSystemVariablesBackToFunctions(expr.get(), funcs);
 }
-std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression *expr, std::map<QString, int> &funcs)
+std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression *expr,  std::map<QString, int> funcs)
 {
    // qDebug() << "BEFORE: " << expr->makeStringOfExpression();
     auto functions = expr->getSetOfFunctions();
@@ -393,7 +393,7 @@ std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression *e
     //qDebug() << "AFTER: " << expr->makeStringOfExpression();
     return result;
 }
-void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<int, abs_ex> & funcs)
+void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, const std::map<int, abs_ex> & funcs)
 {
     //qDebug() << "WITH: " << expr->makeStringOfExpression();
     for (auto &it : funcs)
@@ -404,7 +404,7 @@ void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<in
 
    // qDebug() << "WITHOUT: " << expr->makeStringOfExpression();
 }
-void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int, abs_ex> & funcs)
+void replaceSystemVariablesToExpressions(AbstractExpression *expr, const std::map<int, abs_ex> & funcs)
 {
     //qDebug() << "WITH: " << expr->makeStringOfExpression();
     for (auto &it : funcs)
@@ -414,7 +414,7 @@ void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int,
     expr->simplify();
    // qDebug() << "WITHOUT: " << expr->makeStringOfExpression();
 }
-void replaceSystemVariablesToExpressions(abs_ex & expr, std::map<int, abs_ex> & funcs)
+void replaceSystemVariablesToExpressions(abs_ex & expr, const std::map<int, abs_ex> & funcs)
 {
     if (expr->getId() > 0)
     {

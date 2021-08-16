@@ -23,6 +23,9 @@ ScriptsNameSpace::ScriptsNameSpace()
     this->variables.insert({"pi", VariableLiteral("pi", pi(), true)});
     this->variables.insert({"Pi", VariableLiteral("Pi", pi(), true)});
 
+    this->variables.insert({"inf", VariableLiteral("inf", inf(), true)});
+    this->variables.insert({"minf", VariableLiteral("minf", minusInf(), true)});
+
     this->variables.insert({"dx", VariableLiteral("dx", D(getVariable("x").getAlgExprValue()), true)});
     this->variables.insert({"dy", VariableLiteral("dy", D(getVariable("y").getAlgExprValue()), true)});
 

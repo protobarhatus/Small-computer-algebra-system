@@ -146,6 +146,42 @@ bool Fractal::operator<(const AbstractExpression &right) const
     }
     return false;
 }
+
+void Fractal::checkForInfinity()
+{
+    for (auto &it : this->numerator)
+    {
+        if (::isInf(it))
+            this->has_infinity_in_numerator = true;
+        if (::isMinusInf(it))
+        {
+            if (this->has_minus_inf_in_numerator)
+            {
+                this->has_minus_inf_in_numerator = false;
+                this->has_infinity_in_numerator = true;
+            }
+            else
+                this->has_minus_inf_in_numerator = true;
+        }
+    }
+    for (auto &it : this->denominator)
+    {
+        if (::isInf(it))
+            this->has_infinity_in_denominator = true;
+        if (::isMinusInf(it))
+        {
+            if (this->has_minus_inf_in_denominator)
+            {
+                this->has_minus_inf_in_denominator = false;
+                this->has_infinity_in_denominator = true;
+            }
+            else
+                this->has_minus_inf_in_denominator = true;
+        }
+    }
+    if (this->coefficient.isZero() && (this->has_infinity_in_numerator || this->has_minus_inf_in_numerator))
+        throw QIODevice::tr("0 * inf неопределенность");
+}
 bool Fractal::operator==(AbstractExpression &right)
 {
     if (right.getId() != FRACTAL)
@@ -222,6 +258,9 @@ bool Fractal::canDowncastTo()
 {
     if (this->isOnlyVarsIntegratingConstantsThatCanBeChanged())
         return true;
+    if (this->has_infinity_in_numerator || this->has_minus_inf_in_numerator || this->has_infinity_in_denominator
+            || this->has_minus_inf_in_denominator)
+        return true;
     return (this->denominator.empty() && this->coefficient.getDenominator() == 1 && this->coefficient.getNumerator() == 1 && this->numerator.size() == 1) ||
             (this->numerator.empty() && this->denominator.empty()) ||
             (this->coefficient.getNumerator() == 0);
@@ -245,6 +284,21 @@ abs_ex Fractal::downcastTo()
     }
     if ((this->denominator.empty() && this->coefficient.getDenominator() == 1 && this->coefficient.getNumerator() == 1 && this->numerator.size() == 1))
          return std::move( *this->numerator.begin());
+
+
+    if ((this->has_infinity_in_numerator || this->has_minus_inf_in_numerator) &&
+            (this->has_infinity_in_denominator || this->has_minus_inf_in_denominator))
+        throw QIODevice::tr("inf / inf неопределенность");
+    if (this->has_infinity_in_numerator && this->coefficient.getNumerator() > 0)
+        return getInf();
+    if (this->has_infinity_in_numerator && this->coefficient.getNumerator() < 0)
+        return getMinusInf();
+    if (this->has_minus_inf_in_numerator && this->coefficient.getNumerator() > 0)
+        return getMinusInf();
+    if (this->has_minus_inf_in_numerator && this->coefficient.getNumerator() < 0)
+        return getInf();
+    if (this->has_infinity_in_denominator || this->has_minus_inf_in_denominator)
+        return copy(zero);
     return nullptr;
 }
 bool Fractal::isZero() const
@@ -338,16 +392,20 @@ void Fractal::simplify()
 {
     SIM_IF_NEED
 
+
     for (auto &it: this->numerator)
     {
         it->simplify();
         it = it->downcast();
+
     }
     for (auto &it: this->denominator)
     {
         it->simplify();
         it = it->downcast();
     }
+
+    this->checkForInfinity();
     //qDebug() << this->toString();
     this->takeCommonPartOfPolynomials();
    // qDebug() << this->toString();
@@ -434,6 +492,8 @@ void Fractal::simplify()
     }
     this->numerator.sort(&AbstractExpression::lessToSort);
     this->denominator.sort(&AbstractExpression::lessToSort);
+
+
     this->simplified = true;
 }
 void Fractal::reduceDegrees()
@@ -1575,7 +1635,7 @@ void Fractal::checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bo
     }
 }
 
-abs_ex Fractal::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Fractal::changeSomePartOn(QString part, const abs_ex &on_what)
 {
   //  NONCONST
     abs_ex its_part = nullptr;
@@ -1613,7 +1673,7 @@ abs_ex Fractal::changeSomePartOn(QString part, abs_ex &on_what)
     return its_part;
 }
 
-abs_ex Fractal::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Fractal::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     NONCONST
            return changeSomePartOn(part, on_what);
@@ -4704,6 +4764,20 @@ bool Fractal::hasUndefinedVariable() const
         if (it->hasUndefinedVariable())
             return true;
     return false;
+}
+
+
+//если фрактал в полиноме то он не даункасится и тогда нужно так
+bool Fractal::isInf() const
+{
+    return (this->has_infinity_in_numerator && this->coefficient.getNumerator() > 0) ||
+            (this->has_minus_inf_in_numerator && this->coefficient.getNumerator() < 0);
+}
+
+bool Fractal::isMinusInf() const
+{
+    return (this->has_infinity_in_numerator && this->coefficient.getNumerator() < 0) ||
+            (this->has_minus_inf_in_numerator && this->coefficient.getNumerator() > 0);
 }
 
 void Fractal::pullSomeMultipliersIntoIntegratingConstant()

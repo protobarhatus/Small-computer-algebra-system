@@ -94,9 +94,9 @@ public:
     //1 is bigger than 0 (or equally), -1 is less, 0 is undefined
     int getPositionRelativelyZero();
     bool hasVariable(int var) const;
-    virtual abs_ex changeSomePartOn(QString function, abs_ex & on_what) = 0;
+    virtual abs_ex changeSomePartOn(QString function,const abs_ex & on_what) = 0;
     //отличие от changeSomePartOn в том, что то не снимает simplified, а это - снимает
-    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) = 0;
+    virtual abs_ex changeSomePartOnExpression(QString part,const abs_ex & on_what) = 0;
     virtual abs_ex derivative(int var) const = 0;
     //поиск первообразной и интеграла тут отличается. Интеграл требует наличие множителя-дифференциала. первообразная проверяет только по таблице,
     //интеграл разделяет сумму на сумму интегралов, запускает поиск первообразной и, если это не табличный случай, переходит к другим методам.
@@ -156,10 +156,10 @@ abs_ex getExpressionWithoutAbsoluteValues(const abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(abs_ex & expr);
 QString getStringArgumentOfTrigonometricalFunction(AbstractExpression * expr);
 //std::vector<abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr);
-std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr, std::map<QString, int> & funcs);
-void replaceSystemVariablesBackToFunctions(abs_ex &expr, std::map<int, abs_ex> & funcs);
-std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression * expr, std::map<QString, int> & funcs);
-void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
+std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(abs_ex & expr, std::map<QString, int>  funcs);
+void replaceSystemVariablesBackToFunctions(abs_ex &expr, const std::map<int, abs_ex> & funcs);
+std::map<int, abs_ex> replaceEveryFunctionOnSystemVariable(AbstractExpression * expr, std::map<QString, int> funcs);
+void replaceSystemVariablesBackToFunctions(AbstractExpression *expr, const std::map<int, abs_ex> & funcs);
 //bool canOpenByTrigonometricalSum(abs_ex & expr);
 abs_ex tryToOpenByTrigonometricalSum(abs_ex &expr);
 
@@ -174,8 +174,8 @@ void setUpExpressionIntoVariable(AbstractExpression * func, const abs_ex & expr,
 void setUpExpressionIntoVariable(AbstractExpression * func, abs_ex && expr, int var);
 //отличие от ...BackToFunctions в том, что она снимает simplified с выражения и упрощает его.
 //делать это в ...BackToFunctions нельзя, так как это вызовет бесконечную рекурсию
-void replaceSystemVariablesToExpressions(AbstractExpression *expr, std::map<int, abs_ex> & funcs);
-void replaceSystemVariablesToExpressions(abs_ex &expr, std::map<int, abs_ex> & funcs);
+void replaceSystemVariablesToExpressions(AbstractExpression *expr, const std::map<int, abs_ex> & funcs);
+void replaceSystemVariablesToExpressions(abs_ex &expr, const std::map<int, abs_ex> & funcs);
 //void replaceSystemVariablesBackToFunctions(abs_ex & expr, std::vector<abs_ex> & functions);
 //работает на все функции, не только тригонометрические
 abs_ex getArgumentOfFunction(abs_ex && expr);

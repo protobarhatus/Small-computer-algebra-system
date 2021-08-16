@@ -1561,3 +1561,36 @@ bool operator==(const ComplexNum &a, const ComplexNum &b)
 {
     return subCompare(a.a(), b.a()) && (subCompare(a.b(), b.b()) || subCompare(a.b(), -b.b()));
 }
+
+std::list<abs_ex> solveEquationsForOneVariable(const std::list<abs_ex> &equations, int var, const EquationRootsConditions &conditions)
+{
+    std::list<abs_ex> result;
+    for (auto &it : equations)
+    {
+        std::list<abs_ex> this_result = solveEquation(it, var, conditions);
+        for (auto &it1 : this_result)
+        {
+            bool is_uniq = true;
+            for (auto &it2 : result)
+                if (subCompare(it2, it1))
+                {
+                    is_uniq = false;
+                    break;
+                }
+            bool is_of_all_eqs = true;
+            for (auto &it2 : equations)
+            {
+                abs_ex check = copy(it2);
+                setUpExpressionIntoVariable(check, it1, var);
+                if (!isZero(check))
+                {
+                    is_of_all_eqs = false;
+                    break;
+                }
+            }
+            if (is_uniq && is_of_all_eqs)
+                result.push_back(std::move(it1));
+        }
+    }
+    return result;
+}

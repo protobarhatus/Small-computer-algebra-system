@@ -152,7 +152,7 @@ double DerivativeObject::getApproximateValue(const std::function<double (Variabl
     return 0;
 }
 
-abs_ex DerivativeObject::changeSomePartOn(QString function, abs_ex &on_what)
+abs_ex DerivativeObject::changeSomePartOn(QString function, const abs_ex &on_what)
 {
     if (argument->makeStringOfExpression() == function)
     {
@@ -163,7 +163,7 @@ abs_ex DerivativeObject::changeSomePartOn(QString function, abs_ex &on_what)
     return argument->changeSomePartOn(function, on_what);
 }
 
-abs_ex DerivativeObject::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex DerivativeObject::changeSomePartOnExpression(QString part,const  abs_ex &on_what)
 {
     NONCONST
             if (argument->makeStringOfExpression() == part)

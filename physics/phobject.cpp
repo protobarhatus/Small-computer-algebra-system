@@ -1,5 +1,7 @@
 #include "phobject.h"
 #include "phmodel.h"
+#include "algebra/solving_equations.h"
+#include "algebra/equationrootsconditions.h"
 PhObject::PhObject(PhModel * mod) : model(mod)
 {
 
@@ -40,6 +42,11 @@ void PhObject::setPositionFunction(const VectorFunction &func)
     this->position_function = func;
 }
 
+void PhObject::setMass(const AlgExpr &m)
+{
+    this->mass = m;
+}
+
 void PhObject::countItsKinematicFunctions()
 {
     if (this->position_function == nullptr)
@@ -48,6 +55,7 @@ void PhObject::countItsKinematicFunctions()
         {
             //пока что так, но это работает только если ускорение не зависит от координаты, а вообще здесь нужно
             //решать дифуры
+
             this->velocity_function = integrate(this->acceleration_function, getTimeArgumentVariable().getId());
             this->velocity_function.addConstant(this->start_velocity);
 
@@ -108,4 +116,53 @@ void PhObject::setForceInfluenceAbility(bool can_be)
 bool PhObject::canBeInfluencedByForce() const
 {
     return this->can_be_force_influenced;
+}
+void PhObject::recountAllWithNewVariablesValues(const std::map<int, abs_ex> &vars)
+{
+    replaceSystemVariablesToExpressions(this->start_position, vars);
+    replaceSystemVariablesToExpressions(this->start_velocity, vars);
+    replaceSystemVariablesToExpressions(this->start_acceleration, vars);
+
+    this->position_function.replaceSystemVariablesToExpressions(vars);
+    this->velocity_function.replaceSystemVariablesToExpressions(vars);
+    this->acceleration_function.replaceSystemVariablesToExpressions(vars);
+
+}
+
+AlgExpr PhObject::getMass()
+{
+    return this->mass;
+}
+
+AlgExpr PhObject::findCollisionTime(PhObject *obj)
+{
+    if (obj->type() == OBJECT_TYPE_MAT_POINT)
+    {
+        std::list<abs_ex> equations;
+        if (this->position_function.isExplicit() && obj->position_function.isExplicit())
+        {
+            auto& obj_func = obj->position_function.getFunction();
+            auto& func = this->position_function.getFunction();
+            for (int i = 0; i < func.size(); ++i)
+                equations.push_back((obj_func[i] - func[i]).getExpr());
+            abs_ex v = systemVarExpr();
+            auto res = solveEquationsForOneVariable(equations, getTimeArgumentVariable().getId(),
+                                         EquationRootsConditions(RootCondition(v->getId(), RootCondition::BIGGER_THAN_ZERO, v)));
+            //надо будет улучшить сортировку естессна а то иногда не понятно что первей
+            std::sort(res.begin(), res.end(), [](const abs_ex & a, const abs_ex & b)->bool {
+                return (a - b)->getPositionRelativelyZero() < 0;
+            });
+            return *res.begin();
+
+        }
+        else
+            //TODO
+            return nullptr;
+    }
+    return nullptr;
+}
+
+ObjectType PhObject::type() const
+{
+    return OBJECT_TYPE_MAT_POINT;
 }

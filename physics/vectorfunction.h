@@ -31,6 +31,11 @@ public:
     friend VectorFunction derivative(const VectorFunction & func, int var);
 
     void addConstant(const AlgVector & constant);
+
+    void replaceSystemVariablesToExpressions(const std::map<int, abs_ex> & expr);
+
+    bool isExplicit() const;
+    const AlgVector& getFunction() const;
 private:
     AlgVector function;
     //только для неявного задания функции, funcs_params.size() == function.size();

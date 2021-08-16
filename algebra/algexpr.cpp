@@ -14,6 +14,8 @@
 #include "solving_differential_equations.h"
 #include "derivativeobject.h"
 #include "polynomials_factorization.h"
+#include "Vector.h"
+#include "algebra/Vector.h"
 AlgExpr::AlgExpr()
 {
     this->expression = copy(zero);
@@ -44,6 +46,16 @@ AlgExpr::AlgExpr(const abs_ex &expr)
 AlgExpr::AlgExpr(abs_ex && expr)
 {
     this->expression = std::move(expr);
+}
+
+AlgExpr::AlgExpr(std::nullptr_t)
+{
+    this->expression = nullptr;
+}
+
+bool AlgExpr::operator==(std::nullptr_t)
+{
+    return this->expression == nullptr;
 }
 
 
@@ -850,4 +862,22 @@ AlgExpr positiveVar(const QString &name)
 AlgExpr positiveUndefinedVar(const QString &name)
 {
     return undefinedVar(getPositiveDefinition(), name);
+}
+
+void replaceSystemVariablesToExpressions(Vector<AlgExpr> &expression, const std::map<int, abs_ex> &vars)
+{
+    for (int i = 0; i < expression.size(); ++i)
+    {
+        replaceSystemVariablesToExpressions(expression[i].getExpr(), vars);
+    }
+}
+
+AlgExpr inf()
+{
+    return AlgExpr(getInf());
+}
+
+AlgExpr minusInf()
+{
+    return AlgExpr(getMinusInf());
 }

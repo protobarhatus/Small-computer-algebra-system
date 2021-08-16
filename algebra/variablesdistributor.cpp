@@ -78,9 +78,10 @@ Variable VariablesDistributor::createVariable(VariablesDefinition definition, co
         throw Exception();
 
     ++Variable::id_counter;
-    VariablesDistributor::addSpecialName(Variable::id_counter, name);
+    QString r_name = VariablesNameDistributor::getNextIndexedName(name);
+    VariablesDistributor::addSpecialName(Variable::id_counter, r_name);
 
-    VariablesNameDistributor::addVariable(Variable::id_counter, VariablesNameDistributor::getNextIndexedName(name));
+    VariablesNameDistributor::addVariable(Variable::id_counter, r_name);
     VariablesDistributor& distr = VariablesDistributor::get();
     distr.variables.push_back(new VariablesDefinition(definition));
     return Variable(Variable::id_counter, distr.variables[Variable::id_counter - 1]);
@@ -169,6 +170,8 @@ void VariablesDistributor::clear()
 
     VariablesDistributor::get().special_names.clear();
     VariablesDistributor::get().amount_of_integrating_constants.clear();
+
+    VariablesNameDistributor::_clear();
 }
 
 void VariablesDistributor::addDifferentialLine(const Variable &var, const std::vector<Variable> &line)

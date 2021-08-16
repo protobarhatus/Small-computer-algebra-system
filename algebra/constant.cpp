@@ -107,12 +107,12 @@ int Constant::getPositionRelativelyZeroIfHasVariables()
     return (this->value > 0 ? 1 : (this->value < 0 ? -1 : 0));
 }
 
-abs_ex Constant::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Constant::changeSomePartOn(QString part, const abs_ex &on_what)
 {
     return nullptr;
 }
 
-abs_ex Constant::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Constant::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     return nullptr;
 }
@@ -187,6 +187,11 @@ bool Constant::hasUndefinedVariable() const
 {
     return false;
 }
+
+const QString &Constant::getName() const
+{
+    return name;
+}
 bool Constant::operator<(const AbstractExpression &right) const
 {
     assert(right.getId() == CONSTANT);
@@ -201,3 +206,30 @@ abs_ex getEuler()
     return abs_ex(new Constant(2.71828182845904523536, "e"));
 }
 
+
+abs_ex getInf()
+{
+    return abs_ex(new Constant(std::numeric_limits<double>::infinity(), "inf"));
+}
+
+
+abs_ex getMinusInf()
+{
+    return abs_ex(new Constant(-std::numeric_limits<double>::infinity(), "minf"));
+}
+
+bool isInf(const abs_ex &expr)
+{
+    return expr->getId() == CONSTANT && static_cast<Constant*>(expr.get())->getName() == "inf";
+}
+
+bool isMinusInf(const abs_ex &expr)
+{
+    return expr->getId() == CONSTANT && static_cast<Constant*>(expr.get())->getName() == "minf";
+}
+
+bool isKindOfInf(const abs_ex &expr)
+{
+    return expr->getId() == CONSTANT && (static_cast<Constant*>(expr.get())->getName() == "inf" ||
+                                         static_cast<Constant*>(expr.get())->getName() == "minf");
+}

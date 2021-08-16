@@ -82,8 +82,8 @@ public:
     bool hasTangent();
     void convertTrigonometricalFunctionsByFormulas(const std::map<QString, TrigonometricalFunctionsCastType> & instructions);
     void checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> & params);
-    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
-    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOn(QString part, const abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOnExpression(QString part,const abs_ex & on_what) override;
     //аргумент включается сюда только если он имеет числовую целую степень
     std::vector<std::pair<abs_ex, Number>> getTrigonometryMultipliersArgumentsCopyAndItsDegrees();
     void convertTrigonometricalMultipliersToDifferentArgument(const std::map<QString, TrigonometricalFunctionsArgumentsCastType> & instructions);
@@ -128,6 +128,9 @@ public:
     bool canBeZero() const override;
 
     bool hasUndefinedVariable() const override;
+
+    bool isInf() const;
+    bool isMinusInf() const;
 private:
     void takeAwayAbsoluteValues();
     bool hasIntegratingConstantMultiplierThatCanBeChanged() const;
@@ -180,6 +183,13 @@ private:
     fractal_argument denominator;
 
     Number coefficient;
+
+
+    void checkForInfinity();
+    bool has_infinity_in_numerator = false;
+    bool has_infinity_in_denominator = false;
+    bool has_minus_inf_in_numerator = false;
+    bool has_minus_inf_in_denominator = false;
 };
 
 bool hasDifferentialAsMultiplier(const abs_ex & expr);

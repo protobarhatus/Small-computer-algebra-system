@@ -124,8 +124,11 @@ SOURCES += \
     mathexpression.cpp \
     matrixvalue.cpp \
     parser.cpp \
+    physics/constantsmanager.cpp \
+    physics/interruptingevent.cpp \
     physics/phmodel.cpp \
     physics/phobject.cpp \
+    physics/stageresultdescriptor.cpp \
     physics/vectorfunction.cpp \
     planevalue.cpp \
     polygonvalue.cpp \
@@ -249,8 +252,11 @@ HEADERS += \
     mathexpression.h \
     matrixvalue.h \
     parser.h \
+    physics/constantsmanager.h \
+    physics/interruptingevent.h \
     physics/phmodel.h \
     physics/phobject.h \
+    physics/stageresultdescriptor.h \
     physics/vectorfunction.h \
     planevalue.h \
     polygonvalue.h \

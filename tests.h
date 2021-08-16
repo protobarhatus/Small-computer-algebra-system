@@ -3,5 +3,5 @@
 
 
 void testAlgMod();
-
+void testPhysMod();
 #endif // TESTS_H

@@ -284,7 +284,7 @@ abs_ex Cotangent::getArgumentMoved()
     return std::move(this->argument);
 }
 
-abs_ex Cotangent::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Cotangent::changeSomePartOn(QString part, const abs_ex &on_what)
 {
    // NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -296,7 +296,7 @@ abs_ex Cotangent::changeSomePartOn(QString part, abs_ex &on_what)
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-abs_ex Cotangent::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Cotangent::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     NONCONST
         if (this->argument->makeStringOfExpression() == part)

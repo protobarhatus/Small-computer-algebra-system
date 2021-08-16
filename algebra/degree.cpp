@@ -169,12 +169,68 @@ bool Degree::canDowncastTo()
                     return true;
         }
     }
+    if (isKindOfInf(this->argument) || isKindOfInf(this->degree))
+    {
+        if (isKindOfInf(this->argument))
+            return this->degree->getPositionRelativelyZero() != 0;
+        if (isKindOfInf(this->degree))
+            return (this->argument - one)->getPositionRelativelyZero() != 0 && this->argument->getPositionRelativelyZero() > 0;
+    }
     return false;
 }
 abs_ex Degree::downcastTo()
 {
 
     //assert(canDowncastTo());
+    if (isInf(this->argument))
+    {
+        if (isZero(degree))
+            throw QIODevice::tr("inf^0 неопределенность");
+        int pos = this->degree->getPositionRelativelyZero();
+        if (pos > 0)
+            return getInf();
+
+        return copy(zero);
+    }
+    if (isMinusInf(this->argument))
+    {
+        if (this->argument->getId() != NUMBER)
+            throw QIODevice::tr("Нельзя возводить отрицательное число в вещественную степень");
+        Number* num = static_cast<Number*>(argument.get());
+        if (num->isInteger())
+        {
+            if (num->getNumerator() % 2 == 0)
+                return getInf();
+            else
+                return getMinusInf();
+        }
+        if (num->getDenominator() % 2 == 0)
+            throw QIODevice::tr("Нельзя брать четный корень из отрицательного числа");
+        if (num->getNumerator() % 2 == 0)
+            return getInf();
+        return getMinusInf();
+    }
+    if (isInf(this->degree))
+    {
+        if (*this->argument == *one)
+            throw QIODevice::tr("1^inf неопределенность");
+        if ((this->argument - one)->getPositionRelativelyZero() > 0)
+            return getInf();
+        if (isZero(this->argument))
+            throw QIODevice::tr("0^inf неопределенность");
+        return copy(zero);
+    }
+    if (isMinusInf(this->degree))
+    {
+        if (*this->argument == *one)
+            throw QIODevice::tr("1^(-inf) неопределенность");
+        if ((this->argument - one)->getPositionRelativelyZero() > 0)
+            return copy(zero);
+        if (isZero(this->argument))
+            throw QIODevice::tr("0^(-inf) неопределенность");
+        return getInf();
+    }
+
 
     if (*this->argument == *getEuler() && this->degree->getId() == LOGARITHM)
         return static_cast<Logarithm*>(this->degree.get())->getArgumentMoved();
@@ -398,6 +454,8 @@ abs_ex Degree::downcastTo()
     }
     if (*this->degree == *one)
         return copy( this->argument.get());
+
+
     return nullptr;
 
 }
@@ -1010,7 +1068,7 @@ double Degree::getApproximateValue(const std::function<double (VariablesDefiniti
     return pow(this->argument->getApproximateValue(choosing_value_rule), this->degree->getApproximateValue(choosing_value_rule));
 }
 
-abs_ex Degree::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Degree::changeSomePartOn(QString part, const abs_ex &on_what)
 {
   //  NONCONST
     abs_ex ret = nullptr;
@@ -1039,7 +1097,7 @@ abs_ex Degree::changeSomePartOn(QString part, abs_ex &on_what)
     return ret;
 }
 
-abs_ex Degree::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Degree::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     NONCONST
             abs_ex ret = nullptr;

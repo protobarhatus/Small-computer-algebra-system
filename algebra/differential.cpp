@@ -144,7 +144,7 @@ abs_ex Differential::getArgumentMoved()
     return std::move(this->argument);
 }
 
-abs_ex Differential::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Differential::changeSomePartOn(QString part, const abs_ex &on_what)
 {
    // NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -152,7 +152,7 @@ abs_ex Differential::changeSomePartOn(QString part, abs_ex &on_what)
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-abs_ex Differential::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Differential::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     NONCONST
             if (this->argument->makeStringOfExpression() == part)

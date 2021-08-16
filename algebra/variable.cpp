@@ -173,12 +173,12 @@ double Variable::getApproximateValue(const std::function<double (VariablesDefini
     return choosing_value_rule(this->definition);
 }
 
-abs_ex Variable::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Variable::changeSomePartOn(QString part, const abs_ex &on_what)
 {
     return nullptr;
 }
 
-abs_ex Variable::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Variable::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     return nullptr;
 }

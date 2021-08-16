@@ -88,6 +88,8 @@ bool ArcTangent::canDowncastTo()
         return true;
     if (isIntegratingConstantAndCanChangeIt(this->argument->getId()))
         return true;
+    if (isKindOfInf(arg))
+        return true;
     return false;
 }
 
@@ -116,7 +118,10 @@ abs_ex ArcTangent::downcastTo()
     {
         return integratingConstantExpr(this->argument->getId(), this->getRange());
     }
-
+    if (isInf(argument))
+        return getPi()/two;
+    if (isMinusInf(argument))
+        return -getPi()/two;
     return nullptr;
 
 }
@@ -188,7 +193,7 @@ abs_ex ArcTangent::getArgumentMoved()
     return std::move(this->argument);
 }
 
-abs_ex ArcTangent::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex ArcTangent::changeSomePartOn(QString part, const abs_ex &on_what)
 {
     //NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -200,7 +205,7 @@ abs_ex ArcTangent::changeSomePartOn(QString part, abs_ex &on_what)
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-abs_ex ArcTangent::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex ArcTangent::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     NONCONST
         if (this->argument->makeStringOfExpression() == part)

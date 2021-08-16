@@ -1433,5 +1433,73 @@ void testAlgMod()
           qDebug() << it;
   }
 
-  deleteVariables();
+  VariablesDistributor::clear();
 }
+ #include "physics/phmodel.h"
+void testPhysMod()
+{
+    std::vector<std::function<bool (void)>> test_functions = {
+            []()->bool {
+            PhModel model;
+                model.setDimensionNumber(1);
+                auto bod = model.addObject("bod", model.makeSimpleKinematicObject({0,0},{2, 1}, {0, -10}));
+
+                model.completeContinuityCicle();
+
+               // model[hui]->statePositionAt(5, {40});
+                //model[hui]->statePositionAt(2, {10});
+               // qDebug() << model[hui]->positionAt(A(1)/5).x().toString();
+               // qDebug() << model[hui]->positionAt(A(1)/5).y().toString();
+            return model[bod]->positionAt(A(1)/5) == AlgVector(A(2)/5, 0);
+},
+            []()->bool {
+            ConstantsManager::clearVariables();
+            AlgExpr v = var("v"), a = var("a"), m = var("m");
+
+            PhModel model;
+            model.setDimensionNumber(2);
+            model.setGiven({v, a, m});
+            model.setEnableGravityField(true);
+            auto bod = model.addObject("bod", model.makeSimpleDynamicObject({0, 0}, {v*cos(a), v*sin(a)}, {0,0}, m));
+
+            model.completeContinuityCicle();
+            AlgExpr t = var("t");
+            AlgVector pos = model[bod]->positionAt(t);
+            return pos == AlgVector(v*cos(a)*t, v*sin(a)*t - grav()*t*t / 2);
+},
+            []()->bool {
+            ConstantsManager::clearVariables();
+            PhModel model;
+            model.setDimensionNumber(1);
+            auto obj = model.addObject("obj", model.makeSimpleKinematicObject({0}, AlgVector::create(0), AlgVector::create(0)));
+            model.completeContinuityCicle();
+            model[obj]->statePositionAt(5, {40});
+            model[obj]->statePositionAt(2, {10});
+            return model[obj]->velocityAt(0).x() == 3 && model[obj]->accelerationAt(0).x() == 2;
+}
+};
+
+    std::vector<int> error_tests;
+  for (int i = 0; i < test_functions.size(); ++i)
+  {
+      bool result = test_functions[i]();
+      if (result)
+          qDebug() << "TEST " << i + 1 << ": OK";
+      else
+      {
+          qDebug() << "TEST " << i + 1 << ": ERROR";
+          error_tests.push_back(i + 1);
+      }
+
+  }
+  if (error_tests.size() == 0)
+      qDebug() << "All tests have passed succesfully.";
+  else
+  {
+      qDebug () << "Errors in tests:";
+      for (auto it : error_tests)
+          qDebug() << it;
+  }
+
+  ConstantsManager::clearVariables();
+  }

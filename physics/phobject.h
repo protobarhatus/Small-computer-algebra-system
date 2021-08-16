@@ -4,9 +4,14 @@
 #include "algebra/Vector.h"
 #include "vectorfunction.h"
 class PhModel;
+enum ObjectType {
+    OBJECT_TYPE_MAT_POINT
+};
+//такой объект по сути описывает материальную точку, при этом является основой более сложных объектов
 class PhObject
 {
 public:
+
     PhObject(PhModel * mod);
 
     void setModel(PhModel * mod);
@@ -18,6 +23,8 @@ public:
     void setAccelerationFunction(const VectorFunction & func);
     void setVelocityFunction(const VectorFunction & func);
     void setPositionFunction(const VectorFunction & func);
+
+    void setMass(const AlgExpr & m);
 
 
     virtual void countItsKinematicFunctions();
@@ -32,6 +39,14 @@ public:
 
     void setForceInfluenceAbility(bool can_be);
     bool canBeInfluencedByForce() const;
+
+    virtual void recountAllWithNewVariablesValues(const std::map<int, abs_ex> & vars);
+
+    AlgExpr getMass();
+
+    virtual AlgExpr findCollisionTime(PhObject * obj);
+
+    virtual ObjectType type() const;
 private:
     //вектора 0 размера показывают что значение отсутствует (nullptr)
     AlgVector start_position = AlgVector::create(0);
@@ -43,6 +58,8 @@ private:
     VectorFunction acceleration_function = nullptr;
 
     bool can_be_force_influenced;
+
+    AlgExpr mass;
 
     PhModel * model;
 };

@@ -78,8 +78,8 @@ public:
     //шестое - имеет ли котангенс квадрат, седьмое - имеет ли котангенс
     std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool>> checkTrigonometricalFunctions();
     void checkTrigonometricalFunctionsItHas(std::map<QString, std::tuple<bool, bool, bool, bool, bool, bool, bool, bool> > & params, bool in_fractal = false);
-    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
-    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOn(QString part, const abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOnExpression(QString part, const abs_ex & on_what) override;
     std::unique_ptr<Fractal> toCommonDenominator();
     bool isFractionalCoefficientsAllowed();
     void setFractionalCoefficientsAllowed(bool allow);
@@ -123,6 +123,8 @@ public:
     int amountOfAddictivesWithTrigonometryFunctionOfThis(const QString & argument);
 
     bool hasUndefinedVariable() const override;
+
+
 private:
     bool hasIntegratingConstantAddictiveThatCanBeChanged() const;
     void pullSomeMembersIntoOneIntegratingConstant();
@@ -150,6 +152,10 @@ private:
     virtual bool operator<(const AbstractExpression & right) const override;
     //for dividing
     bool is_fractional_coefficients_allowed = false;
+
+    void checkForInfinity();
+    bool has_inf = false;
+    bool has_minus_inf = false;
 };
 abs_ex checkIfItsSinusOrCosinusFormulaPolynomial(std::unique_ptr<Polynomial> && polynom);
 abs_ex checkIfItsTangentOrCotangentFormulaPolynomial(std::unique_ptr<Polynomial> && polynom);

@@ -6,6 +6,9 @@ class Fractal;
 bool isPolynomOfAllVariables(const abs_ex & equation);
 std::list<abs_ex> solveEquation(const abs_ex & equation, int var);
 std::list<abs_ex> solveEquation(const abs_ex & equation, int var, const EquationRootsConditions & conditions);
+//то есть несколько уравнений на одну переменную: это для того чтобы найти t когда r(t) == v(t), r, v - вектора
+std::list<abs_ex> solveEquationsForOneVariable(const std::list<abs_ex> & equations, int var, const EquationRootsConditions & conditions);
+
 bool isIntegratingConstantAddictiveThatCanBeChanged(const Fractal *it);
 bool isIntegratingConstantAddictiveThatCanBeChanged(const std::unique_ptr<Fractal> & it);
 bool isIntegratingConstantAddictive(const std::unique_ptr<Fractal> & it);

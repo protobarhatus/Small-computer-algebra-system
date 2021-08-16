@@ -43,3 +43,9 @@ QString VariablesNameDistributor::getNextIndexedName(const QString &name)
     str.setNum(num + 1);
     return name + str;
 }
+
+void VariablesNameDistributor::_clear()
+{
+    VariablesNameDistributor::get().vars_table.clear();
+    VariablesNameDistributor::get().used_names.clear();
+}

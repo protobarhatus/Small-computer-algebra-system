@@ -203,7 +203,7 @@ abs_ex ArcSinus::getArgumentMoved()
     return std::move(this->argument);
 }
 
-abs_ex ArcSinus::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex ArcSinus::changeSomePartOn(QString part,const  abs_ex &on_what)
 {
   //  NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -215,7 +215,7 @@ abs_ex ArcSinus::changeSomePartOn(QString part, abs_ex &on_what)
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-abs_ex ArcSinus::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex ArcSinus::changeSomePartOnExpression(QString part,const  abs_ex &on_what)
 {
     NONCONST
         if (this->argument->makeStringOfExpression() == part)

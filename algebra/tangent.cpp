@@ -292,7 +292,7 @@ abs_ex Tangent::getArgumentMoved()
     return std::move(this->argument);
 }
 
-abs_ex Tangent::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Tangent::changeSomePartOn(QString part, const abs_ex &on_what)
 {
   //  NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -304,7 +304,7 @@ abs_ex Tangent::changeSomePartOn(QString part, abs_ex &on_what)
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-abs_ex Tangent::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Tangent::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     NONCONST
             return changeSomePartOn(part, on_what);

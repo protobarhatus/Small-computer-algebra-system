@@ -266,7 +266,7 @@ abs_ex Cosinus::getArgumentMoved()
     return std::move(this->argument);
 }
 
-abs_ex Cosinus::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Cosinus::changeSomePartOn(QString part, const abs_ex &on_what)
 {
    // NONCONST
     if (this->argument->makeStringOfExpression() == part)
@@ -278,7 +278,7 @@ abs_ex Cosinus::changeSomePartOn(QString part, abs_ex &on_what)
     return this->argument->changeSomePartOn(part, on_what);
 }
 
-abs_ex Cosinus::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Cosinus::changeSomePartOnExpression(QString part,const  abs_ex &on_what)
 {
     NONCONST
         if (this->argument->makeStringOfExpression() == part)

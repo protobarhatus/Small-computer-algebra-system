@@ -25,8 +25,8 @@ public:
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> &choosing_value_rule) override;
     virtual int getPositionRelativelyZeroIfHasVariables() override;
-    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
-    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOn(QString part, const abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOnExpression(QString part, const abs_ex & on_what) override;
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
     virtual void setSimplified(bool simpl) override;
@@ -43,6 +43,8 @@ public:
     bool canBeZero() const override;
 
     bool hasUndefinedVariable() const override;
+
+    const QString & getName() const;
 private:
     virtual bool operator<(const AbstractExpression & right) const override;
     double value;
@@ -51,4 +53,11 @@ private:
 
 abs_ex getPi();
 abs_ex getEuler();
+
+abs_ex getInf();
+abs_ex getMinusInf();
+bool isInf(const abs_ex & expr);
+bool isMinusInf(const abs_ex & expr);
+bool isKindOfInf(const abs_ex & expr);
+
 #endif // CONSTANT_H

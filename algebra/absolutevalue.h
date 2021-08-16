@@ -30,8 +30,8 @@ public:
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;
     //returns moved expression so it's not valid and must be destroyed
     abs_ex open();
-    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
-    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOn(QString part, const abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOnExpression(QString part, const abs_ex & on_what) override;
     virtual abs_ex derivative(int var) const override;
     virtual abs_ex antiderivative(int var) const override;
     AbstractExpression* getExpression();

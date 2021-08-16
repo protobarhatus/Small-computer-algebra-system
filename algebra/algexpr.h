@@ -21,6 +21,9 @@ public:
     AlgExpr(const abs_ex & expr);
     AlgExpr(abs_ex && expr);
 
+    AlgExpr(nullptr_t);
+    bool operator==(nullptr_t);
+
 
     AlgExpr& operator=(const AlgExpr & expr);
     AlgExpr& operator=(AlgExpr && expr);
@@ -177,6 +180,8 @@ AlgExpr sin(AlgExpr && arg);
 AlgExpr sin(int arg);
 AlgExpr pi();
 AlgExpr euler();
+AlgExpr inf();
+AlgExpr minusInf();
 AlgExpr e();
 AlgExpr cos(const AlgExpr & arg);
 AlgExpr cos(AlgExpr && arg);
@@ -219,4 +224,8 @@ AlgExpr expand(const AlgExpr & expr);
 std::list<AlgExpr> solveEquation(const AlgExpr & equation, const AlgExpr & var);
 std::pair<std::list<DifurResult>, std::vector<QString>> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
 AlgExpr degToRad(const AlgExpr & deg);
+
+template <typename T>
+class Vector;
+void replaceSystemVariablesToExpressions(Vector<AlgExpr> & expression, const std::map<int, abs_ex> & vars);
 #endif // ALGEXPR_H

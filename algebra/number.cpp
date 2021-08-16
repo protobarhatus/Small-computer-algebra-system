@@ -329,12 +329,12 @@ bool Number::operator==(const Number & num)
     return this->numerator == num.numerator && this->denominator == num.denominator;
 }
 
-abs_ex Number::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex Number::changeSomePartOn(QString part, const abs_ex &on_what)
 {
     return nullptr;
 }
 
-abs_ex Number::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex Number::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     return nullptr;
 }

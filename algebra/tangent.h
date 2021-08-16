@@ -30,8 +30,8 @@ public:
     virtual QString makeWolframString() const override;
 
     abs_ex getArgumentMoved();
-    virtual abs_ex changeSomePartOn(QString part, abs_ex & on_what) override;
-    virtual abs_ex changeSomePartOnExpression(QString part, abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOn(QString part, const abs_ex & on_what) override;
+    virtual abs_ex changeSomePartOnExpression(QString part, const abs_ex & on_what) override;
     abs_ex getArgumentsCopy();
 
     virtual abs_ex derivative(int var) const override;

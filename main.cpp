@@ -83,12 +83,31 @@ void geoTest()
 void physicsTest()
 {
     qDebug() << "STARTING ";
-    PhModel model;
+   /* PhModel model;
     model.setDimensionNumber(1);
-    auto hui = model.addObject("hui", model.makeSimpleKinematicObject({3}, {2}, {1}));
+    auto hui = model.addObject("hui", model.makeSimpleKinematicObject({0,0},{2, 1}, {0, -10}));
 
     model.completeContinuityCicle();
-    qDebug() << model[hui]->positionAt(5).x().toString();
+
+   // model[hui]->statePositionAt(5, {40});
+    //model[hui]->statePositionAt(2, {10});
+    qDebug() << model[hui]->positionAt(A(1)/5).x().toString();
+    qDebug() << model[hui]->positionAt(A(1)/5).y().toString();*/
+
+    AlgExpr v = var("v"), a = var("a"), m = var("m");
+
+    PhModel model;
+    model.setDimensionNumber(2);
+    model.setGiven({v, a, m});
+    model.setEnableGravityField(true);
+    auto hui = model.addObject("hui", model.makeSimpleDynamicObject({0, 0}, {v*cos(a), v*sin(a)}, {0,0}, m));
+
+    model.completeContinuityCicle();
+
+    AlgVector pos = model[hui]->positionAt(var("t"));
+    qDebug() << pos.x().toString();
+    qDebug() << pos.y().toString();
+    qDebug() << grav().toString();
 }
 #include <QException>
 int main(int argc, char *argv[])
@@ -97,13 +116,14 @@ int main(int argc, char *argv[])
   //                                    {4, 5, A(3)/2, -3},
    //                                   {-10, -20, 4, -1}}));
 
-    //необходимо вызывать чтобы он создался
-    VariablesDistributor::get();
+
    // geoTest();
-    //testAlgMod();
+  //  testAlgMod();
 
-
+    testPhysMod();
+    ConstantsManager::clearVariables();
     physicsTest();
+    VariablesDistributor::clear();
     qDebug() << "#########";
    // GaluaField::initialize(11);
   //  Polynom p1({7, 0, 4, 0, 2, 1});
@@ -353,6 +373,9 @@ int main(int argc, char *argv[])
      //   widg.setExpr("a + b");
      //   widg.show();
 #endif
+
+    //необходимо вызывать чтобы он создался
+    VariablesDistributor::get();
    MainApplicationSpace appl;
    appl.launch();
 

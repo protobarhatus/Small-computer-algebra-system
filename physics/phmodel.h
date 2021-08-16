@@ -3,10 +3,14 @@
 #include "algebra/algexpr.h"
 #include "vector"
 #include "phobject.h"
-
+#include "stageresultdescriptor.h"
+#include "constantsmanager.h"
 typedef std::unique_ptr<PhObject> PhObjectPtr;
 
 
+
+
+typedef int ObjId;
 
 class PhModel
 {
@@ -18,9 +22,11 @@ public:
     PhObjectPtr& operator[](int id);
     const PhObjectPtr& operator[](int id) const;
 
-    void completeContinuityCicle();
+    StageResultDescriptor completeContinuityCicle();
 
     PhObjectPtr makeSimpleKinematicObject(const AlgVector & pos, const AlgVector & vel, const AlgVector & acc);
+    PhObjectPtr makeSimpleDynamicObject(const AlgVector & pos, const AlgVector & vel, const AlgVector & acc,
+                                        const AlgExpr & mass);
 
     void setDimensionNumber(int d);
 
@@ -29,13 +35,24 @@ public:
     void addEquation(AlgVector && equation);
     void addEquation(const AlgVector & equation);
 
+    void setEnableGravityField(bool enabled);
 
+    void setGiven(const std::set<AlgExpr> & vars);
 private:
 
-    AlgExpr findContinuityCicleEnd();
-    void solveEquations();
 
+    void setKinematicParams(PhObjectPtr & res, const AlgVector & pos, const AlgVector & vel, const AlgVector & acc);
+
+    AlgVector countForce(int obj_id);
+
+    StageResultDescriptor findContinuityCicleEnd();
+
+    std::vector<InterruptingEvent> findCollisionEvents();
+    void solveEquations();
+    //!ВСЕ НОВЫЕ ПЕРЕМЕННЫЕ ДОЛЖНЫ ПОПАСТЬ СЮДА
     void recountAllWithNewVariablesValues(const std::map<int, abs_ex> & vars_values);
+
+
 
     std::vector<abs_ex> equations;
 
@@ -43,7 +60,7 @@ private:
     AlgVector createVelocityUknownVector();
     AlgVector createAccelerationUknownVector();
 
-    std::vector<AlgExpr> timeStagesMarks;
+    std::vector<StageResultDescriptor> timeStagesMarks;
 
     std::vector<PhObjectPtr> objects;
     std::vector<QString> objects_names;
@@ -51,9 +68,11 @@ private:
     std::set<int> known_variables;
 
     int dimensions;
+
+    bool enabled_gravity_field;
 };
 
 
 
-Variable getTimeArgumentVariable();
+
 #endif // PHMODEL_H

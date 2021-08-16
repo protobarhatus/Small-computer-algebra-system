@@ -75,6 +75,7 @@ bool AbsoluteValue::canDowncastTo()
         return true;
     if (isIntegratingConstantAndCanChangeIt(this->expression->getId()))
         return true;
+
     return false;
 }
 abs_ex AbsoluteValue::downcastTo()
@@ -175,7 +176,7 @@ abs_ex AbsoluteValue::open()
     return std::move(this->expression);
 }
 
-abs_ex AbsoluteValue::changeSomePartOn(QString part, abs_ex &on_what)
+abs_ex AbsoluteValue::changeSomePartOn(QString part, const abs_ex &on_what)
 {
    // NONCONST
     if (this->expression->makeStringOfExpression() == part)
@@ -187,7 +188,7 @@ abs_ex AbsoluteValue::changeSomePartOn(QString part, abs_ex &on_what)
     return this->expression->changeSomePartOn(part, on_what);
 }
 
-abs_ex AbsoluteValue::changeSomePartOnExpression(QString part, abs_ex &on_what)
+abs_ex AbsoluteValue::changeSomePartOnExpression(QString part, const abs_ex &on_what)
 {
     NONCONST
         if (this->expression->makeStringOfExpression() == part)

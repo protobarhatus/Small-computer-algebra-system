@@ -27,8 +27,8 @@ public:
 
     double getApproximateValue() override;
     double getApproximateValue(const std::function<double (VariablesDefinition *)> &choosing_value_rule) override;
-    abs_ex changeSomePartOn(QString function, abs_ex &on_what) override;
-    abs_ex changeSomePartOnExpression(QString part, abs_ex &on_what) override;
+    abs_ex changeSomePartOn(QString function, const abs_ex &on_what) override;
+    abs_ex changeSomePartOnExpression(QString part, const abs_ex &on_what) override;
     abs_ex derivative(int var) const override;
     abs_ex antiderivative(int var) const override;
 

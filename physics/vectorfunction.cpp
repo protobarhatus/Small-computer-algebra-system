@@ -57,6 +57,7 @@ void VectorFunction::setInexplicitFunction(AlgVector &&func,  std::vector<Variab
 
 AlgVector VectorFunction::result(const AlgExpr &argument)
 {
+    //qDebug() << this->function.x().toString();
     assert(this->arguments.size() == 1);
     AlgVector res = AlgVector::create(function.size());
     for (int i = 0; i < function.size(); ++i)
@@ -173,13 +174,36 @@ void VectorFunction::addConstant(const AlgVector &constant)
     }
 }
 
+void VectorFunction::replaceSystemVariablesToExpressions(const std::map<int, abs_ex> &expr)
+{
+    ::replaceSystemVariablesToExpressions(this->function, expr);
+}
+
+bool VectorFunction::isExplicit() const
+{
+    return this->is_explicitly;
+}
+
+const AlgVector &VectorFunction::getFunction() const
+{
+    return this->function;
+}
+
 VectorFunction integrate(const VectorFunction &func, int var)
 {
+
     //да выполняем лишнее копирование но зато не нужно беспокоится о копировании других элементов
     VectorFunction res = func;
-
+  //  qDebug() << func.function[0].getExpr()->toString();
     for (int i = 0; i < func.function.size(); ++i)
-        res.function[i] = integral(func.function[i], getVariableExpr(var));
+    {
+        //так надо, так как рез. интегрирования 0 это C, а она прибавится вовне
+        if (func.function[i] == 0)
+            res.function[i] = 0;
+        else
+            res.function[i] = integral(func.function[i], getVariableExpr(var));
+    }
+  //  qDebug() << res.function[0].getExpr()->toString();
     return res;
 }
 
