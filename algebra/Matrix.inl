@@ -266,72 +266,73 @@ Matrix<T> inverse(Matrix<T> matrix)
     int height = matrix.size();
     int width = matrix[0].size();
     auto get_index_of_first_non_zero = [](Vector<T>& vec)->int {
-		for (int i = 0; i < vec.size(); ++i)
+        for (int i = 0; i < vec.size(); ++i)
             if (vec[i] != 0)
-				return i;
-		return vec.size();
-	};
+                return i;
+        return vec.size();
+    };
     std::vector<std::pair<int, int> > indexes_of_first_non_zero(height);
     auto sort_rows = [height, &get_index_of_first_non_zero, &matrix, &indexes_of_first_non_zero, &result]()->void {
-		for (int i = 0; i < height; ++i)
-		{
+        for (int i = 0; i < height; ++i)
+        {
             indexes_of_first_non_zero[i] = { i, get_index_of_first_non_zero(matrix[i]) };
-		}
-		std::sort(indexes_of_first_non_zero.begin(), indexes_of_first_non_zero.end(), [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
-			return a.second < b.second; });
-		for (int i = 0; i < height; ++i)
-		{
-			if (i < indexes_of_first_non_zero[i].first)
-			{
+        }
+        std::sort(indexes_of_first_non_zero.begin(), indexes_of_first_non_zero.end(), [](const std::pair<int, int>& a, const std::pair<int, int>& b) {
+            return a.second < b.second; });
+        for (int i = 0; i < height; ++i)
+        {
+            if (i < indexes_of_first_non_zero[i].first)
+            {
                 std::swap(matrix[i], matrix[indexes_of_first_non_zero[i].first]);
-				std::swap(result[i], result[indexes_of_first_non_zero[i].first]);
-			}
-		}
-	};
+                std::swap(result[i], result[indexes_of_first_non_zero[i].first]);
+            }
+        }
+    };
     auto divide_on_lead_element = [&matrix, &result](int x)->void {
         T lead_el = matrix[x][x];
+        qDebug() << lead_el.toString();
         for (int i = x; i < matrix.size(); ++i)
-		{
+        {
             matrix[x][i] = matrix[x][i] / lead_el;
-		}
+        }
         for (int i = 0; i < matrix.size(); ++i)
-		{
+        {
             result[x][i]  = result[x][i] / lead_el;
-		}
-	};
-	sort_rows();
+        }
+    };
+    sort_rows();
 
-	for (int n = 0; n < height; ++n) {
-		divide_on_lead_element(n);
-		for (int i = n + 1; i < height; ++i)
-		{
+    for (int n = 0; n < height; ++n) {
+        divide_on_lead_element(n);
+        for (int i = n + 1; i < height; ++i)
+        {
             T multiplier = -matrix[i][n] / matrix[n][n];
             matrix[i] = matrix[i] + matrix[n] * (multiplier);
-			result[i] = result[i] + result[n] * (multiplier);
+            result[i] = result[i] + result[n] * (multiplier);
 
 
-		}
-
-		//sort_rows();
-	}
+        }
+//{{1; 2; 3}; {4; 5; 6}; {7; 8; 9}}
+        //sort_rows();
+    }
     /*for (int i = 0; i < matrix.size(); ++i)
         for (int j = 0; j < matrix[i].size(); ++j)
             if (abs(matrix[i][j]) < 1e-15)
                 matrix[i][j] = 0;*/
-	for (int n = height - 1; n >= 0; --n)
-	{
-		for (int i = n - 1; i >= 0; --i)
-		{
+    for (int n = height - 1; n >= 0; --n)
+    {
+        for (int i = n - 1; i >= 0; --i)
+        {
             T multiplier = -matrix[i][n] / matrix[n][n];
             matrix[i] = matrix[i] + matrix[n] * (multiplier);
-			result[i] = result[i] + result[n] * (multiplier);
-		}
-	}
+            result[i] = result[i] + result[n] * (multiplier);
+        }
+    }
     /*for (int i = 0; i < matrix.size(); ++i)
         for (int j = 0; j < matrix[i].size(); ++j)
             if (abs(matrix[i][j]) < 1e-15)
                 matrix[i][j] = 0;*/
-	return result;
+    return result;
 }
 template<typename T>
 std::vector<std::vector<T> > gauss(Matrix<T>&& extended_equation_matrix)
@@ -445,6 +446,12 @@ Matrix<T> rotationMatrix2D(const T& angle)
     return Matrix<T>({ Vector<T>(cos(angle), -sin(angle)), Vector<T>(sin(angle), cos(angle))});
 }
 
+
+template<typename T>
+Matrix<T> transpose(const Matrix<T> & mat)
+{
+    return Matrix<T>(mat.columns(), mat.lines(), [&mat](int x, int y)->T { return mat[y][x];});
+}
 
 
 #endif

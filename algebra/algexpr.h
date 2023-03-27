@@ -10,6 +10,8 @@
 #include "absolutevalue.h"
 #include "solving_differential_equations.h"
 #include "equationrootsconditions.h"
+#include "algebra/Vector.h"
+
 class AlgExpr
 {
 public:
@@ -101,9 +103,10 @@ public:
     friend AlgExpr atan(AlgExpr && arg);
     friend AlgExpr asin(const AlgExpr & arg);
     friend AlgExpr asin(AlgExpr && arg);
+    friend AlgExpr D(const AlgExpr & arg, int order);
     abs_ex& getExpr();
     const abs_ex& getExpr() const;
-
+    friend AlgExpr teylor(const AlgExpr & expr, const AlgVector & values, int order);
 private:
     bool isEqualTo(const AlgExpr & sec) const;
     abs_ex expression;
@@ -150,6 +153,8 @@ AlgExpr var(VariablesDefinition );
 AlgExpr var(int min, int max);
 AlgExpr var(const QString & name);
 AlgExpr var(const VariablesDefinition & def, const QString & name);
+//if var with this name doesnt exist, creates it. otherwise returns existing variable
+AlgExpr certainVar(const QString & name);
 AlgExpr undefinedVar(const QString & name);
 AlgExpr undefinedVar();
 AlgExpr undefinedVar(VariablesDefinition def, const QString & name);
@@ -201,6 +206,7 @@ AlgExpr derivative(const AlgExpr & arg, AlgExpr arg_variable);
 //да, с большой буквы, но так надо. не буду же я называть ее dif или differential
 AlgExpr D(const AlgExpr & arg);
 AlgExpr D(AlgExpr && arg);
+AlgExpr D(const AlgExpr & arg, int order);
 AlgExpr integral(const AlgExpr & arg);
 AlgExpr integral(const AlgExpr & arg, AlgExpr var);
 AlgExpr definiteIntegral(const AlgExpr & arg, const AlgExpr & from, const AlgExpr & to);
@@ -219,6 +225,10 @@ AlgExpr derivObj(const AlgExpr & func_var, int arg_var, int order);
 AlgExpr derivObj(const AlgExpr & func_var, const AlgExpr & arg_var, int order);
 AlgExpr factorize(const AlgExpr & expr);
 AlgExpr expand(const AlgExpr & expr);
+
+AlgExpr teylor(const AlgExpr & expr, const AlgVector & values, int order);
+
+
 std::list<AlgExpr> solveEquation(const AlgExpr & equation, const AlgExpr & var);
 std::pair<std::list<DifurResult>, std::vector<QString>> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
 AlgExpr degToRad(const AlgExpr & deg);
@@ -226,4 +236,11 @@ AlgExpr degToRad(const AlgExpr & deg);
 template <typename T>
 class Vector;
 void replaceSystemVariablesToExpressions(Vector<AlgExpr> & expression, const std::map<int, abs_ex> & vars);
+
+Vector<AlgExpr> derivative(const Vector<AlgExpr>& expr, const AlgExpr & arg);
+Vector<AlgExpr> derivative(Vector<AlgExpr> &&expr, const AlgExpr &arg);
+
+//its like gcd + commonPart
+AlgExpr gcd(const AlgExpr & a, const AlgExpr & b);
+
 #endif // ALGEXPR_H

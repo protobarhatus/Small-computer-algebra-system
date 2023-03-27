@@ -94,3 +94,25 @@ int MathSets::maxDegreeOfBinomialCoefs()
 {
     return MathSets::getInstance().binomial_coefficients.size() - 1;
 }
+
+
+long long int fact(long long int f)
+{
+    if (f == 0)
+        return 1;
+    return fact(f - 1) * f;
+}
+
+bool incrementSumm(std::vector<long long int> & vec)
+{
+    for (int i = 0; i < vec.size() - 1; ++i)
+    {
+        if (vec[i] > 0)
+        {
+            vec[i] -= 1;
+            vec[i + 1] += 1;
+            return true;
+        }
+    }
+    return false;
+}

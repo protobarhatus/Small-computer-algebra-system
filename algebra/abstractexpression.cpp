@@ -411,6 +411,7 @@ void replaceSystemVariablesToExpressions(AbstractExpression *expr, const std::ma
     {
         expr->changeSomePartOnExpression(systemVar(it.first).makeStringOfExpression(), it.second);
     }
+    expr->setSimplified(false);
     expr->simplify();
    // qDebug() << "WITHOUT: " << expr->makeStringOfExpression();
 }
@@ -1260,5 +1261,74 @@ std::pair<abs_ex, abs_ex> checkIfItsDegreeOfLinearFunction(const abs_ex &func, i
     auto arg = Degree::getArgumentOfDegree(func);
     return checkIfItsLinearFunction(arg, var);
 }
+#include "mathsets.h"
 
 
+abs_ex teylorSummand(const abs_ex & arg, const std::vector<abs_ex> & point, int order)
+{
+    auto vars = arg->getSetOfVariables();
+    assert(vars.size() == point.size());
+    std::vector<long long int> degrees(vars.size(), 0);
+    std::vector<int> vars_vec;
+    for (auto &it : vars)
+        vars_vec.push_back(it);
+
+    degrees[0] = order;
+
+    abs_ex result = copy(zero);
+
+    long long int factorial = fact(order);
+
+    std::map<int, abs_ex> points_values;
+    for (int i = 0; i < vars.size(); ++i)
+        points_values.insert({vars_vec[i], copy(point[i])});
+    do
+    {
+        abs_ex deriv = copy(arg);
+        abs_ex Diff = copy(one);
+        for (int i = 0; i < vars.size(); ++i)
+        {
+            for (int j = 0; j < degrees[i]; ++j)
+                deriv = deriv->derivative(vars_vec[i]);
+            if (degrees[i] > 0)
+                Diff = Diff * takeDegreeOf(getVariableExpr(vars_vec[i]) - point[i], degrees[i]);
+        }
+        long long int multiplier = factorial;
+        for (auto &it : degrees)
+            multiplier /= fact(it);
+
+        replaceSystemVariablesToExpressions(deriv, points_values);
+        deriv->setSimplified(false);
+        deriv->simplify();
+        deriv = deriv->downcast();
+
+        result = result + numToAbs(multiplier)* deriv * Diff;
+
+    }while(incrementSumm(degrees));
+    return result / numToAbs(fact(order));
+}
+
+abs_ex teylor(const abs_ex & arg, const std::vector<abs_ex> & point, int order)
+{
+    auto vars = arg->getSetOfVariables();
+    assert(vars.size() == point.size());
+
+    std::vector<int> vars_vec;
+    for (auto &it : vars)
+        vars_vec.push_back(it);
+
+    std::map<int, abs_ex> points_values;
+    for (int i = 0; i < vars.size(); ++i)
+        points_values.insert({vars_vec[i], copy(point[i])});
+
+    abs_ex result = copy(arg);
+    replaceSystemVariablesToExpressions(result, points_values);
+    result->setSimplified(false);
+    result->simplify();
+    result = result->downcast();
+
+    for (int i = 1; i <= order; ++i)
+        result = result + teylorSummand(arg, point, i);
+
+    return result;
+}

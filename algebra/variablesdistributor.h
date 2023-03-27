@@ -25,6 +25,8 @@ public:
     static void clear();
     //к примеру {t, {x, v_x, a_x}}
     static void addDifferentialLine(const Variable & var, const std::vector<Variable> & line);
+    //checks only vars, not system vars or integrating constants
+    static bool hasVariable(const QString & name);
 private:
     friend Variable getVariable(int id);
     //системные переменные нужны чтобы заменить какую-либо функцию для выполнения операции по типу деления или выделения степени

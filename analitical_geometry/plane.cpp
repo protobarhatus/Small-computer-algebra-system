@@ -15,7 +15,7 @@ Plane::~Plane()
 
 Plane::Plane(const AlgExpr& a, const AlgExpr& b, const AlgExpr& c, const AlgExpr& d) : _a(a), _b(b), _c(c), _d(d)
 {
-
+    this->getRidOfGcd();
 }
 AlgVector Plane::normal() const
 {
@@ -101,78 +101,6 @@ AlgExpr Plane::x(const AlgExpr& y, const AlgExpr& z)
 
 Line3d Plane::getIntersection(const Plane & plane)
 {
-    /*//plane не совпадает и не параллельно, иначе херню выдаст
-    double a = this->_a, b = this->_b, c = this->_c;
-    double d = plane._a, e = plane._b, f = plane._c;
-    auto Power = [](double x, int d) { return pow(x, d); };
-    //следующий код был скопирован с вольфрам математика, анализу не подлежит
-    std::vector<std::vector<double>> inverse = { {(d*(-(a*d) - b * e - c * f)) /
-        (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-            Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-            Power(b, 2)*Power(f, 2)) + (a*(Power(d, 2) + Power(e, 2) + Power(f, 2))) /
-            (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                Power(b, 2)*Power(f, 2)), ((Power(a, 2) + Power(b, 2) + Power(c, 2))*d) /
-                (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                    Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                    Power(b, 2)*Power(f, 2)) + (a*(-(a*d) - b * e - c * f)) /
-                    (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                        Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                        Power(b, 2)*Power(f, 2))}, {(e*(-(a*d) - b * e - c * f)) /
-                        (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                            Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                            Power(b, 2)*Power(f, 2)) + (b*(Power(d, 2) + Power(e, 2) + Power(f, 2))) /
-                            (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                                Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                                Power(b, 2)*Power(f, 2)), ((Power(a, 2) + Power(b, 2) + Power(c, 2))*e) /
-                                (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                                    Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                                    Power(b, 2)*Power(f, 2)) + (b*(-(a*d) - b * e - c * f)) /
-                                    (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                                        Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                                        Power(b, 2)*Power(f, 2)) }, {(f*(-(a*d) - b * e - c * f)) /
-                                        (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                                            Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                                            Power(b, 2)*Power(f, 2)) + (c*(Power(d, 2) + Power(e, 2) + Power(f, 2))) /
-                                            (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                                                Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                                                Power(b, 2)*Power(f, 2)), ((Power(a, 2) + Power(b, 2) + Power(c, 2))*f) /
-                                                (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                                                    Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                                                    Power(b, 2)*Power(f, 2)) + (c*(-(a*d) - b * e - c * f)) /
-                                                    (Power(b, 2)*Power(d, 2) + Power(c, 2)*Power(d, 2) - 2 * a*b*d*e + Power(a, 2)*Power(e, 2) +
-                                                        Power(c, 2)*Power(e, 2) - 2 * a*c*d*f - 2 * b*c*e*f + Power(a, 2)*Power(f, 2) +
-                                                        Power(b, 2)*Power(f, 2))} };
-    //a-1b
-    std::vector<double> ind_part = { -this->_d, -plane._d };
-
-    std::vector<double> mult_res(3, 1);
-    for (int i = 0; i < 3; ++i)
-    {
-        double sum = 0;
-        for (int j = 0; j < 2; ++j)
-            sum += inverse[i][j] * ind_part[j];
-        mult_res[i] = sum;
-    }*/
-    /*double a = this->_a, b = this->_b, c = this->_c, d = this->_d;
-    double e = plane._a, f = plane._b, g = plane._c, h = plane._d;
-
-    if (this->_c == 0 && plane._c == 0)
-    {
-        double x = (d * f - b * h) / (b * e - a * f);
-        double y = (d * e - a * h) / (a * f - b * e);
-
-        return Line3d(Vector3d(x, y, 0), Vector3d(x, y, 1));
-    }
-    if (b * e == a * f)
-    {
-
-    }
-    auto x = [&a, &b, &c, &d, &e, &f, &g, &h](double z) { return(-b * g *z - b * h + c * f *z + d * f) / (b *e - a * f); };
-    auto y = [&a, &b, &c, &d, &e, &f, &g, &h](double z) { return(-a*(g *z + h) + c *e *z + d *e) / (a *f - b *e); };
-    return Line3d(Vector3d(x(0), y(0), 0), Vector3d(x(1), y(1), 1));*/
-
-
 
     if (areParallel(*this, plane))
         throw QIODevice::tr("Нельзя пересечь параллельные или совпадающие плоскости");
@@ -236,6 +164,19 @@ Line3d Plane::getIntersection(const Plane & plane)
     AlgVector point_on_line(res0[0], res0[1], res0[2]);
     AlgVector base_vector(rest[0], rest[1], rest[2]);
     return Line3d(point_on_line, point_on_line + base_vector);
+}
+
+void Plane::getRidOfGcd()
+{
+    AlgExpr com = gcd(gcd(this->_a, this->_b), gcd(this->_c, this->_d));
+    if (com != 1)
+    {
+        this->_a /= com;
+        this->_b /= com;
+        this->_c /= com;
+        this->_d /= com;
+    }
+
 }
 /*Vector2 Plane::getCoordinatesInPlanesUnitsVector(const Vector3d & point) const
 {

@@ -345,7 +345,8 @@ bool Fractal::isDenominatorEqualToOne()
 }
 std::unique_ptr<Fractal> Fractal::operator+(const std::unique_ptr<Fractal> & sec_sum)
 {
-    if (this->denominator == sec_sum->denominator && this->coefficient == sec_sum->coefficient)
+    //хрень с (const Number) полнейший костыль потому что три года назад я накрутил полнейшую херню с перегрузками сравнения и теперь я ебал это все править
+    if (this->denominator == sec_sum->denominator && (const Number)this->coefficient == sec_sum->coefficient)
     {
         abs_ex newnum_ptr = toAbsEx(static_cast<AbstractExpression*>(new Fractal(&this->numerator, this->coefficient.getNumerator()))) +
                 toAbsEx(static_cast<AbstractExpression*>(new Fractal(&sec_sum->numerator, sec_sum->coefficient.getNumerator())));
@@ -945,51 +946,7 @@ void Fractal::reducePolynomials()
         this->simplify();
    // this->reduceSameMembers();
 }
-/*std::unique_ptr<Fractal> Fractal::operator*(const std::unique_ptr<Fractal> & right)
-{
-    std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&this->numerator, &this->denominator));
-    result->setCoefficinet( this->coefficient * right->coefficient);
-    for (auto &it : right->numerator)
-        result->pushBackToNumerator(copy(it));
-    for (auto &it : right->denominator)
-        result->pushBackToDenominator(copy(it));
-    result->simplify();
-    return result;
-}
-std::unique_ptr<Fractal> Fractal::operator*(const Fractal & right)
-{
-    std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&this->numerator, &this->denominator));
-    result->setCoefficinet( this->coefficient * right.coefficient);
 
-    for (auto &it : right.numerator)
-        result->pushBackToNumerator(copy(it));
-    for (auto &it : right.denominator)
-        result->pushBackToDenominator(copy(it));
-    result->simplify();
-    return result;
-}
-std::unique_ptr<Fractal> Fractal::operator/(const std::unique_ptr<Fractal> & right)
-{
-    std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&this->numerator, &this->denominator));
-    result->setCoefficinet( this->coefficient / right->coefficient);
-    for (auto &it : right->numerator)
-        result->pushBackToDenominator(copy(it));
-    for (auto &it : right->denominator)
-        result->pushBackToNumerator(copy(it));
-    result->simplify();
-    return result;
-}
-std::unique_ptr<Fractal> Fractal::operator/(const Fractal & right) const
-{
-    std::unique_ptr<Fractal> result = std::unique_ptr<Fractal>(new Fractal(&this->numerator, &this->denominator));
-    result->setCoefficinet( this->coefficient / right.coefficient);
-    for (auto &it : right.numerator)
-        result->pushBackToDenominator(copy(it));
-    for (auto &it : right.denominator)
-        result->pushBackToNumerator(copy(it));
-    result->simplify();
-    return result;
-}*/
 bool Fractal::canTurnIntoPolynomWithOpeningParentheses() const
 {
     if (!this->denominator.empty() || this->coefficient.getDenominator() != 1)
@@ -1205,8 +1162,12 @@ QString Fractal::toString() const
     QString result ;
 
     bool was_last_thing_it_need_to_set_sign_after = false;
-    if (!this->coefficient.isOne())
+    if (!(this->coefficient.isOne() || this->coefficient == Number(-1)))
         result += this->coefficient.toString();
+    if (this->coefficient == -1 && this->numerator.size() > 0)
+        result += "-";
+    else if (this->coefficient == -1)
+        result += "-1";
     for (auto &it : this->numerator)
         if (it->getId() != POLYNOMIAL)
         {

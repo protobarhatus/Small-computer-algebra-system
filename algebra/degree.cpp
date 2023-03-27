@@ -19,6 +19,7 @@
 #include "cotangent.h"
 #include "variablesdistributor.h"
 #include "arcsinus.h"
+#include "arctangent.h"
 Degree::Degree(abs_ex && iargument, abs_ex && idegree)
 {
     this->argument = std::move(iargument);
@@ -1160,6 +1161,12 @@ abs_ex Degree::antiderivative(int var) const
             abs_ex a = std::move(qc_f[0]);
             abs_ex b = std::move(qc_f[1]);
             abs_ex c = std::move(qc_f[2]);
+            if (lower(a, zero))
+            {
+                b = b / a;
+                c = c / a;
+                return -toAbsEx(Number(1, 8)) * (b*b + four*c) * atan((b - two*x)/two/copy(this)) - toAbsEx(Number(1, 4))*(b - two*x)*copy(this);
+            }
             return ((b + two* a* x)* copy(this)/(four* a) - ((sqr(b) - four* a* c)* ln(abs(b + two* a* x + two* sqrt(a)* copy(this))))/(numToAbs(8)* pow(a, Number(3)/2)));
         }
     }
