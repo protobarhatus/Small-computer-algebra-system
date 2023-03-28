@@ -33,6 +33,8 @@ public:
 
     StrongCheckResult strongCheck(const abs_ex & root, int var) const;
     QString toString() const;
+    QString makeRenderString() const;
+    QString makeWolframString() const;
 private:
     int var;
     bool is_expr_independent_of_var;

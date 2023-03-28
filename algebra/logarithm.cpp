@@ -273,6 +273,14 @@ QString Logarithm::toString() const
     return "ln(" + this->argument->toString() + ")";
 }
 
+QString Logarithm::makeRenderString() const
+{
+    QString argstr = this->argument->toString();
+    if (argstr.length() > 2)
+        return "ln!(" + argstr + ")";
+    return "ln(" + argstr + ")";
+}
+
 double Logarithm::getApproximateValue()
 {
     return log(this->argument->getApproximateValue());

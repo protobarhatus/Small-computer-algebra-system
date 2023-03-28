@@ -89,6 +89,9 @@ public:
     //отличия от makeStringOfExpression() в том, что makeStringOfExpression расставляет кучу лишних скобочек,
     //а если попытаться это изменить, то полетит часть с заменой переменных на выражения и я хз почему
     virtual QString toString() const = 0;
+    //окей, количество разных форматов стрингов выходит из под контроля. Но хорошего способа избежать кучи разных функций для этого вроде как нет...
+    //это дает строку в формате для рендеринга в той библиотеке что я с гитхаба скачал
+    virtual QString makeRenderString() const = 0;
     virtual double getApproximateValue() = 0;
     //the difference between overload without argument is that this function choose a value for variable from definition by lambda, but other cannot be used with variables andjust throw assert()
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) = 0;

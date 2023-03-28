@@ -277,4 +277,64 @@ QString RootCondition::toString() const
 
 }
 
+QString RootCondition::makeRenderString() const
+{
+    QString res = this->condition_expression->makeRenderString() + "&Symbol(32)&";
+    switch (type) {
+    case LESS_THAN_ZERO:
+        res += "<";
+        break;
+    case LESS_OR_EQUAL_ZERO:
+        res += "Symbol(8804)";
+        break;
+    case EQUAL_ZERO:
+        res += "=";
+        break;
+    case DONT_EQUAL_ZERO:
+        res += "Symbol(8800)";
+        break;
+    case BIGGER_OR_EQUAL_ZERO:
+        res += "Symbol(8805)";
+        break;
+    case BIGGER_THAN_ZERO:
+        res += ">";
+        break;
+    case EQUAL_TWO_PI_INTEGER:
+        res += "= 2*" + QString("Symbol(960)") + "*k,k&Symbol(32)&Symbol(8712)&Symbol(32)&Symbol(8469)";
+        return res;
+        break;
+    }
+    return res + "&Symbol(32)&0";
+}
+
+QString RootCondition::makeWolframString() const
+{
+    QString res = this->condition_expression->makeWolframString() + " ";
+    switch (type) {
+    case LESS_THAN_ZERO:
+        res += "<";
+        break;
+    case LESS_OR_EQUAL_ZERO:
+        res += QString(QChar(8804));
+        break;
+    case EQUAL_ZERO:
+        res += "=";
+        break;
+    case DONT_EQUAL_ZERO:
+        res += QString(QChar(8800));
+        break;
+    case BIGGER_OR_EQUAL_ZERO:
+        res += QString(QChar(8805));
+        break;
+    case BIGGER_THAN_ZERO:
+        res += ">";
+        break;
+    case EQUAL_TWO_PI_INTEGER:
+        res += "= 2*" + QString(QChar(960)) + "*k, k " + QString(QChar(8712)) + " " + QString(QChar(8469));
+        return res;
+        break;
+    }
+    return res + " 0";
+}
+
 

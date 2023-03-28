@@ -168,6 +168,14 @@ QString ArcTangent::toString() const
     return "atan(" + this->argument->toString() + ")";
 }
 
+QString ArcTangent::makeRenderString() const
+{
+    QString argstr = this->argument->toString();
+    if (argstr.length() > 2)
+        return "atan!(" + argstr + ")";
+    return "atan(" + argstr + ")";
+}
+
 double ArcTangent::getApproximateValue()
 {
     return atan(this->argument->getApproximateValue());

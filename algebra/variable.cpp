@@ -137,6 +137,11 @@ QString Variable::toString() const
 {
     return this->makeStringOfExpression();
 }
+
+QString Variable::makeRenderString() const
+{
+    return this->toString();
+}
 double Variable::getApproximateValue()
 {
     assert(false);

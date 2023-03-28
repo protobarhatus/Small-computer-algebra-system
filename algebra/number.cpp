@@ -285,6 +285,11 @@ QString Number::toString() const
 {
     return makeStringOfExpression();
 }
+
+QString Number::makeRenderString() const
+{
+    return toString();
+}
 Number Number::operator+=(const Number &number)
 {
     *this = *this + number;

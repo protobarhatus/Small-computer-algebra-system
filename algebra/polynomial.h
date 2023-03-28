@@ -57,6 +57,7 @@ public:
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
     QString toString() const override;
+    QString makeRenderString() const override;
     abs_ex reduceCommonPart();
     // if it is a sum like sqrt(3)+sqrt(5), it returns result on formula (a+b)(a-b)=a^2-b^2. returns result and multiplier
     std::pair<abs_ex, abs_ex> multiplyIrrationalSumOnAppropriateFormula();

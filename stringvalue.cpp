@@ -20,6 +20,16 @@ QString StringValue::toString() const
     return '"' + this->value + '"';
 }
 
+QString StringValue::makeRenderString() const
+{
+    return "String(\"'" + this->value + "'\")";
+}
+
+QString StringValue::makeWolframString() const
+{
+    return toString();
+}
+
 AbstractValueType StringValue::getId() const
 {
     return VALUE_STRING;

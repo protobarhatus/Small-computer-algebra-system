@@ -26,6 +26,16 @@ QString PolyhedronValue::toString() const
     return str;
 }
 
+QString PolyhedronValue::makeRenderString() const
+{
+    return "String(\"" + toString() + "\")";
+}
+
+QString PolyhedronValue::makeWolframString() const
+{
+    return toString();
+}
+
 AbstractValueType PolyhedronValue::getId() const
 {
     return VALUE_POLYHEDRON;

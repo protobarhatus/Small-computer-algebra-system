@@ -58,6 +58,7 @@ public:
     void out();
     QString toString() const;
     QString toWolframString() const;
+    QString makeRenderString() const;
     friend void testAlgMod();
     friend void _neuLData();
     friend AlgExpr var();

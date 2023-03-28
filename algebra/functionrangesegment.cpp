@@ -177,6 +177,35 @@ QString FunctionRangeSegment::toString() const
     return res;
 }
 
+QString FunctionRangeSegment::makeRenderString() const
+{
+    if (this->min() == nullptr && this->max() == nullptr)
+        return "Symbol(8477)";
+    if (this->isPoint())
+    {
+        return "{" + this->min()->makeRenderString() + "}";
+    }
+    QString res;
+    if (this->isMinIncluded())
+        res += '[';
+    else
+        res += "!(";
+    if (this->min() == nullptr)
+        res += "-" + QString("Symbol(8734)");
+    else
+        res += this->min()->makeRenderString();
+    res += "&Symbol(59)&";
+    if (this->max() == nullptr)
+        res += "Symbol(8734)";
+    else
+        res += this->max()->makeRenderString();
+    if (this->isMaxIncluded())
+        res += ']';
+    else
+        res += ')';
+    return res;
+}
+
 bool FunctionRangeSegment::isEmpty()
 {
     return !(this->min() == nullptr || this->max() == nullptr) &&

@@ -1839,6 +1839,40 @@ QString DifurResult::toString() const
     return res;
 }
 
+QString DifurResult::makeRenderString() const
+{
+    QString res;
+    if (this->type == COMMON_INTEGRAL)
+        res = this->result->makeRenderString() + "&Symbol(32)=Symbol(32)&0";
+    else if (this->type == SOLVED_FOR_X)
+        res = "x&Symbol(32)=Symbol(32)&" + this->result->makeRenderString();
+    else
+        res = "y&Symbol(32)=Symbol(32)&" + this->result->makeRenderString();
+    auto set = this->result->getSetOfVariables();
+    for (auto &it : set)
+        if (isIntegratingConstant(it))
+            res += "&Symbol(32)&Symbol(32)&and&Symbol(32)&Symbol(32)&" + makeIntegratingConstantName(it) + "&Symbol(32)&Symbol(8712)&Symbol(32)&"
+                    + VariablesDistributor::getVariablesDefinition(it)->getRange().makeRenderString();
+    return res;
+}
+
+QString DifurResult::makeWolframString() const
+{
+    QString res;
+    if (this->type == COMMON_INTEGRAL)
+        res = this->result->makeWolframString() + "  = 0";
+    else if (this->type == SOLVED_FOR_X)
+        res = "x = " + this->result->makeWolframString();
+    else
+        res = "y = " + this->result->makeWolframString();
+    auto set = this->result->getSetOfVariables();
+    for (auto &it : set)
+        if (isIntegratingConstant(it))
+            res += "  and  " + makeIntegratingConstantName(it) + " " + QChar(8712) + "  "
+                    + VariablesDistributor::getVariablesDefinition(it)->getRange().toString();
+    return res;
+}
+
 const abs_ex &DifurResult::expr() const
 {
     return this->result;

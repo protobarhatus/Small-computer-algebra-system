@@ -10,6 +10,8 @@ public:
     VectorValue(const Vector<AlgExpr> & expr);
     VectorValue(Vector<AlgExpr> && expr);
     virtual QString toString() const override;
+    virtual QString makeRenderString() const override;
+    virtual QString makeWolframString() const override;
     virtual AbstractValueType getId() const override;
 
     const Vector<AlgExpr>& getValue() const;

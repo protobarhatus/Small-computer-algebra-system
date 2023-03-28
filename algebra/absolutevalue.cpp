@@ -154,6 +154,11 @@ QString AbsoluteValue::toString() const
 {
     return "|" + this->expression->toString() + "|";
 }
+
+QString AbsoluteValue::makeRenderString() const
+{
+    return "|" + this->expression->makeRenderString() + "|";
+}
 double AbsoluteValue::getApproximateValue()
 {
     return abs(this->expression->getApproximateValue());

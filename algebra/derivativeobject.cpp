@@ -140,6 +140,11 @@ QString DerivativeObject::makeWolframString() const
     return string;
 }
 
+QString DerivativeObject::makeRenderString() const
+{
+    return "Strokes(" + (argument)->makeRenderString() + "," + QString::number(order) + ")";
+}
+
 double DerivativeObject::getApproximateValue()
 {
     assert(false);

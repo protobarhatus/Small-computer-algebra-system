@@ -340,6 +340,18 @@ QString FunctionRange::toString() const
     return res;
 }
 
+QString FunctionRange::makeRenderString() const
+{
+    QString res;
+    for (auto it = this->segments.begin(); it != this->segments.end(); ++it)
+    {
+        res += it->makeRenderString();
+        if (next(it) != this->segments.end())
+            res += "&Symbol(32)&Symbol(8899)&Symbol(32)&";
+    }
+    return res;
+}
+
 bool FunctionRange::isSymmetricRelativelyZero() const
 {
     if (this->segments.size() == 1)

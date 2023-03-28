@@ -46,6 +46,8 @@ public:
     const MathExpression& operator=(MathExpression && expr);
 
     QString toString() const;
+    QString makeRenderString() const;
+    QString makeWolframString() const;
     AbstractValueType getType() const;
 
 

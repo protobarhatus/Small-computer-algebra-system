@@ -36,6 +36,7 @@ public:
     bool canBeBiggerThanZero() const;
 
     QString toString() const;
+    QString makeRenderString() const;
     bool isEmpty();
     bool containsZero() const;
 private:

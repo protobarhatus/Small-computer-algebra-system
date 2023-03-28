@@ -50,6 +50,8 @@ public:
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
     QString toString() const override;
+    QString makeRenderString() const override;
+
     bool isRootNumeric();
     long long int getRootValue();
 

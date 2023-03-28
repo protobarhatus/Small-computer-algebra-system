@@ -30,6 +30,34 @@ QString MatrixValue::toString() const
     return res;
 }
 
+QString MatrixValue::makeRenderString() const
+{
+    QString res = "!(Matrix(" + QString::number(this->getValue().columns()) + "," + QString::number(this->getValue().lines());
+    for (int i = 0; i < this->getValue().lines(); ++i)
+    {
+        for (int j = 0; j < this->getValue().columns(); ++j)
+        {
+            res += "," + this->getValue()[i][j].makeRenderString();
+        }
+    }
+    res += "))";
+    return res;
+}
+
+QString MatrixValue::makeWolframString() const
+{
+    QString res=  "{";
+    for (int i = 0; i < this->getValue().lines(); ++i)
+    {
+        res += "{";
+        for (int j = 0; j < this->getValue().columns(); ++j)
+            res += this->getValue()[i][j].toWolframString() + (j < getValue().columns() - 1 ? ", " : "");
+        res += QString("}") + (i < getValue().lines() - 1 ? ", " : "");
+    }
+    res += "}";
+    return res;
+}
+
 AbstractValueType MatrixValue::getId() const
 {
     return VALUE_MATRIX;

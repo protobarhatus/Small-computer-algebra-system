@@ -141,6 +141,11 @@ QString Differential::toString() const
     return sym + "(" + this->argument->makeStringOfExpression() + ")";
 }
 
+QString Differential::makeRenderString() const
+{
+    return "PDiffN(" + this->argument->makeRenderString() + "," + QString::number(order) + ")";
+}
+
 double Differential::getApproximateValue()
 {
     assert(false);

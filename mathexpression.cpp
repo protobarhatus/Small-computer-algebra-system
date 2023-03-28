@@ -146,6 +146,16 @@ QString MathExpression::toString() const
     return this->value->toString();
 }
 
+QString MathExpression::makeRenderString() const
+{
+    return this->value->makeRenderString();
+}
+
+QString MathExpression::makeWolframString() const
+{
+    return this->value->makeWolframString();
+}
+
 AbstractValueType MathExpression::getType() const
 {
     return value->getId();

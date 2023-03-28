@@ -1194,6 +1194,32 @@ QString Fractal::toString() const
         result = result.remove(0, 1);
     return result;
 }
+
+QString Fractal::makeRenderString() const
+{
+    QString mult = "";
+    if (numerator.size() == 0 && denominator.size() == 0)
+        return this->coefficient.makeRenderString();
+    if (coefficient == -1)
+        mult = "-";
+    else if (coefficient != 1)
+        mult = "(" + coefficient.makeRenderString() + ")*";
+
+    if (this->numerator.size() == 0)
+        mult += "1";
+    else
+    {
+        bool first = true;
+        for (auto &it : this->numerator)
+        {
+            mult += (first ? QString("") : QString("*")) + "(" + it->makeRenderString() + ")";
+            first = false;
+        }
+    }
+    for (auto &it : this->denominator)
+        mult += "/(" + it->makeRenderString() + ")";
+    return mult;
+}
 //i need this prefix becouse for some reasons in definition of Fractal::findCommonPart this overloading is not seen
 fractal_argument _findCommonPart(fractal_argument & first, fractal_argument & second)
 {

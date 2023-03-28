@@ -55,6 +55,7 @@ public:
     void normalize();
 
     QString toString() const;
+    QString makeRenderString() const;
     bool isSymmetricRelativelyZero() const;
     bool isEmpty();
     bool containsZero() const;

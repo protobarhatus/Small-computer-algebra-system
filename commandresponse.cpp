@@ -2,7 +2,7 @@
 
 CommandResponse::CommandResponse()
 {
-
+    message = std::vector<QString>(OUTPUT_STRING_TYPES_AMOUNT);
 }
 
 CommandResponse::CommandResponse(const CommandResponse &resp) : _type(resp._type), input_num(resp.input_num), message(resp.message)
@@ -23,7 +23,7 @@ int CommandResponse::inputNumber() const
     return this->input_num;
 }
 
-QString CommandResponse::getMessage() const
+const std::vector<QString>& CommandResponse::getMessage() const
 {
     return this->message;
 }
@@ -33,7 +33,7 @@ CommandResponse::Type CommandResponse::type() const
     return _type;
 }
 
-CommandResponse acceptedInputCommandRespond(int input_num, const QString & out_message)
+CommandResponse acceptedInputCommandRespond(int input_num, const std::vector<QString> & out_message)
 {
     CommandResponse resp;
     resp._type = CommandResponse::ACCEPTED_INPUT;
@@ -42,7 +42,7 @@ CommandResponse acceptedInputCommandRespond(int input_num, const QString & out_m
     return resp;
 }
 
-CommandResponse errorCommandRespond(const QString &error_message)
+CommandResponse errorCommandRespond(const std::vector<QString> &error_message)
 {
     CommandResponse resp;
     resp._type = CommandResponse::ERROR;

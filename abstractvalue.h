@@ -23,6 +23,8 @@ public:
     AbstractValue();
     virtual ~AbstractValue();
     virtual QString toString() const = 0;
+    virtual QString makeRenderString() const = 0;
+    virtual QString makeWolframString() const = 0;
     virtual AbstractValueType getId() const = 0;
 
     virtual std::unique_ptr<AbstractValue> operator+(const std::unique_ptr<AbstractValue> & b) const = 0;

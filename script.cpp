@@ -33,7 +33,8 @@ void Script::setCommands(const std::vector<QString> &commands)
 {
     this->commands = commands;
 }
-QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
+//это конечно ужас потом надо отрефакторить
+std::vector<QString> executeEquationSolving(QString equation, const ScriptsNameSpace & space)
 {
     equation = deleteOuterBreakets(deleteSpaces(equation));
     std::pair<QString, std::vector<QString>> func_solve;
@@ -42,25 +43,27 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
     } catch (const QString & mes) {
 
     }
-    auto buildAnswerFromNonDifferentialEquation = [&space](const AlgExpr & equation, const QString & var)->QString
+    auto buildAnswerFromNonDifferentialEquation = [&space](const AlgExpr & equation, const QString & var)->std::vector<QString>
     {
         std::list<AlgExpr> roots;
         try {
             auto varexpr = parseAndComplete(var, space);
             if (varexpr.getType() != VALUE_ALGEBRAIC_EXPRESSION)
-                throw QIODevice::tr("Решать можно только для переменных, представляющих объекты элементарной алгебры");
+                throw QIODevice::tr("Решать (пока что) можно только для переменных, представляющих объекты элементарной алгебры");
             roots = solveEquation(equation, varexpr.getAlgExprValue());
         } catch (...) {
-            return QIODevice::tr("Нет корней или программа не может найти корни");
+            return {QIODevice::tr("String(\"Нет корней или программа не может найти корни\")"),
+                        QIODevice::tr("Нет корней или программа не может найти корни")};
         }
 
         if (roots.size() == 0)
-            return QIODevice::tr("Нет корней или программа не может найти корни");
+            return {QIODevice::tr("String(\"Нет корней или программа не может найти корни\")"),
+                        QIODevice::tr("Нет корней или программа не может найти корни")};
         std::vector<AlgExpr> roots_vectors;
         for (auto &it : roots)
             roots_vectors.push_back(it);
         auto selectes = selectRootsAndConditions(roots_vectors, space.getConditions(), parseAndComplete(var, space).getAlgExprValue().getExpr()->getId());
-        QString res;
+        /*QString res;
         for (auto &it : selectes.first)
             res += var + " = " + it.toString() + "<br>";
         if (selectes.second.size() > 0)
@@ -70,7 +73,40 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
                 res += it.toString() + "<br>,";
             res += "}<br>";
         }
-        return res;
+        return res;*/
+        QString render_string_res;
+        if (selectes.second.size() > 0)
+            render_string_res = "System(";
+        if (selectes.first.size() == 1)
+            render_string_res += selectes.first.begin()->makeRenderString();
+        else
+        {
+            render_string_res += "[Matrix(1," + QString::number(selectes.first.size());
+            for (auto &it : selectes.first)
+                render_string_res += "," + var + "&Symbol(32)=Symbol(32)&" +it.makeRenderString();
+            render_string_res += "]";
+        }
+
+        if (selectes.second.size() > 0)
+        {
+            render_string_res += ",";
+            for (auto &it : selectes.second)
+                render_string_res += it.makeRenderString()+",";
+            render_string_res = render_string_res.left(render_string_res.length() - 1);
+            render_string_res += ")";
+        }
+
+        QString wolfram_res;
+        for (auto &it : selectes.first)
+            wolfram_res += var + " = " + it.toString() + "<br>";
+        if (selectes.second.size() > 0)
+        {
+            wolfram_res += "AND {<br>";
+            for (auto &it : selectes.second)
+                wolfram_res += it.toString() + "<br>,";
+            wolfram_res += "}<br>";
+        }
+        return {render_string_res, wolfram_res};
 
     };
     if (func_solve.first == "SolveFor")
@@ -121,7 +157,8 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
         auto roots = solveDifur(eq.getAlgExprValue(), parseAndComplete("x", space).getAlgExprValue()
                                 , parseAndComplete("y", space).getAlgExprValue());
         if (roots.first.size() == 0)
-            return QIODevice::tr("Нет решений или программа не может их найти");
+            return {QIODevice::tr("String(\"Нет решений или программа не может их найти\")"),
+                        QIODevice::tr("Нет решений или программа не может их найти")};
         for (auto &it : roots.first)
             downgradeIntegratingConstantsIndexes(it.expr());
         std::vector<DifurResult> rtsvec;
@@ -129,7 +166,7 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
             rtsvec.push_back(it);
         auto selected = selectRootsAndConditions(rtsvec, space.getConditions(),
                                                  parseAndComplete("y", space).getAlgExprValue().getExpr()->getId());
-        QString res;
+        /*QString res;
         for (auto &it : selected.first)
             res += it.toString() + "<br>";
         if (selected.second.size() > 0)
@@ -143,7 +180,45 @@ QString executeEquationSolving(QString equation, const ScriptsNameSpace & space)
         for (auto &it : roots.second)
             res += std::move(it) + "<br>";
         res += "#$";
-        return res;
+        return res;*/
+        QString render_string_res;
+        if (selected.second.size() > 0)
+            render_string_res = "System(";
+        if (selected.first.size() == 1)
+            render_string_res += selected.first.begin()->makeRenderString();
+        else
+        {
+            render_string_res += "[Matrix(1," + QString::number(selected.first.size());
+            for (auto &it : selected.first)
+                render_string_res += "," + it.makeRenderString();
+            render_string_res += "]";
+        }
+
+        if (selected.second.size() > 0)
+        {
+            render_string_res += ",";
+            for (auto &it : selected.second)
+                render_string_res += it.makeRenderString()+",";
+            render_string_res = render_string_res.left(render_string_res.length() - 1);
+            render_string_res += ")";
+        }
+
+        //да это вообще не вольфрам но и фиг с ним целью не стоит покрыть вообще весь синтаксис вольфрамом
+        QString wolfram_string_res;
+        for (auto &it : selected.first)
+            wolfram_string_res += it.toString() + "<br>";
+        if (selected.second.size() > 0)
+        {
+            wolfram_string_res += "AND {<br>";
+            for (auto &it : selected.second)
+                wolfram_string_res += it.toString() + ",<br>";
+            wolfram_string_res += "}<br>";
+        }
+        wolfram_string_res += "#^<" + equation + "#>";
+        for (auto &it : roots.second)
+            wolfram_string_res += std::move(it) + "<br>";
+        wolfram_string_res += "#$";
+        return {render_string_res, wolfram_string_res};
     }
     auto vars = eq.getAlgExprValue().getExpr()->getSetOfVariables();
     if (vars.size() > 1)
@@ -225,29 +300,29 @@ std::vector<CommandResponse> Script::execute(const std::vector<QString> &command
         auto request_type = defineTypeOfRequest(commands[i]);
         if (request_type == REQUEST_TYPE_WRONG_REQUEST)
         {
-            result[i] = errorCommandRespond("Wrong request");
+            result[i] = errorCommandRespond({"Wrong request"});
             continue;
         }
         else if (request_type == REQUEST_TYPE_EXPRESSION)
         {
             try {
                 MathExpression res = parseAndComplete(commands[i], space);
-                result[i] = acceptedInputCommandRespond(input_counter++, res.toString());
+                result[i] = acceptedInputCommandRespond(input_counter++, {res.makeRenderString(), res.makeWolframString()});
             } catch (const QString &error) {
-                result[i] = errorCommandRespond(error);
+                result[i] = errorCommandRespond({error});
             } catch (...) {
-                result[i] = errorCommandRespond("");
+                result[i] = errorCommandRespond({"Error"});
             }
         }
         else if (request_type == REQUEST_TYPE_EQUATION)
         {
             try {
-                QString res = executeEquationSolving(commands[i], space);
+                std::vector<QString> res = executeEquationSolving(commands[i], space);
                 result[i] = acceptedInputCommandRespond(input_counter++, res);
             } catch (const QString &error) {
-                result[i] = errorCommandRespond(error);
+                result[i] = errorCommandRespond({error});
             } catch (...) {
-                result[i] = errorCommandRespond("");
+                result[i] = errorCommandRespond({"Error"});
             }
         }
         else if (request_type == REQUEST_TYPE_ASSIGNATION)
@@ -256,9 +331,9 @@ std::vector<CommandResponse> Script::execute(const std::vector<QString> &command
                 executeAssignation(commands[i], space);
                 result[i] = skippedCommandRespond();
             } catch (const QString &error) {
-                result[i] = errorCommandRespond(error);
+                result[i] = errorCommandRespond({error});
             } catch (...) {
-                result[i] = errorCommandRespond("");
+                result[i] = errorCommandRespond({"Error"});
             }
         }
 

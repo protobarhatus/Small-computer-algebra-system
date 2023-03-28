@@ -178,6 +178,14 @@ QString ArcSinus::toString() const
     return "asin(" + this->argument->toString() + ")";
 }
 
+QString ArcSinus::makeRenderString() const
+{
+    QString argstr = this->argument->toString();
+    if (argstr.length() > 2)
+        return "asin!(" + argstr + ")";
+    return "asin(" + argstr + ")";
+}
+
 double ArcSinus::getApproximateValue()
 {
     return asin(this->argument->getApproximateValue());

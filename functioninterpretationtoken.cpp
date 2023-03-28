@@ -19,6 +19,18 @@ AbstractValueType FunctionInterpretationToken::getId() const
     return VALUE_FUNCTION_TOKEN;
 }
 
+QString FunctionInterpretationToken::makeRenderString() const
+{
+    assert(false);
+    return "";
+}
+
+QString FunctionInterpretationToken::makeWolframString() const
+{
+    assert(false);
+    return "";
+}
+
 std::unique_ptr<AbstractValue> FunctionInterpretationToken::operator+(const std::unique_ptr<AbstractValue> &b) const
 {
     assert(false);

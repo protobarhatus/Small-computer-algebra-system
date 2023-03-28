@@ -48,6 +48,16 @@ QString PolygonValue::toString() const
     return res;
 }
 
+QString PolygonValue::makeRenderString() const
+{
+    return "String(\"" + toString() + "\")";
+}
+
+QString PolygonValue::makeWolframString() const
+{
+    return toString();
+}
+
 AbstractValueType PolygonValue::getId() const
 {
     return VALUE_POLYGON;

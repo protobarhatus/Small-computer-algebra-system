@@ -11,6 +11,8 @@ public:
     PolyhedronValue(Polyhedron && val);
 
     virtual QString toString() const override;
+    virtual QString makeRenderString() const override;
+    virtual QString makeWolframString() const override;
     virtual AbstractValueType getId() const override;
 
     virtual std::unique_ptr<AbstractValue> operator+(const std::unique_ptr<AbstractValue> & b) const override;

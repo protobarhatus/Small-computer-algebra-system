@@ -31,6 +31,22 @@ QString VectorValue::toString() const
     return str;
 }
 
+QString VectorValue::makeRenderString() const
+{
+    QString res= "!(Matrix(1," + QString::number(this->getValue().size());
+    for (int i = 0; i < this->getValue().size(); ++i)
+        res += "," + this->getValue()[i].makeRenderString();
+    return res + "))";
+}
+
+QString VectorValue::makeWolframString() const
+{
+    QString res = "{";
+    for (int i = 0; i < this->getValue().size(); ++i)
+        res += getValue()[i].toWolframString() + (i < getValue().size() - 1 ? ", " : "");
+    return res + "}";
+}
+
 AbstractValueType VectorValue::getId() const
 {
     return VALUE_VECTOR;

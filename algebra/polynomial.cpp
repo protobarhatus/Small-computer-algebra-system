@@ -858,6 +858,24 @@ QString Polynomial::toString() const
         result = result.remove(0, 1);
     return result;
 }
+
+QString Polynomial::makeRenderString() const
+{
+    bool first = true;
+    QString str=monomials.begin()->get()->makeRenderString();
+    for (auto &it : monomials)
+    {
+        if (first)
+        {
+            first = false;
+            continue;
+        }
+        if (it->getCoefficient().compareWith(0) > 0)
+            str += "+";
+        str += it->makeRenderString();
+    }
+    return str;
+}
 abs_ex Polynomial::reduceCommonPart()
 {
     NONCONST

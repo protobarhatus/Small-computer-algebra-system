@@ -66,6 +66,50 @@ SOURCES += \
     analitical_geometry/polyhedron.cpp \
     analitical_geometry/polyhedrondefinitioncomponent.cpp \
     commandresponse.cpp \
+    expressions_drawer/abstract_big_parent_expression.cpp \
+    expressions_drawer/abstract_expression.cpp \
+    expressions_drawer/abstract_parent_expression.cpp \
+    expressions_drawer/abstract_twin_parent_expression.cpp \
+    expressions_drawer/argument_expression.cpp \
+    expressions_drawer/asterix_expression.cpp \
+    expressions_drawer/at_value_expression.cpp \
+    expressions_drawer/base_expression.cpp \
+    expressions_drawer/bracketed_expression.cpp \
+    expressions_drawer/cap_expression.cpp \
+    expressions_drawer/case_expression.cpp \
+    expressions_drawer/chain_expression.cpp \
+    expressions_drawer/character_expression.cpp \
+    expressions_drawer/circulation_expression.cpp \
+    expressions_drawer/comma_expression.cpp \
+    expressions_drawer/common_function_expression.cpp \
+    expressions_drawer/custom_text_expression.cpp \
+    expressions_drawer/empty_expression.cpp \
+    expressions_drawer/expression_builder.cpp \
+    expressions_drawer/extended_number_expresssion.cpp \
+    expressions_drawer/fraction_expression.cpp \
+    expressions_drawer/frame_expression.cpp \
+    expressions_drawer/function_expression.cpp \
+    expressions_drawer/function_name_expression.cpp \
+    expressions_drawer/group_expression.cpp \
+    expressions_drawer/index_expression.cpp \
+    expressions_drawer/integral_expression.cpp \
+    expressions_drawer/lambda_expression.cpp \
+    expressions_drawer/limit_expression.cpp \
+    expressions_drawer/matrix_expression.cpp \
+    expressions_drawer/nabla_expression.cpp \
+    expressions_drawer/null_expression.cpp \
+    expressions_drawer/number_expresssion.cpp \
+    expressions_drawer/planck_expression.cpp \
+    expressions_drawer/product_expression.cpp \
+    expressions_drawer/root_expression.cpp \
+    expressions_drawer/round_bracketed_expression.cpp \
+    expressions_drawer/sign_expression.cpp \
+    expressions_drawer/simple_expression.cpp \
+    expressions_drawer/space_expression.cpp \
+    expressions_drawer/stand_expression.cpp \
+    expressions_drawer/strokes_expression.cpp \
+    expressions_drawer/summa_expression.cpp \
+    expressions_drawer/variable_expression.cpp \
     form.cpp \
     functioninterpretationtoken.cpp \
     functionliteral.cpp \
@@ -85,6 +129,7 @@ SOURCES += \
     planevalue.cpp \
     polygonvalue.cpp \
     polyhedronvalue.cpp \
+    qimageedit.cpp \
     script.cpp \
     scriptsnamespace.cpp \
     scripttextfield.cpp \
@@ -145,6 +190,51 @@ HEADERS += \
     analitical_geometry/polyhedron.h \
     analitical_geometry/polyhedrondefinitioncomponent.h \
     commandresponse.h \
+    expressions_drawer/abstract_big_parent_expression.h \
+    expressions_drawer/abstract_expression.h \
+    expressions_drawer/abstract_parent_expression.h \
+    expressions_drawer/abstract_twin_parent_expression.h \
+    expressions_drawer/argument_expression.h \
+    expressions_drawer/asterix_expression.h \
+    expressions_drawer/at_value_expression.h \
+    expressions_drawer/base_expression.h \
+    expressions_drawer/bracketed_expression.h \
+    expressions_drawer/cap_expression.h \
+    expressions_drawer/case_expression.h \
+    expressions_drawer/chain_expression.h \
+    expressions_drawer/character_expression.h \
+    expressions_drawer/circulation_expression.h \
+    expressions_drawer/comma_expression.h \
+    expressions_drawer/common_function_expression.h \
+    expressions_drawer/custom_text_expression.h \
+    expressions_drawer/empty_expression.h \
+    expressions_drawer/expression_builder.h \
+    expressions_drawer/extended_number_expresssion.h \
+    expressions_drawer/fraction_expression.h \
+    expressions_drawer/frame_expression.h \
+    expressions_drawer/function_expression.h \
+    expressions_drawer/function_name_expression.h \
+    expressions_drawer/global.h \
+    expressions_drawer/group_expression.h \
+    expressions_drawer/index_expression.h \
+    expressions_drawer/integral_expression.h \
+    expressions_drawer/lambda_expression.h \
+    expressions_drawer/limit_expression.h \
+    expressions_drawer/matrix_expression.h \
+    expressions_drawer/nabla_expression.h \
+    expressions_drawer/null_expression.h \
+    expressions_drawer/number_expresssion.h \
+    expressions_drawer/planck_expression.h \
+    expressions_drawer/product_expression.h \
+    expressions_drawer/root_expression.h \
+    expressions_drawer/round_bracketed_expression.h \
+    expressions_drawer/sign_expression.h \
+    expressions_drawer/simple_expression.h \
+    expressions_drawer/space_expression.h \
+    expressions_drawer/stand_expression.h \
+    expressions_drawer/strokes_expression.h \
+    expressions_drawer/summa_expression.h \
+    expressions_drawer/variable_expression.h \
     form.h \
     functioninterpretationtoken.h \
     functionliteral.h \
@@ -163,6 +253,7 @@ HEADERS += \
     planevalue.h \
     polygonvalue.h \
     polyhedronvalue.h \
+    qimageedit.h \
     script.h \
     scriptsnamespace.h \
     scripttextfield.h \
@@ -188,5 +279,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 DISTFILES += \
     algebra/algebra_mod.qmodel \
     algebra/algebra_modul_behavior.qmodel \ \
-    difurs_examples
+    difurs_examples \
+    expressions_drawer/math_expressions.pri
 

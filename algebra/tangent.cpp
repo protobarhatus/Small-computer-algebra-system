@@ -243,6 +243,14 @@ QString Tangent::toString() const
     return "tan(" + this->argument->toString() + ")";
 }
 
+QString Tangent::makeRenderString() const
+{
+    QString argstr = this->argument->toString();
+    if (argstr.length() > 2)
+        return "tan!(" + argstr + ")";
+    return "tan(" + argstr + ")";
+}
+
 double Tangent::getApproximateValue()
 {
     return tan(this->argument->getApproximateValue());

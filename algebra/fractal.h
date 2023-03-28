@@ -70,6 +70,8 @@ public:
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
     QString toString() const override;
+    QString makeRenderString() const override;
+
     abs_ex findCommonPart(Fractal * frac);
     void sortVariablesInIncreasingOfTheirId();
     void pushBackToNumerator(abs_ex && expr);

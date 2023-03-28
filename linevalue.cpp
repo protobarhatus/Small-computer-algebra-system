@@ -22,6 +22,17 @@ QString LineValue::toString() const
             "; " + value.getBaseVector().y().toString() + "; " + value.getBaseVector().z().toString() + ")";
 }
 
+QString LineValue::makeRenderString() const
+{
+    return "String(\"" + toString() + "\")";
+}
+
+QString LineValue::makeWolframString() const
+{
+    return toString();
+}
+
+
 AbstractValueType LineValue::getId() const
 {
     return VALUE_LINE;

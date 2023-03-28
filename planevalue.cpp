@@ -61,9 +61,19 @@ QString PlaneValue::toString() const
 
 }
 
+QString PlaneValue::makeRenderString() const
+{
+    return "String(\"" + toString() + "\")";
+}
+
 AbstractValueType PlaneValue::getId() const
 {
     return VALUE_PLANE;
+}
+
+QString PlaneValue::makeWolframString() const
+{
+    return toString();
 }
 
 std::unique_ptr<AbstractValue> PlaneValue::operator+(const std::unique_ptr<AbstractValue> &b) const

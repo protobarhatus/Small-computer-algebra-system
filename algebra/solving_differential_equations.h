@@ -14,6 +14,8 @@ public:
     DifurResult (const DifurResult & res);
     DifurResult (DifurResult && res);
     QString toString() const;
+    QString makeRenderString() const;
+    QString makeWolframString() const;
     const abs_ex &expr() const;
     Type getType() const;
     abs_ex toCommonIntegral(int x, int y) const;

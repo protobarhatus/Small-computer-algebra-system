@@ -25,6 +25,7 @@ public:
     virtual QString makeStringOfExpression() const override;
     virtual QString makeWolframString() const override;
     QString toString() const override;
+    QString makeRenderString() const override;
 
     virtual double getApproximateValue() override;
     virtual double getApproximateValue(const std::function<double (VariablesDefinition *)> & choosing_value_rule) override;

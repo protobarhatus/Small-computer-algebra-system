@@ -210,6 +210,14 @@ QString Cosinus::toString() const
 {
     return "cos(" + this->argument->toString() + ")";
 }
+
+QString Cosinus::makeRenderString() const
+{
+    QString argstr = this->argument->toString();
+    if (argstr.length() > 2)
+        return "cos!(" + argstr + ")";
+    return "cos(" + argstr + ")";
+}
 double Cosinus::getApproximateValue()
 {
     return cos(this->argument->getApproximateValue());

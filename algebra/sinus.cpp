@@ -206,6 +206,14 @@ QString Sinus::toString() const
 {
     return "sin(" + this->argument->toString() + ")";
 }
+
+QString Sinus::makeRenderString() const
+{
+    QString argstr = this->argument->toString();
+    if (argstr.length() > 2)
+        return "sin!(" + argstr + ")";
+    return "sin(" + argstr + ")";
+}
 double Sinus::getApproximateValue()
 {
     return sin(this->argument->getApproximateValue());

@@ -87,6 +87,13 @@ QString Constant::makeWolframString() const
     return this->makeStringOfExpression();
 }
 
+QString Constant::makeRenderString() const
+{
+    if (this->name == QChar(L'π'))
+        return "pi";
+    return this->makeStringOfExpression();
+}
+
 QString Constant::toString() const
 {
     return this->name;

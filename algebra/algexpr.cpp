@@ -359,6 +359,11 @@ QString AlgExpr::toWolframString() const
 {
     return this->expression->makeWolframString();
 }
+
+QString AlgExpr::makeRenderString() const
+{
+    return this->expression->makeRenderString();
+}
 AlgExpr var()
 {
     AlgExpr expr;

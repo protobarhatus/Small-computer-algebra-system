@@ -240,6 +240,14 @@ QString Cotangent::toString() const
     return "cot(" + this->argument->toString() + ")";
 }
 
+QString Cotangent::makeRenderString() const
+{
+    QString argstr = this->argument->toString();
+    if (argstr.length() > 2)
+        return "cot!(" + argstr + ")";
+    return "cot(" + argstr + ")";
+}
+
 double Cotangent::getApproximateValue()
 {
     return tan(this->argument->getApproximateValue());

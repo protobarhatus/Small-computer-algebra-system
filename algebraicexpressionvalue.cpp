@@ -21,6 +21,16 @@ QString AlgebraicExpressionValue::toString() const
     return this->value.toString();
 }
 
+QString AlgebraicExpressionValue::makeRenderString() const
+{
+    return this->value.makeRenderString();
+}
+
+QString AlgebraicExpressionValue::makeWolframString() const
+{
+    return this->value.toWolframString();
+}
+
 AbstractValueType AlgebraicExpressionValue::getId() const
 {
     return VALUE_ALGEBRAIC_EXPRESSION;

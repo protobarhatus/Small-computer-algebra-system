@@ -1000,6 +1000,15 @@ QString Degree::toString() const
     }
     return result;
 }
+
+QString Degree::makeRenderString() const
+{
+    if (*degree == *half)
+        return "sqrt(" + this->argument->makeRenderString() + ")";
+    if (this->degree->getId() == NUMBER && (Number(1) / *static_cast<Number*>(this->degree.get())).isInteger())
+        return "Root(" + QString::number((Number(1) / *static_cast<Number*>(this->degree.get())).getNumerator()) + "," + argument->makeRenderString() + ")";
+    return "(" + this->argument->makeRenderString() + ")^(" + this->degree->makeRenderString() + ")";
+}
 bool Degree::isRootNumeric()
 {
     return this->degree->getId() == NUMBER || (this->degree->getId() == FRACTAL && static_cast<Fractal*>(this->degree.get())->getFractal().second->empty());
