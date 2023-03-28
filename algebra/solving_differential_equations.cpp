@@ -14,6 +14,7 @@
 #include "sinus.h"
 #include "cosinus.h"
 #include "algebra/algexpr.h"
+#include <QIODevice>
 
 QString formula(const QString & text)
 {

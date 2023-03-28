@@ -1,3 +1,4 @@
+#include <QIODevice>
 #include "polyhedron.h"
 #include "geometry_3d.h"
 

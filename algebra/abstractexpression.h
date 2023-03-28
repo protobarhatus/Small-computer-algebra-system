@@ -7,6 +7,7 @@
 #include <vector>
 #include <array>
 #include "functionrange.h"
+#include <QIODevice>
 #define SIM_IF_NEED if (this->simplified) return; //else this->simplified = true;
 #define NONCONST this->simplified = false;
 class AbstractExpression;

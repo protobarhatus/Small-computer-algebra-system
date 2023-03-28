@@ -16,54 +16,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    ../../mo2/Balloon/balloontip.cpp \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_comma.cpp \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_extsymbol.cpp \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_lambda.cpp \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_nabla.cpp \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_plank.cpp \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_sign.cpp \
-    ../../mo2/ExprDraw/Number/texpr_expnumber.cpp \
-    ../../mo2/ExprDraw/Number/texpr_number.cpp \
-    ../../mo2/ExprDraw/Parent/BigParent/CommonFunc/texpr_commonfunc.cpp \
-    ../../mo2/ExprDraw/Parent/BigParent/CommonFunc/texpr_func.cpp \
-    ../../mo2/ExprDraw/Parent/BigParent/texpr_atvalue.cpp \
-    ../../mo2/ExprDraw/Parent/BigParent/texpr_bigparent.cpp \
-    ../../mo2/ExprDraw/Parent/BigParent/texpr_ratio.cpp \
-    ../../mo2/ExprDraw/Parent/BigParent/texpr_root.cpp \
-    ../../mo2/ExprDraw/Parent/Chain/Bracketed/texpr_argument.cpp \
-    ../../mo2/ExprDraw/Parent/Chain/Bracketed/texpr_base.cpp \
-    ../../mo2/ExprDraw/Parent/Chain/Bracketed/texpr_bracketed.cpp \
-    ../../mo2/ExprDraw/Parent/Chain/Bracketed/texpr_round.cpp \
-    ../../mo2/ExprDraw/Parent/Chain/texpr_chain.cpp \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_circ.cpp \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_groupop.cpp \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_integral.cpp \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_prod.cpp \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_summa.cpp \
-    ../../mo2/ExprDraw/Parent/TwinParent/texpr_index.cpp \
-    ../../mo2/ExprDraw/Parent/TwinParent/texpr_twinparent.cpp \
-    ../../mo2/ExprDraw/Parent/texpr_cap.cpp \
-    ../../mo2/ExprDraw/Parent/texpr_case.cpp \
-    ../../mo2/ExprDraw/Parent/texpr_lim.cpp \
-    ../../mo2/ExprDraw/Parent/texpr_matrix.cpp \
-    ../../mo2/ExprDraw/Parent/texpr_parent.cpp \
-    ../../mo2/ExprDraw/Parent/texpr_stand.cpp \
-    ../../mo2/ExprDraw/Simple/texpr_asterix.cpp \
-    ../../mo2/ExprDraw/Simple/texpr_customtext.cpp \
-    ../../mo2/ExprDraw/Simple/texpr_funcname.cpp \
-    ../../mo2/ExprDraw/Simple/texpr_simple.cpp \
-    ../../mo2/ExprDraw/Simple/texpr_var.cpp \
-    ../../mo2/ExprDraw/texpr_class.cpp \
-    ../../mo2/ExprDraw/texpr_empty.cpp \
-    ../../mo2/ExprDraw/texpr_space.cpp \
-    ../../mo2/ExprDraw/texpr_strokes.cpp \
-    ../../mo2/ExprMake/texpr_builder.cpp \
-    ../../mo2/ExprMake/texpr_error.cpp \
-    ../../mo2/exprguidepaintwidget.cpp \
-    ../../mo2/exprguidewidget.cpp \
-    ../../mo2/testexprmakewidget.cpp \
-    ../../mo2/testpaintwidget.cpp \
     abstractvalue.cpp \
     algebra/Matrix.inl \
     algebra/Vector.inl \
@@ -143,56 +95,6 @@ SOURCES += \
     vectorvalue.cpp
 
 HEADERS += \
-    ../../mo2/Balloon/balloontip.h \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_comma.h \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_extsymbol.h \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_lambda.h \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_nabla.h \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_plank.h \
-    ../../mo2/ExprDraw/ExtSymbol/texpr_sign.h \
-    ../../mo2/ExprDraw/Number/texpr_expnumber.h \
-    ../../mo2/ExprDraw/Number/texpr_number.h \
-    ../../mo2/ExprDraw/Parent/BigParent/CommonFunc/texpr_commonfunc.h \
-    ../../mo2/ExprDraw/Parent/BigParent/CommonFunc/texpr_func.h \
-    ../../mo2/ExprDraw/Parent/BigParent/texpr_atvalue.h \
-    ../../mo2/ExprDraw/Parent/BigParent/texpr_bigparent.h \
-    ../../mo2/ExprDraw/Parent/BigParent/texpr_ratio.h \
-    ../../mo2/ExprDraw/Parent/BigParent/texpr_root.h \
-    ../../mo2/ExprDraw/Parent/Chain/Bracketed/texpr_argument.h \
-    ../../mo2/ExprDraw/Parent/Chain/Bracketed/texpr_base.h \
-    ../../mo2/ExprDraw/Parent/Chain/Bracketed/texpr_bracketed.h \
-    ../../mo2/ExprDraw/Parent/Chain/Bracketed/texpr_round.h \
-    ../../mo2/ExprDraw/Parent/Chain/texpr_chain.h \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_circ.h \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_groupop.h \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_integral.h \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_prod.h \
-    ../../mo2/ExprDraw/Parent/TwinParent/GroupOp/texpr_summa.h \
-    ../../mo2/ExprDraw/Parent/TwinParent/texpr_index.h \
-    ../../mo2/ExprDraw/Parent/TwinParent/texpr_twinparent.h \
-    ../../mo2/ExprDraw/Parent/texpr_cap.h \
-    ../../mo2/ExprDraw/Parent/texpr_case.h \
-    ../../mo2/ExprDraw/Parent/texpr_lim.h \
-    ../../mo2/ExprDraw/Parent/texpr_matrix.h \
-    ../../mo2/ExprDraw/Parent/texpr_parent.h \
-    ../../mo2/ExprDraw/Parent/texpr_stand.h \
-    ../../mo2/ExprDraw/Simple/texpr_asterix.h \
-    ../../mo2/ExprDraw/Simple/texpr_customtext.h \
-    ../../mo2/ExprDraw/Simple/texpr_funcname.h \
-    ../../mo2/ExprDraw/Simple/texpr_simple.h \
-    ../../mo2/ExprDraw/Simple/texpr_var.h \
-    ../../mo2/ExprDraw/expr_draw.h \
-    ../../mo2/ExprDraw/expr_draw_pro.h \
-    ../../mo2/ExprDraw/texpr_class.h \
-    ../../mo2/ExprDraw/texpr_empty.h \
-    ../../mo2/ExprDraw/texpr_space.h \
-    ../../mo2/ExprDraw/texpr_strokes.h \
-    ../../mo2/ExprMake/texpr_builder.h \
-    ../../mo2/ExprMake/texpr_error.h \
-    ../../mo2/exprguidepaintwidget.h \
-    ../../mo2/exprguidewidget.h \
-    ../../mo2/testexprmakewidget.h \
-    ../../mo2/testpaintwidget.h \
     abstractvalue.h \
     algebra/Matrix.h \
     algebra/Vector.h \
@@ -284,13 +186,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 DISTFILES += \
-    ../../mo2/ExprDraw/ExprDraw.pri \
-    ../../mo2/ExprGuide.pro.user \
-    ../../mo2/ExprMake/ExprMake.pri \
-    ../../mo2/icon.rc \
-    ../../mo2/icon.svg \
     algebra/algebra_mod.qmodel \
     algebra/algebra_modul_behavior.qmodel \
 
-SUBDIRS += \
-    ../../mo2/ExprGuide.pro

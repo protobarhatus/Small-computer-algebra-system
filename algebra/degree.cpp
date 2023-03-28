@@ -19,6 +19,7 @@
 #include "cotangent.h"
 #include "variablesdistributor.h"
 #include "arcsinus.h"
+#include <QIODevice>
 Degree::Degree(abs_ex && iargument, abs_ex && idegree)
 {
     this->argument = std::move(iargument);

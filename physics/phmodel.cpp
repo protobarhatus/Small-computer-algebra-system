@@ -2,6 +2,7 @@
 #include "algebra/variablesdistributor.h"
 #include "algebra/solving_equations.h"
 #include "algebra/constant.h"
+#include <QIODevice>
 PhModel::PhModel()
 {
 

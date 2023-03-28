@@ -1,9 +1,10 @@
 #include "parser.h"
-#include <QRegExp>
 #include <stack>
 #include "algebra/algexpr.h"
 #include "vectorvalue.h"
 #include "matrixvalue.h"
+#include <QRegularExpression>
+
 bool isOpenBreaket( QChar  sym)
 {
     return sym == '(' || sym == '[';
@@ -340,7 +341,7 @@ std::list<QString> tryToSplitAmongBreaketsMultiplications(const QString & expr)
 bool isDerivativeObject(const QString & expr)
 {
    // return expr.contains(QRegExp("^\\w[\\w\\d]*\'+$"));
-    return expr.contains(QRegExp("^y\'+$"));
+    return expr.contains(QRegularExpression("^y\'+$"));
 }
 MathExpression parseDerivativeObject(const QString & expr, const ScriptsNameSpace & scripts_space)
 {
@@ -407,7 +408,7 @@ MathExpression parseContainer(QString  expr, const ScriptsNameSpace & scripts_sp
 }
 bool isContainer(const QString& expr)
 {
-    if (!  (expr[0] == "{" && expr.back() == "}"))
+    if (!  (expr[0] == '{' && expr.back() == '}'))
         return false;
     int fig_breaket_balance = 1;
     for (int i = 1; i < expr.length(); ++i)

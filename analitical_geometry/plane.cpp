@@ -4,6 +4,7 @@
 #include <cmath>
 #include <vector>
 #include "geometry_3d.h"
+#include <QIODevice>
 Plane::Plane()
 {
 }

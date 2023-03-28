@@ -1,5 +1,5 @@
 #include "geometry_3d.h"
-
+#include <QIODevice>
 #define sq(X) ((X)*(X))
 AlgExpr distance(const AlgVector & point, const Plane & plane)
 {

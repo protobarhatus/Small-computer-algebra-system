@@ -1,5 +1,5 @@
 #include "linevalue.h"
-
+#include <QIODevice>
 LineValue::LineValue()
 {
 

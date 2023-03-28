@@ -17,6 +17,7 @@
 #include "sinus.h"
 #include "cosinus.h"
 #include "constant.h"
+#include <QIODevice>
 
 Polynomial::Polynomial()
 {

@@ -10,6 +10,7 @@
 #include "absolutevalue.h"
 #include "solving_differential_equations.h"
 #include "equationrootsconditions.h"
+#include <QIODevice>
 class AlgExpr
 {
 public:

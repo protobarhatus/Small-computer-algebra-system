@@ -22,6 +22,7 @@
 #include "differential.h"
 #include "solving_differential_equations.h"
 #include "factorization.h"
+#include <QIODevice>
 Fractal::Fractal() : coefficient(1)
 {
 
@@ -1173,7 +1174,7 @@ QString Fractal::makeStringOfExpression() const
         else
             result += "/(" + it->makeStringOfExpression() + ")";
     result += ")";
-    if (result[1] == "*")
+    if (result[1] == '*')
         result = result.remove(1, 1);
     return result;
 }
@@ -1195,7 +1196,7 @@ QString Fractal::makeWolframString() const
             result += "/" + it->makeWolframString();
         else
             result += "/(" + it->makeWolframString() + ")";
-    if (result[0] == "*")
+    if (result[0] == '*')
         result = result.remove(0, 1);
     return result;
 }
@@ -1228,7 +1229,7 @@ QString Fractal::toString() const
             result += " / " + it->toString();
         else
             result += " / (" + it->toString() + ")";
-    if (result[0] == "*")
+    if (result[0] == '*')
         result = result.remove(0, 1);
     return result;
 }
