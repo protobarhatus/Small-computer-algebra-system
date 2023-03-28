@@ -150,7 +150,7 @@ ScriptsNameSpace::ScriptsNameSpace()
                                     throw QString("Argument of D() should be object of elementary algebra");
                                 return MathExpression(D(std::move(args[0].getAlgExprValue())));}, true)});
 
-    this->functions.insert({"D", FunctionLiteral("D", 2, [](std::vector<MathExpression>&& args) {
+    this->functions.insert({"D", FunctionLiteral("D", 2, [](std::vector<MathExpression>&& args)->MathExpression {
                                 if (args[0].getType() == VALUE_ALGEBRAIC_EXPRESSION &&
                                         args[1].getType() == VALUE_ALGEBRAIC_EXPRESSION)
                                 {

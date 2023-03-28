@@ -925,6 +925,6 @@ AlgExpr teylor(const AlgExpr & expr, const AlgVector & values, int order)
 {
     std::vector<abs_ex> point(values.size());
     for (int i = 0; i < values.size(); ++i)
-        point[i] = copy(values[i].expression);
-    return teylor(expr.expression, point, order);
+        point[i] = copy(values[i].getExpr());
+    return teylor(expr.getExpr(), point, order);
 }

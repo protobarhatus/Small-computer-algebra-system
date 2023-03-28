@@ -80,6 +80,7 @@ public:
     friend AlgExpr derivative(const AlgExpr & arg, AlgExpr arg_variable);
     friend AlgExpr D(const AlgExpr & arg);
     friend AlgExpr D(AlgExpr && arg);
+    friend AlgExpr D(const AlgExpr & arg, int order);
 
 
     friend AlgExpr operator+(const AlgExpr & left, const AlgExpr & right);
@@ -223,8 +224,13 @@ AlgExpr expand(const AlgExpr & expr);
 std::list<AlgExpr> solveEquation(const AlgExpr & equation, const AlgExpr & var);
 std::pair<std::list<DifurResult>, std::vector<QString>> solveDifur(const AlgExpr & difur, const AlgExpr & x, const AlgExpr & y);
 AlgExpr degToRad(const AlgExpr & deg);
+AlgExpr gcd(const AlgExpr &a, const AlgExpr &b);
+AlgExpr certainVar(const QString &name);
 
 template <typename T>
 class Vector;
 void replaceSystemVariablesToExpressions(Vector<AlgExpr> & expression, const std::map<int, abs_ex> & vars);
+AlgExpr teylor(const AlgExpr & expr, const Vector<AlgExpr> & values, int order);
+Vector<AlgExpr> derivative(const Vector<AlgExpr> &expr, const AlgExpr &arg);
+Vector<AlgExpr> derivative(Vector<AlgExpr> &&expr, const AlgExpr &arg);
 #endif // ALGEXPR_H

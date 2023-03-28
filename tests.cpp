@@ -7,7 +7,7 @@
 #include "random"
 #include "algebra\some_algebra_expression_conversions.h"
 #include "algebra/solving_equations.h"
-
+#include "algebra/Vector.h"
 
 #define A(x) AlgExpr(x)
 bool testRootFunction()
@@ -43,6 +43,7 @@ bool testRootFunction()
     }
     return true;
 }
+
 void testAlgMod()
 {
     std::vector<std::function<bool (void)>> test_functions = {
