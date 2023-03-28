@@ -434,7 +434,7 @@ bool isPointsCombination(const QString & expr, const ScriptsNameSpace & scripts_
     if (spl.size() <= 1)
         return false;
     for (auto &it : spl)
-        if (!scripts_space.hasVariable(it))
+        if (!scripts_space.hasVariable(it) || scripts_space.getVariable(it).getType() != VALUE_VECTOR)
             return false;
     return true;
 }
@@ -475,7 +475,10 @@ MathExpression parseAndComplete(QString expr, const ScriptsNameSpace & scripts_s
     if (sum.size() > 1)
     {
         auto it = sum.begin();
-        result = parseAndComplete(it->second, scripts_space);
+        if (it->first == '+')
+            result = parseAndComplete(it->second, scripts_space);
+        else
+            result = AlgExpr(-1)*parseAndComplete(it->second, scripts_space);
         for (++it; it != sum.end(); ++it)
         {
             if (it->first == '+')

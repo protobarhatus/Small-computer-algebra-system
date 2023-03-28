@@ -1407,6 +1407,11 @@ void testAlgMod()
     AlgExpr x = var();
     //тест на бесконечную рекурсию
     return sin(x)*(1+cos(x)+pow(cos(x), 2))==sin(x)*(1+cos(x)+pow(cos(x), 2));
+},
+[]()->bool {
+    AlgExpr x = var();
+    AlgExpr y = var();
+    return teylor(pow(euler(), 2*x)*cos(y), AlgVector(0, 0), 2) == A(1) / 2 * (-1 * pow(y, 2) + 2 + 4 * x + 4 * pow(x, 2));
 }
     };
 
@@ -1433,7 +1438,7 @@ void testAlgMod()
           qDebug() << it;
   }
 
-  VariablesDistributor::clear();
+      VariablesDistributor::clear();
 }
  #include "physics/phmodel.h"
 void testPhysMod()
@@ -1502,4 +1507,78 @@ void testPhysMod()
   }
 
   ConstantsManager::clearVariables();
+  VariablesDistributor::clear();
   }
+void physicsTest()
+{
+    qDebug() << "STARTING ";
+   /* PhModel model;
+    model.setDimensionNumber(1);
+    auto obj = model.addObject("obj", model.makeSimpleKinematicObject({0,0},{2, 1}, {0, -10}));
+
+    model.completeContinuityCicle();
+
+   // model[obj]->statePositionAt(5, {40});
+    //model[obj]->statePositionAt(2, {10});
+    qDebug() << model[obj]->positionAt(A(1)/5).x().toString();
+    qDebug() << model[obj]->positionAt(A(1)/5).y().toString();*/
+
+    AlgExpr v = var("v"), a = var("a"), m = var("m");
+
+    PhModel model;
+    model.setDimensionNumber(2);
+    model.setGiven({v, a, m});
+    model.setEnableGravityField(true);
+    auto obj = model.addObject("obj", model.makeSimpleDynamicObject({0, 0}, {v*cos(a), v*sin(a)}, {0,0}, m));
+
+    model.completeContinuityCicle();
+
+    AlgVector pos = model[obj]->positionAt(var("t"));
+    qDebug() << pos.x().toString();
+    qDebug() << pos.y().toString();
+}
+
+
+
+#include "analitical_geometry/geometry_3d.h"
+#include "algebra/polynom.h"
+void out(const Polynom & p)
+{
+    auto debug = qDebug();
+    for (int i = p.deg();i >= 0; --i)
+    {
+        if (i != 0)
+            debug << " + " << p[i].toInt() << "x^" << i;
+        else
+            debug << " + " << p[i].toInt();
+    }
+}
+void out(const AlgVector & vec)
+{
+    qDebug() << "(" << vec.x().toString() << "; " << vec.y().toString() << "; " << vec.z().toString() << ")";
+}
+void out (const Plane & plane)
+{
+    qDebug() << "A: " << plane.a().toString();
+    qDebug() << "B: " << plane.b().toString();
+    qDebug() << "C: " << plane.c().toString();
+    qDebug() << "D: " << plane.d().toString();
+}
+void geoTest()
+{
+   // getBaseRightPolygon(1, 5);
+
+    auto polygon = getBaseRightPolygon(4, 3);
+    auto pir = makePiramidOverPolygon(polygon, (polygon[0] + polygon[1])/ 2, 2, "TABC");
+
+    pir.addPoint((pir["B"] + pir["C"]) / 2, "L");
+    out(pir.plane("TAB"));
+    auto alpha = getPlaneThroughTwoPointsAndPerpendicularToPlane(pir["T"], pir["L"], pir.plane("TAB"));
+    auto a = pir.section(alpha);
+    out(getPlaneThroughTwoPointsAndPerpendicularToPlane(pir["T"], pir["L"], pir.plane("TAB")));
+    qDebug() << area(a).toString();
+    qDebug() << angle(pir.line("TC"), alpha).toString();
+
+   // qDebug() << surface(prizm.section(prizm.plane("MNK"))).toWolframString();
+   // qDebug() << angle(prizm.plane("MNK"), prizm.plane("ABC")).toWolframString();
+}

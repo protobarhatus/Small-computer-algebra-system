@@ -187,5 +187,6 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 DISTFILES += \
     algebra/algebra_mod.qmodel \
-    algebra/algebra_modul_behavior.qmodel \
+    algebra/algebra_modul_behavior.qmodel \ \
+    difurs_examples
 

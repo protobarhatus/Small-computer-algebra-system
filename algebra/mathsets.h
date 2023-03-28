@@ -10,6 +10,7 @@ public:
     static std::set<int> & getPrimesSet();
     static const std::vector<std::vector<long long int>> & getBinomialCoefs();
     static const std::vector<long long int> & getBinomialCoefs(int degree);
+    //n - сколько выбрать, k - из скольки
     static long long int combinations(int n, int k);
     static int maxDegreeOfBinomialCoefs();
 private:
@@ -26,4 +27,8 @@ private:
     void makeBinomialCoefficients(int n);
 };
 
+
+long long int fact(long long int f);
+
+bool incrementSumm(std::vector<long long int> & vec);
 #endif // MATHSETS_H

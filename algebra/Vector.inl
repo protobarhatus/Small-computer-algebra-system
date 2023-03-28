@@ -146,7 +146,8 @@ template<typename T>
 const T& Vector<T>::z() const
 {
 	if (this->_size < 3)
-		throw "reference to nonexistent dimension";
+        throw "reference to nonexistent dimension";
+     //   return 0;
     return this->vector[2];
 }
 template<typename T>

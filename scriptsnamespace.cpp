@@ -9,6 +9,9 @@
 #include "planevalue.h"
 #include "linevalue.h"
 #include "polyhedronvalue.h"
+#include "algebra/number.h"
+//y'' == (6000000-y)/6000000* 10*1- 1*(2*pi / 86400)^2*(6000000-y)
+#include "algebra/number.h"
 ScriptsNameSpace::ScriptsNameSpace()
 {
     for (int i = 0; i < 26; ++i)
@@ -33,6 +36,12 @@ ScriptsNameSpace::ScriptsNameSpace()
     this->functions.insert({"_SUB", getSubFunction()});
     this->functions.insert({"_MULT", getMultFunction()});
     this->functions.insert({"_DIV", getDivFunction()});
+    //!TODO: clean up variable distributor after every script execution
+    this->functions.insert({"var", FunctionLiteral("var", 1, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_STRING)
+                                    throw QIODevice::tr("Аргумент функции var должен быть строкой");
+                                return MathExpression(certainVar(args[0].getStringValue()));
+                            })});
 
     this->functions.insert({"sqrt", FunctionLiteral("sqrt", 1, [this](std::vector<MathExpression>&& args)->MathExpression {
                                 if (args[0].getType() != VALUE_ALGEBRAIC_EXPRESSION)
@@ -142,10 +151,22 @@ ScriptsNameSpace::ScriptsNameSpace()
                                 return MathExpression(D(std::move(args[0].getAlgExprValue())));}, true)});
 
     this->functions.insert({"D", FunctionLiteral("D", 2, [](std::vector<MathExpression>&& args) {
-                                if (args[0].getType() != VALUE_ALGEBRAIC_EXPRESSION ||
-                                        args[1].getType() != VALUE_ALGEBRAIC_EXPRESSION)
-                                    throw QString("Arguments of D() should be objects of elementary algebra");
-                                return MathExpression(derivative(std::move(args[0].getAlgExprValue()), args[1].getAlgExprValue()));}, true)});
+                                if (args[0].getType() == VALUE_ALGEBRAIC_EXPRESSION &&
+                                        args[1].getType() == VALUE_ALGEBRAIC_EXPRESSION)
+                                {
+                                    if (args[1].getAlgExprValue().getExpr()->getId() == NUMBER)
+                                        return MathExpression(D(std::move(args[0].getAlgExprValue()), toIntegerNumber(args[1].getAlgExprValue().getExpr())));
+                                    return MathExpression(derivative(std::move(args[0].getAlgExprValue()), args[1].getAlgExprValue()));
+                                }
+                                if (args[0].getType() == VALUE_VECTOR && args[1].getType() == VALUE_ALGEBRAIC_EXPRESSION)
+                                {
+
+                                    return MathExpression(derivative(std::move(args[0].getVectorValue()), args[1].getAlgExprValue()));
+                                }
+                                throw QIODevice::tr("Неправильные аргументы функции D()");
+                            }, true)});
+
+
 
     this->functions.insert({"Integrate", FunctionLiteral("Integrate", 2, [](std::vector<MathExpression>&& args) {
                                 if (args[0].getType() != VALUE_ALGEBRAIC_EXPRESSION ||
@@ -583,6 +604,66 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
                                     throw QIODevice::tr("Volume() принимает многогранник");
                                 return args[0].getPolyhedron().getValue().volume();
                             }, true)});
+    this->functions.insert({"Teylor", FunctionLiteral("Teylor", 3, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Первый аргумент Teylor должен быть выражением");
+                                if (args[1].getType() != VALUE_VECTOR)
+                                    throw QIODevice::tr("Второй аргумент Teylor должен быть вектором значений ВСЕХ переменных функции");
+                                if (args[2].getType() != VALUE_ALGEBRAIC_EXPRESSION &&
+                                    args[2].getAlgExprValue().getExpr()->getId() != NUMBER)
+                                    throw QIODevice::tr("Третий аргумент Teylor должен быть числом - порядком до которого раскладывать");
+                                return teylor(args[0].getAlgExprValue(), args[1].getVectorValue(), toInt(args[2].getAlgExprValue()));
+                            }, true)});
+    this->functions.insert({"Transpose", FunctionLiteral("Transpose", 1, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_MATRIX)
+                                    throw QIODevice::tr("Аргумент должен быть матрицей");
+                                return transpose(args[0].getMatrixValue());
+                            })});
+    this->functions.insert({"T", FunctionLiteral("T", 1, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() != VALUE_MATRIX)
+                                    throw QIODevice::tr("Аргумент должен быть матрицей");
+                                return transpose(args[0].getMatrixValue());
+                            })});
+    this->functions.insert({"vec", FunctionLiteral("vec", 1, [this](std::vector<MathExpression> && args) {
+                                if (args[0].getType() == VALUE_ALGEBRAIC_EXPRESSION)
+                                    return AlgVector(args[0].getAlgExprValue());
+                                if (args[0].getType() == VALUE_MATRIX)
+                                {
+                                    const Matrix<AlgExpr>& mat = args[0].getMatrixValue();
+                                    if (mat.lines() == 1)
+                                        return mat[0];
+                                    if (mat.columns() == 1)
+                                    {
+                                        AlgVector res = AlgVector::create(mat.lines());
+                                        for (int i = 0; i < mat.lines(); ++i)
+                                            res[i] = mat[i][0];
+                                        return res;
+                                    }
+                                    throw QIODevice::tr("Данная матрица не может быть превращена в вектор");
+                                }
+                                throw QIODevice::tr("Аргумент должен быть числом либо матрицей");
+                            })});
+    this->functions.insert({"Identic", FunctionLiteral("Identic", 1, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_ALGEBRAIC_EXPRESSION)
+                                    throw QIODevice::tr("Identic[] принимает число");
+                                AlgExpr arg = args[0].getAlgExprValue();
+                                if (arg.getExpr()->getId() != NUMBER || !isIntegerNumber(arg.getExpr()))
+                                    throw QIODevice::tr("Аргументом функции Identic должно быть константное целое число");
+                                int n = toIntegerNumber(arg.getExpr());
+                                return MathExpression(makeUnitMatrix<AlgExpr>(n));
+                            })});
+    this->functions.insert({"Gramm", FunctionLiteral("Gram", 1, [this](std::vector<MathExpression> && args)->MathExpression {
+                                if (args[0].getType() != VALUE_MATRIX)
+                                    throw QIODevice::tr("Gramm принимает квадратную матрицу");
+                                const Matrix<AlgExpr>& mat = args[0].getMatrixValue();
+                                if (mat.lines() != mat.columns())
+                                    throw QIODevice::tr("матрица в Gramm должна быть квадратной");
+                                return MathExpression(Matrix<AlgExpr>(mat.lines(), mat.columns(), [&mat](int i, int j)->AlgExpr {return scalar(mat[i], mat[j]);}));
+                            })});
+    this->functions.insert({"ScalarG", FunctionLiteral("Gram", 3, [this](std::vector<MathExpression> && args)->MathExpression {
+                            return (transpose(args[0].getMatrixValue()) * args[2].getMatrixValue() * args[1].getMatrixValue())[0][0];
+                            })});
+
 
 
 
@@ -723,3 +804,21 @@ FunctionLiteral getDivFunction()
             return args[0] / args[1];
         },true);
 }
+
+
+/*y''-a*y'+4*y == x^2+x
+
+
+M = {{1; 2; 3}; {2; 3; 4}; {5; 6*sqrt(2); 7}}
+
+M + {{5; a; b}; {1; 1; 1}; {3; 4; 5}}
+
+Inverse[M]
+
+Det[M]
+rect = RegularPolygon["ABCDEF", 3]
+pyramid = Pyramid[rect, 3, Center[rect], "H"]
+ABC
+ABH
+Angle[ABC, ABH]*/
+

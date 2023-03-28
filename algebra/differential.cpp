@@ -3,12 +3,19 @@
 #include "number.h"
 #include <cmath>
 #include "variablesdistributor.h"
+#include "fractal.h"
+#include "number.h"
 Differential::Differential(const abs_ex &arg)
 {
     this->argument = copy(arg);
     this->simplify();
 }
-
+Differential::Differential(const abs_ex & arg, int order)
+{
+    this->argument = copy(arg);
+    this->order = order;
+    this->simplify();
+}
 Differential::Differential(abs_ex &arg)
 {
     this->argument = std::move(arg);
@@ -18,11 +25,13 @@ Differential::Differential(abs_ex &arg)
 Differential::Differential(const Differential &cop)
 {
     this->argument = copy(cop.argument);
+    this->order = cop.order;
 }
 
 Differential::Differential(Differential &&mov)
 {
     this->argument = std::move(mov.argument);
+    this->order = mov.order;
 }
 
 Differential::~Differential()
@@ -39,6 +48,13 @@ void Differential::simplify()
 {
     SIM_IF_NEED
     this->argument->simplify();
+    this->argument = this->argument->downcast();
+    if (this->argument->getId() == DIFFERENTIAL)
+    {
+        this->order++;
+        abs_ex arg = std::move(static_cast<Differential*>(argument.get())->argument);
+        this->argument = std::move(arg);
+    }
     this->simplified = true;
 }
 
@@ -99,21 +115,30 @@ void Differential::_qDebugOut()
 
 QString Differential::makeStringOfExpression() const
 {
-    if (this->argument->getId() > 0)
-        return "d" + this->argument->makeStringOfExpression();
-    return "d(" + this->argument->makeStringOfExpression() + ")";
+    QString sym = "d";
+    if (order > 1)
+        sym += "^" + QString::number(order);
+    if (this->argument->getId() > 0 && order == 1)
+        return sym + this->argument->makeStringOfExpression();
+    return sym + "(" + this->argument->makeStringOfExpression() + ")";
 }
 
 QString Differential::makeWolframString() const
 {
-    return "D[" + argument->makeWolframString() + "]";
+    QString sym = "D";
+    if (order > 1)
+        sym += "^" + QString::number(order);
+    return sym + "[" + argument->makeWolframString() + "]";
 }
 
 QString Differential::toString() const
 {
-    if (this->argument->getId() > 0)
-        return "d" + this->argument->makeStringOfExpression();
-    return "d(" + this->argument->makeStringOfExpression() + ")";
+    QString sym = "d";
+    if (order > 1)
+        sym += "^" + QString::number(order);
+    if (this->argument->getId() > 0 && order == 1)
+        return sym + this->argument->makeStringOfExpression();
+    return sym + "(" + this->argument->makeStringOfExpression() + ")";
 }
 
 double Differential::getApproximateValue()
@@ -261,9 +286,18 @@ bool Differential::operator<(const AbstractExpression &expr) const
     return AbstractExpression::less(this->argument.get(), static_cast<Differential*>(const_cast<AbstractExpression*>(&expr))->argument.get());
 }
 
+std::list<abs_ex> copy(const std::list<abs_ex> & list)
+{
+    std::list<abs_ex> res;
+    for (auto &it : list)
+        res.push_back(copy(it));
+    return res;
+}
+
 abs_ex fullDifferential(const abs_ex &expr)
 {
     //qDebug() << expr->makeStringOfExpression();
+
     auto set = expr->getSetOfVariables();
     abs_ex res = copy(zero);
     for (auto &it : set)
@@ -275,10 +309,49 @@ abs_ex fullDifferential(const abs_ex &expr)
 
 abs_ex D(const abs_ex &arg)
 {
-    return abs_ex(new Differential(arg));
+    return abs_ex(new Differential(arg))->downcast();
 }
 
 abs_ex D(abs_ex &&arg)
 {
-    return abs_ex(new Differential(std::move(arg)));
+    return abs_ex(new Differential(std::move(arg)))->downcast();
+}
+
+#include "mathsets.h"
+abs_ex D(const abs_ex & arg, int order)
+{
+    if (order == 1)
+        return D(arg);
+    if (arg->getId() > 0)
+    {
+        return abs_ex(new Differential(arg, order));
+    }
+    auto vars = arg->getSetOfVariables();
+    std::vector<long long int> degrees(vars.size(), 0);
+    std::vector<int> vars_vec;
+    for (auto &it : vars)
+        vars_vec.push_back(it);
+
+    degrees[0] = order;
+
+    abs_ex result = copy(zero);
+
+    long long int factorial = fact(order);
+    do
+    {
+        abs_ex deriv = copy(arg);
+        abs_ex Diff = copy(one);
+        for (int i = 0; i < vars.size(); ++i)
+        {
+            for (int j = 0; j < degrees[i]; ++j)
+                deriv = deriv->derivative(vars_vec[i]);
+            if(degrees[i] > 0)
+                Diff = Diff * D(getVariableExpr(vars_vec[i]), degrees[i]);
+        }
+        long long int multiplier = factorial;
+        for (auto &it : degrees)
+            multiplier /= fact(it);
+        result = result + numToAbs(multiplier)* deriv * Diff;
+    }while(incrementSumm(degrees));
+    return result;
 }

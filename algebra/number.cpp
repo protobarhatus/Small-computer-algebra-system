@@ -304,7 +304,7 @@ Number Number::operator/=(const Number &number)
 }
 bool Number::operator!=(const Number & num) const
 {
-    return !(*const_cast<Number*>(this) == *const_cast<Number*>(&num));
+    return !(*this == num);
 }
 double Number::getApproximateValue()
 {
@@ -320,11 +320,11 @@ double Number::getApproximateValue(const std::function<double (VariablesDefiniti
     return this->getApproximateValue();
 }
 
-bool Number::operator==(long long num)
+bool Number::operator==(long long num) const
 {
     return this->numerator == num && this->denominator == 1;
 }
-bool Number::operator==(const Number & num)
+bool Number::operator==(const Number & num) const
 {
     return this->numerator == num.numerator && this->denominator == num.denominator;
 }

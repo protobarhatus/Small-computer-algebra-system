@@ -67,5 +67,8 @@ Matrix<T> inverse(Matrix<T> matrix);
 template<typename T>
 Matrix<T> rotationMatrix2D(const T& angle);
 
+template<typename T>
+Matrix<T> transpose(const Matrix<T> & mat);
+
 #include "Matrix.inl"
 #endif

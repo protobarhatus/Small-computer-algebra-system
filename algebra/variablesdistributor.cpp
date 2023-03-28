@@ -86,6 +86,8 @@ Variable VariablesDistributor::createVariable(VariablesDefinition definition, co
     distr.variables.push_back(new VariablesDefinition(definition));
     return Variable(Variable::id_counter, distr.variables[Variable::id_counter - 1]);
 }
+
+
 void VariablesDistributor::deleteVariables()
 {
     for (auto &it : this->variables)
@@ -182,6 +184,11 @@ void VariablesDistributor::addDifferentialLine(const Variable &var, const std::v
         line[i].definition->addDifferentialLine(var.getId(), {line[i - 1].getId(), line[i + 1].getId()});
     line.back().definition->addDifferentialLine(var.getId(), {line[line.size() - 2].getId(), -1});
 
+}
+
+bool VariablesDistributor::hasVariable(const QString &name)
+{
+    return VariablesNameDistributor::hasName(name);
 }
 
 

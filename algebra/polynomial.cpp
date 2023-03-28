@@ -692,7 +692,8 @@ std::pair<std::unique_ptr<Polynomial>, std::unique_ptr<Polynomial>> Polynomial::
         *divinders_monomials = *divinders_monomials - &subtrahend;
         //qDebug() << "DIFF: " << divinders_monomials->makeStringOfExpression();
         deg_of_max = divinders_monomials->getMaxDegreeOfVariable(argument_variables_id);
-        if (last_deg_of_max == deg_of_max ||
+        //хрень с (const Number) полнейший костыль потому что три года назад я накрутил полнейшую херню с перегрузками сравнения и теперь я ебал это все править
+        if ((const Number)last_deg_of_max == deg_of_max ||
                 (last_deg_of_max - deg_of_max).compareWith(0) < 0)
             return {nullptr, nullptr};
         last_deg_of_max = deg_of_max;
@@ -759,7 +760,8 @@ Polynomial Polynomial::getCoefficientOfMaxDegreeOfVariable(int id)
         Number it_deg = it->getMaxDegreeOfVariable(id);
         if (it_deg.isCorrect())
         {
-            if (it_deg == degree)
+            //хрень с (const Number) полнейший костыль потому что три года назад я накрутил полнейшую херню с перегрузками сравнения и теперь я ебал это все править
+            if ((const Number)it_deg == degree)
             {
                 result.pushBack(it->getFractalWithoutVariable(id));
             }

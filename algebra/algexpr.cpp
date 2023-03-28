@@ -16,6 +16,8 @@
 #include "polynomials_factorization.h"
 #include "Vector.h"
 #include "algebra/Vector.h"
+#include "variablesnamedistributor.h"
+#include "algebra/Vector.h"
 AlgExpr::AlgExpr()
 {
     this->expression = copy(zero);
@@ -349,7 +351,10 @@ QString AlgExpr::toString() const
                     + VariablesDistributor::getVariablesDefinition(it)->getRange().toString();
     return res;
 }
-
+AlgExpr D(const AlgExpr & arg, int order)
+{
+    return D(arg.expression, order);
+}
 QString AlgExpr::toWolframString() const
 {
     return this->expression->makeWolframString();
@@ -872,4 +877,54 @@ AlgExpr inf()
 AlgExpr minusInf()
 {
     return AlgExpr(getMinusInf());
+}
+
+Vector<AlgExpr> derivative(const Vector<AlgExpr> &expr, const AlgExpr &arg)
+{
+    Vector<AlgExpr> res = Vector<AlgExpr>::create(expr.size());
+    for (int i = 0; i < expr.size(); ++i)
+    {
+        res[i] = derivative(expr[i], arg);
+    }
+    return res;
+}
+
+Vector<AlgExpr> derivative(Vector<AlgExpr> &&expr, const AlgExpr &arg)
+{
+    Vector<AlgExpr> res = Vector<AlgExpr>::create(expr.size());
+    for (int i = 0; i < expr.size(); ++i)
+    {
+        res[i] = derivative(std::move(expr[i]), arg);
+    }
+    return res;
+}
+
+AlgExpr gcd(const AlgExpr &a, const AlgExpr &b)
+{
+    if (a.getExpr()->getId() == FRACTAL && b.getExpr()->getId() == FRACTAL)
+    {
+        abs_ex res = (static_cast<Fractal*>(a.getExpr().get())->findCommonPart(static_cast<Fractal*>(b.getExpr().get())));
+        res->simplify();
+        return res->downcast();
+    }
+    abs_ex frac1 (new Fractal(a.getExpr().get()));
+    abs_ex frac2 (new Fractal(b.getExpr().get()));
+    abs_ex res = static_cast<Fractal*>(frac1.get())->findCommonPart(static_cast<Fractal*>(frac2.get()));
+    res->simplify();
+    return res->downcast();
+}
+
+AlgExpr certainVar(const QString &name)
+{
+    if (VariablesDistributor::hasVariable(name))
+        return getVariableExpr(VariablesNameDistributor::getId(name));
+    return var(name);
+}
+
+AlgExpr teylor(const AlgExpr & expr, const AlgVector & values, int order)
+{
+    std::vector<abs_ex> point(values.size());
+    for (int i = 0; i < values.size(); ++i)
+        point[i] = copy(values[i].expression);
+    return teylor(expr.expression, point, order);
 }

@@ -8,6 +8,7 @@ class Differential : public AbstractExpression
 public:
     Differential(const abs_ex & arg);
     Differential(abs_ex & arg);
+    Differential(const abs_ex & arg, int order);
     Differential(const Differential & cop);
     Differential(Differential && mov);
     virtual ~Differential();
@@ -54,8 +55,10 @@ public:
     bool hasUndefinedVariable() const override;
 private:
     virtual bool operator<(const AbstractExpression & expr) const override;
+    int order = 1;
 };
 abs_ex D(const abs_ex & arg);
 abs_ex D(abs_ex && arg);
+abs_ex D(const abs_ex & arg, int order);
 abs_ex fullDifferential(const abs_ex & expr);
 #endif // DIFFERENTIAL_H

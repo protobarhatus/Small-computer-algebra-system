@@ -1,5 +1,5 @@
 #include "variablesnamedistributor.h"
-
+#include <assert.h>
 VariablesNameDistributor::VariablesNameDistributor()
 {
 
@@ -13,6 +13,7 @@ void VariablesNameDistributor::addVariable(int id, QString name)
 {
     VariablesNameDistributor::get().vars_table.insert(std::pair<int, QString>(id, name));
     VariablesNameDistributor::get().used_names.insert(name);
+    VariablesNameDistributor::get().names_vars_table.insert({name, id});
 }
 QString VariablesNameDistributor::getName(int id)
 {
@@ -44,8 +45,20 @@ QString VariablesNameDistributor::getNextIndexedName(const QString &name)
     return name + str;
 }
 
+bool VariablesNameDistributor::hasName(const QString &name)
+{
+    return VariablesNameDistributor::get().used_names.find(name) != VariablesNameDistributor::get().used_names.end();
+}
+
+int VariablesNameDistributor::getId(const QString &name)
+{
+    assert(VariablesNameDistributor::hasName(name));
+    return VariablesNameDistributor::get().names_vars_table.find(name)->second;
+}
+
 void VariablesNameDistributor::_clear()
 {
     VariablesNameDistributor::get().vars_table.clear();
     VariablesNameDistributor::get().used_names.clear();
+    VariablesNameDistributor::get().names_vars_table.clear();
 }

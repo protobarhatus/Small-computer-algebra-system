@@ -234,4 +234,9 @@ abs_ex operator-(abs_ex && left, abs_ex && right);
 
 abs_ex operator-(const abs_ex & arg);
 abs_ex operator-(abs_ex && arg);
+
+
+
+abs_ex teylor(const abs_ex & arg, const std::vector<abs_ex> & point, int order);
+
 #endif // ABSTRACTEXPRESSION_H

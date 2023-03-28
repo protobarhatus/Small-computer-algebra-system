@@ -12,12 +12,17 @@ public:
 
     static QString getNextIndexedName(const QString & name);
 
+    static bool hasName(const QString & name);
+
+    static int getId(const QString & name);
+
     static void _clear();
 private:
     VariablesNameDistributor();
     VariablesNameDistributor(const VariablesNameDistributor &) = delete;
     void operator=(const VariablesNameDistributor &) = delete;
     std::map<int, QString> vars_table;
+    std::map<QString, int> names_vars_table;
     std::set<QString> used_names;
 };
 

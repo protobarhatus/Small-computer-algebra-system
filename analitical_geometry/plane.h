@@ -34,7 +34,7 @@ public:
 private:
     AlgExpr _a, _b, _c, _d;
 
-
+    void getRidOfGcd();
     //bool has_counted_units_vectors = false;
     //Vector3d abscissa_unit_vector, ordinata_unit_vector;
     //Line3d abscissa_axis, ordinata_axis;
