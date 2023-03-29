@@ -63,3 +63,20 @@ For a differential equation, the program will not only solve it, but also provid
 ![image](https://user-images.githubusercontent.com/51193423/228589026-37382928-274f-4855-8456-fd29b55b4f1d.png)
 ![image](https://user-images.githubusercontent.com/51193423/228589566-ee199076-c234-4a3d-bdbb-7f8108b21ce3.png)
 
+## Geometry work
+Also, the program has a variaty of tools to solve geometry problems, especially similar to ones in the Unified State Exam (ЕГЭ, профиль). For geometry, there are several types of entities in language:
+* Line
+* Plane
+* Polygon
+* Polyhedron
+
+Here are couple of examples of using the program to solve some geometry tasks.
+Here is a problem from USE (ЕГЭ):
+![image](https://user-images.githubusercontent.com/51193423/228616823-695d796d-2d42-4e09-9ea3-9a6d7c394e94.png)
+
+
+And this is a bit harder: the problem is from "a step to the future" (Шаг в будущее) school olimpiad. It requires to firstly solve an equation and then recalculate some entities:
+![image](https://user-images.githubusercontent.com/51193423/228614500-10fed1e8-d291-4c90-807f-7ec73f03c068.png)
+
+![image](https://user-images.githubusercontent.com/51193423/228614893-02ba5db8-7fd0-4b3d-979f-8e1fc07c250b.png)
+
