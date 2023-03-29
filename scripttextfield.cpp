@@ -19,7 +19,7 @@ void ScriptTextField::keyPressEvent(QKeyEvent *e)
 {
    // qDebug() << this->textCursor().position();
     //qDebug() << "released";
-    if (!isCursorChangingKey(e))
+    if (!isCursorChangingKey(e) && e->key() != Qt::Key_Alt)
         this->deleteSystemMarks();
     if (e->modifiers().testFlag(Qt::ShiftModifier))
     {

@@ -170,7 +170,7 @@ QString ArcTangent::toString() const
 
 QString ArcTangent::makeRenderString() const
 {
-    QString argstr = this->argument->toString();
+    QString argstr = this->argument->makeRenderString();
     if (argstr.length() > 2)
         return "atan!(" + argstr + ")";
     return "atan(" + argstr + ")";

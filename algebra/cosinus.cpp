@@ -213,7 +213,7 @@ QString Cosinus::toString() const
 
 QString Cosinus::makeRenderString() const
 {
-    QString argstr = this->argument->toString();
+    QString argstr = this->argument->makeRenderString();
     if (argstr.length() > 2)
         return "cos!(" + argstr + ")";
     return "cos(" + argstr + ")";

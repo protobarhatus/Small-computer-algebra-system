@@ -242,7 +242,7 @@ QString Cotangent::toString() const
 
 QString Cotangent::makeRenderString() const
 {
-    QString argstr = this->argument->toString();
+    QString argstr = this->argument->makeRenderString();
     if (argstr.length() > 2)
         return "cot!(" + argstr + ")";
     return "cot(" + argstr + ")";

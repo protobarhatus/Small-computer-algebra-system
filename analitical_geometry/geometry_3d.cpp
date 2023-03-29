@@ -337,7 +337,7 @@ AlgVector getIntersection(const Line3d &a, const Line3d &b)
                                                                                                     {a.getBaseVector().z(), -1 * b.getBaseVector().z(), 0, b.getPointOnLine().z() - a.getPointOnLine().z()}}));
 
     auto eqres = gauss(Matrix<AlgExpr>(std::vector<Vector<AlgExpr>> ({ {a.getBaseVector().x(), -1*b.getBaseVector().x(), 0, b.getPointOnLine().x() - a.getPointOnLine().x()},
-                                {a.getBaseVector().y(), -1 * b.getBaseVector().y(), 0, b.getPointOnLine().y() - b.getPointOnLine().y()},
+                                {a.getBaseVector().y(), -1 * b.getBaseVector().y(), 0, b.getPointOnLine().y() - a.getPointOnLine().y()},
                                                                        {a.getBaseVector().z(), -1 * b.getBaseVector().z(), 0, b.getPointOnLine().z() - a.getPointOnLine().z()}})));
 
   //  for (int i = 0; i < 3; ++i)

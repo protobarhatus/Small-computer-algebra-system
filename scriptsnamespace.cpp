@@ -277,7 +277,7 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
                                         args[2].getType() != VALUE_ALGEBRAIC_EXPRESSION)
                                     throw QIODevice::tr("Rhomb принимает строку, длину и угол");
                                 return this->callFunctionsAction("Parallelogramm", {std::move(args[0]),
-                                            std::move(args[1]), std::move(args[1]), std::move(args[3])});
+                                            args[1], args[1], std::move(args[2])});
                             }, true)});
     this->functions.insert({"Center", FunctionLiteral("Center", 1, [](std::vector<MathExpression>&&args) {
                                 if (args[0].getType() != VALUE_POLYGON)
@@ -537,11 +537,11 @@ this->functions.insert({"Expand", FunctionLiteral("Expand", 1, [](std::vector<Ma
     this->functions.insert({"Intersection", FunctionLiteral("Intersection", 2, [](std::vector<MathExpression> && args)->MathExpression {
                                 if (args[0].getType() == VALUE_LINE && args[0].getType() == VALUE_LINE)
                                     return getIntersection(args[0].getLineValue().getValue(), args[1].getLineValue().getValue());
-                                if (args[0].getType() != VALUE_LINE && args[1].getType() == VALUE_PLANE)
+                                if (args[0].getType() == VALUE_LINE && args[1].getType() == VALUE_PLANE)
                                     return getIntersection(args[0].getLineValue().getValue(), args[1].getPlaneValue().getValue());
-                                if (args[0].getType() != VALUE_PLANE && args[1].getType() != VALUE_LINE)
+                                if (args[0].getType() == VALUE_PLANE && args[1].getType() == VALUE_LINE)
                                     return getIntersection(args[1].getLineValue().getValue(), args[0].getPlaneValue().getValue());
-                                if (args[0].getType() != VALUE_PLANE && args[1].getType() != VALUE_PLANE)
+                                if (args[0].getType() == VALUE_PLANE && args[1].getType() == VALUE_PLANE)
                                     return args[0].getPlaneValue().getValue().getIntersection(args[1].getPlaneValue().getValue());
                                 throw QIODevice::tr("Отсутствует функция Intersection для этих аргументов");
                             }, true)});

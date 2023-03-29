@@ -209,7 +209,7 @@ QString Sinus::toString() const
 
 QString Sinus::makeRenderString() const
 {
-    QString argstr = this->argument->toString();
+    QString argstr = this->argument->makeRenderString();
     if (argstr.length() > 2)
         return "sin!(" + argstr + ")";
     return "sin(" + argstr + ")";

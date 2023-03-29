@@ -1853,6 +1853,8 @@ QString DifurResult::makeRenderString() const
         if (isIntegratingConstant(it))
             res += "&Symbol(32)&Symbol(32)&and&Symbol(32)&Symbol(32)&" + makeIntegratingConstantName(it) + "&Symbol(32)&Symbol(8712)&Symbol(32)&"
                     + VariablesDistributor::getVariablesDefinition(it)->getRange().makeRenderString();
+    res.replace("<sub>", "_");
+    res.replace("</sub>", "");
     return res;
 }
 

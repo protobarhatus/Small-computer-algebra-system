@@ -180,7 +180,7 @@ QString ArcSinus::toString() const
 
 QString ArcSinus::makeRenderString() const
 {
-    QString argstr = this->argument->toString();
+    QString argstr = this->argument->makeRenderString();
     if (argstr.length() > 2)
         return "asin!(" + argstr + ")";
     return "asin(" + argstr + ")";
